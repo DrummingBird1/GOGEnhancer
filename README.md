@@ -1,0 +1,189 @@
+# GOG Enhancer
+
+**Version 2.0.3** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
+
+תוסף third-party (לא רשמי) ל-GOG.com — מטבע חי, היסטוריית מחירים, השוואת מחירים בין חנויות, תגיות אישיות, שדרוג עיצובי מלא, עברית ו-RTL, והכל ללא Google Fonts וללא analytics.
+
+> **Disclaimer / הצהרה משפטית:** This is an unofficial third-party extension. It is not affiliated with, endorsed by, or sponsored by GOG sp. z o.o. or CD Projekt S.A. The "GOG" name is used nominatively to describe the storefront the extension works with.
+
+---
+
+## 📂 Repository contents
+
+| File / Folder | Purpose |
+|---|---|
+| `manifest.json` | Manifest V3 declaration |
+| `background/`, `content/`, `popup/`, `options/`, `onboarding/`, `tags/`, `lib/`, `icons/` | Extension code and assets |
+| `PRIVACY.md` | Privacy policy — host this at a public URL before submitting to the Web Store |
+| `LICENSE` | MIT license |
+| `STORE_LISTING.md` | Copy-paste material for the Chrome Web Store Developer Dashboard |
+| `README.md` | This file |
+
+---
+
+## ✨ What's new in v2.0 / מה חדש בגרסה 2
+
+### Architecture / ארכיטקטורה
+- **שכבת אחסון מאוחדת** — preferences ב-`storage.sync` (קל ומסונכרן בין מכשירים), data בכבד (תגיות, היסטוריה, cache) ב-`storage.local`. שום דבר לא נופל מעבר למכסות.
+- **גרסון הגדרות + מיגרציה** — שדרוג מ-v1 מעביר אוטומטית tags ו-notes מ-sync ל-local.
+- **System fonts בלבד** — אפס תלות ב-Google Fonts. שום בקשת רשת חיצונית מלבד API לשערי מטבע.
+- **MutationObserver ממוקד** על main / [ng-view] עם debouncing — יותר חכם, פחות עבודה.
+
+### New features / יכולות חדשות
+- 💱 **שערי מטבע חיים** — נשלפים אוטומטית מ-`api.frankfurter.app` כל 12 שעות. אפשר לערוך ידנית.
+- 📈 **מעקב מחירים** — כל ביקור בעמוד משחק מתעד תמונת-מצב. פאנל סטטיסטיקות בעמוד המשחק (current / all-time low / average).
+- 🔍 **השוואה ב-IsThereAnyDeal** — כפתור בעמוד המשחק שמחפש את אותו משחק ב-Steam / Epic / Humble / Fanatical.
+- 🏷️ **לוח תגיות מלא** — דף נפרד עם חיפוש, סינון, ספירה לכל תגית, ויצוא CSV. אוטוקומפליט לתגיות קיימות.
+- 🔔 **התראות מבצעי wishlist** — alarm רץ בכל 6 שעות, סופר פריטים במבצע ב-wishlist, ומציג מספר על אייקון התוסף בסרגל הכלים.
+- 🛡️ **מגן DRM-free עם SVG** — באנר מוצק עם shield icon, copy מחזק, ופיל "GOG+" בצבעי גרדיאנט.
+- 🎨 **שדרוג עיצובי לכרטיסים** — *card-aware*: "Good Old Game" מקבל אפקט CRT עדין + הילת זהב; משחקי Cyberpunk/Witcher מקבלים neon underglow ציאן/מג'נטה.
+- 🪟 **טולטיפ מעוצב** — חלופה לטולטיפ הברירת-מחדל של הדפדפן, עם כותרות, תוכן עשיר, פוזיציה אוטומטית.
+- 🍞 **טוסטים** — feedback ויזואלי כשמשנים הגדרה (פינה תחתונה ימנית).
+- 📋 **רשימת מודים דינמית** — נסרקת אוטומטית מ-`gog.com/en/mods` כל 24 שעות.
+- 🌍 **זיהוי מטבע אוטומטי בעמוד** — אם GOG מציג ב-EUR (משתמש EU), הרחבה לא ממירה שוב.
+- 🎯 **RTL נכון** — עם `inline-start/end` במקום `left/right`, ו-`unicode-bidi: isolate` למחירים.
+- ⌨️ **קיצורי מקלדת**: `Alt+G` פותח popup, `Alt+Shift+G` מפעיל/מכבה, `Alt+Shift+H` מחליף עברית.
+- 🧙 **Onboarding wizard** בן 3 צעדים — שפה, אזור, פיצ'רים. נפתח אוטומטית בהתקנה ראשונה.
+
+### Visual upgrade module / מודול שדרוג עיצוב
+מופעל דרך toggle "Design injection" בפופאפ. כשמופעל:
+- מספרי מחירים בכל האתר עם **mono font** (`ui-monospace` / Cascadia / JetBrains) ו-tabular-nums.
+- כרטיסים מודעי-עידן (era-aware): סקאן-ליינס לקלאסיקות, neon glow לקיברפאנק.
+- depth/shadows עדינים, ambient gradient background, micro-interactions ב-hover.
+- "Good Old Game" pill מקבל גרדיאנט זהב מתכתי במקום הסגול הפושר.
+- Skeleton loaders עם shimmer animation במקום `{{ product.title }}` חשוף.
+- Cleanlayout: מסתיר promos של 2023/2024 שכבר פגו תוקף.
+
+### Honest privacy / פרטיות בכנות
+- **שתי דומיינים בלבד** מקבלים בקשות רשת:
+  1. `www.gog.com` — לקריאת תוכן הדף ולהזרקת UI.
+  2. `api.frankfurter.app` — לשערי מטבע (ללא API key, ללא tracking).
+- **אפס analytics, אפס gtag, אפס Google Fonts**.
+- **תגיות והערות חיות במכשיר שלך** דרך `chrome.storage.local`. לא יוצאות החוצה.
+- **Open source** — כל הקוד נקרא בתיקיית התוסף.
+
+---
+
+## 🧰 Files / קבצים
+
+```
+gog-plus/
+├── manifest.json              # MV3, permissions, commands
+├── lib/
+│   └── storage.js             # מעטפת sync/local מאוחדת
+├── background/
+│   └── background.js          # alarms (FX/mods/wishlist) + commands
+├── content/
+│   ├── content.js             # אורקסטרציה ראשית
+│   ├── content.css            # styles ל-UI שלנו
+│   ├── design-injection.css   # שדרוג עיצוב ל-GOG עצמו
+│   ├── translations.js        # מילון עברית + patterns
+│   ├── currency-detection.js  # זיהוי מטבע בעמוד
+│   ├── price-history.js       # תיעוד מחירים
+│   ├── tooltips.js            # טולטיפ מעוצב
+│   └── toasts.js              # הודעות feedback
+├── popup/                     # popup על אייקון בסרגל
+├── options/                   # עמוד הגדרות מתקדם
+├── onboarding/                # wizard ראשוני (3 צעדים)
+├── tags/                      # לוח תגיות + יצוא CSV
+└── icons/                     # 16/48/128 PNGs
+```
+
+---
+
+## 🚀 Installation / התקנה
+
+1. הורד את הקובץ `gog-plus.zip` וחלץ אותו לתיקייה כלשהי.
+2. פתח Chrome ועבור ל-`chrome://extensions/`.
+3. הפעל **Developer mode** (פינה ימנית עליונה).
+4. לחץ **Load unpacked** ובחר את התיקייה שחילצת.
+5. ה-onboarding wizard ייפתח אוטומטית בלשונית חדשה. עבור את 3 הצעדים.
+6. גלוש ל-[gog.com](https://www.gog.com) — ההרחבה פעילה.
+
+---
+
+## ⌨️ Keyboard shortcuts / קיצורים
+
+| Shortcut | Action |
+|---|---|
+| `Alt+G` | פתח popup |
+| `Alt+Shift+G` | toggle GOG+ on/off |
+| `Alt+Shift+H` | toggle Hebrew translations |
+
+ניתן לשנות ב-`chrome://extensions/shortcuts`.
+
+---
+
+## ⚙️ Permissions explained / הסבר הרשאות
+
+| Permission | למה |
+|---|---|
+| `storage` | שמירת העדפות, תגיות, היסטוריה |
+| `activeTab` | רענון הלשונית הפעילה כשלוחצים "Reload" |
+| `alarms` | scheduling של רענון FX/mods/wishlist ברקע |
+| `host: www.gog.com` | זריקת UI לתוך עמודי GOG |
+| `host: api.frankfurter.app` | שליפת שערי מטבע |
+
+---
+
+## 🛠️ Known limitations / מגבלות ידועות
+
+- **Sparkline צ'ארט** של היסטוריית מחירים — בגרסה 2.0 רק הסטטיסטיקות מוצגות; הוויזואליזציה נשארת ל-v2.1.
+- **Refund window timer** — תוכנן ל-v2.0 אבל הוסר. GOG לא חושף תאריך רכישה דרך DOM פומבי, וטיימר מבוסס "ביקור ראשון בעמוד" יוצר ציפייה לא מדויקת. בגרסה הנוכחית מוצג רק badge סטטי "30-day refund" שמזכיר את המדיניות. תכנון ל-v2.1: שדה ידני לתאריך רכישה עם countdown.
+- **המרת מטבע בעמודים שאינם USD** — אם GOG כבר מציג לך EUR/PLN/GBP, ההרחבה מזהה ולא ממירה שוב כדי לא לשבש. אם תרצה המרה צולבת, פתח issue.
+- **Mods list scraping** — תלוי בכך ש-`gog.com/en/mods` שומר על מבנה דומה. אם תהיה רגרסיה, force-refresh דרך Advanced settings.
+- **Wishlist badge counter** — מבוסס על ספירת DOM חיה כשהמשתמש מבקר ב-`/account/wishlist` (פעם אחרונה ב-24 שעות אחרונות). אם לא ביקרת לאחרונה — ה-badge יהיה ריק עד הביקור הבא. ה-tooltip של אייקון ההרחבה ימליץ לבקר.
+
+---
+
+## 📜 Changelog / יומן שינויים
+
+### v2.0.3 (current) — Web Store readiness
+- **Renamed** "GOG+" → "GOG Enhancer". The new name follows the nominative-fair-use pattern (RES, YouTube Enhancer etc.) which substantially reduces trademark risk.
+- Added `PRIVACY.md` — a complete privacy policy ready to be hosted publicly before submitting to the Chrome Web Store.
+- Added `LICENSE` — MIT, with a trademark clarification appendix about the GOG name.
+- Added `STORE_LISTING.md` — copy-paste-ready material for the developer dashboard: short/long descriptions in English and Hebrew, permission justifications, single-purpose statement, screenshot guide.
+- Updated user-facing strings everywhere (manifest name, popup header, options header, onboarding header, tag-dashboard header, banner pill, panel title, action title, command descriptions). Internal class names and storage keys are unchanged so existing installations upgrade cleanly.
+- Manifest description rewritten to declare the third-party / unofficial status up front.
+
+### v2.0.2 — layout regression hotfix
+- **שבר ה-cards של GOG.** הגרסה הקודמת הכריחה `position: relative` על ה-anchor החיצוני של כל card, מה שגרם ל-overlays הפנימיים של GOG (תצוגות מקדימות, screenshots בקרוסלה) לקרוס פנימה ולמלא את הכרטיס בתיבות אפורות.
+- Badges עברו מ-card root ל-cover image wrapper (חיפוש דינמי של ה-host המתאים לפי גודל)
+- אפקטי era (CRT classic, neon cyberpunk) הועברו מ-card לאותו cover wrapper
+- הוסר selector skeleton-loader הרחב מדי (`:has(> :empty)`) שגם הוא הזיק
+- הוסר rule שהכריח `position: relative` על footer ועל card containers דרך `[class*="..."]`
+- De-duplication לפי slug — אם GOG מציג את אותו משחק במספר anchors (cover-link + body-link), רק אחד מקבל badge
+
+### v2.0.1
+- **Security:** patched XSS via tag names rendered through innerHTML (now built with createElement + textContent)
+- **CSP:** removed inline `onclick` from onboarding (Manifest V3 forbids it)
+- **Privacy:** removed `tags.html` and `onboarding.html` from `web_accessible_resources` (was a fingerprint vector for any gog.com page)
+- **Wishlist badge:** rewrote scrape strategy — content script counts live DOM on `/account/wishlist` and reports to background (the previous `fetch()` regex never worked on the SPA)
+- **Disabled state:** master toggle now actually hides all injected UI via CSS rule on `html.gog-plus-disabled`
+- **Honesty:** dropped overpromised "refund window timer" from limitations (won't ship a fake feature)
+
+### v2.0.0
+- Re-architected storage (sync vs local split)
+- Live FX rates via frankfurter.app
+- Price history tracking + stats panel
+- IsThereAnyDeal compare button
+- Tag dashboard + CSV export + autocomplete
+- Wishlist sale toolbar badge
+- Onboarding wizard
+- Era-aware card styling
+- Rich tooltips + toast notifications
+- Keyboard commands
+- Hebrew dict expanded + dup-key fix + RTL improvements
+- System fonts only (removed Google Fonts)
+- Real cleanLayout implementation
+- Honest privacy story (2 domains only)
+
+### v1.0.0
+- Initial release: currency converter, refund badge, mod indicator,
+  custom tags, wishlist filters, basic Hebrew, options page.
+
+---
+
+## 🧑‍💻 Built for Idan, Ramat Gan
+מותאם בתחילה למשתמש ישראלי (ILS, מע"מ 18%, עברית) — אבל עובד מצוין גם
+ל-EU/UK/US/PL. כל שדה ניתן לעריכה.
