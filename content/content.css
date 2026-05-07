@@ -1,0 +1,598 @@
+/* ============================================================
+   GOG+ — Content styles v2
+   Scoped via .gog-plus-* prefix. System-font-only (no Google Fonts).
+   ============================================================ */
+
+/* When the master toggle is off, hide every piece of UI we injected.
+   We also want to leave the page exactly as we found it, so this rule
+   takes precedence over individual component visibility. */
+html.gog-plus-disabled #gog-plus-banner,
+html.gog-plus-disabled #gog-plus-gamepanel,
+html.gog-plus-disabled #gog-plus-wlfilters,
+html.gog-plus-disabled .gog-plus-badges,
+html.gog-plus-disabled .gog-plus-conv-note,
+html.gog-plus-disabled .gog-plus-tooltip,
+html.gog-plus-disabled .gog-plus-toasts {
+  display: none !important;
+}
+
+:root {
+  --gp-magenta: #c64fff;
+  --gp-cyan: #00f0ff;
+  --gp-green: #7fffa6;
+  --gp-pink: #ff6b9d;
+  --gp-bg: #0a0612;
+  --gp-surface: #14092a;
+  --gp-text: #f4eaff;
+  --gp-text-dim: rgba(244, 234, 255, 0.65);
+  --gp-text-muted: rgba(244, 234, 255, 0.40);
+  --gp-border: rgba(244, 234, 255, 0.12);
+  --gp-border-strong: rgba(244, 234, 255, 0.25);
+
+  --gp-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "SF Mono",
+    Menlo, Consolas, monospace;
+  --gp-display: "Bahnschrift", "DIN Alternate", "Inter Tight",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --gp-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Heebo",
+    system-ui, sans-serif;
+}
+
+/* When master toggle is off, hide everything we injected */
+html.gog-plus-disabled .gog-plus-conv-note,
+html.gog-plus-disabled .gog-plus-badges,
+html.gog-plus-disabled .gog-plus-banner,
+html.gog-plus-disabled .gog-plus-gamepanel,
+html.gog-plus-disabled .gog-plus-wlfilters,
+html.gog-plus-disabled .gog-plus-tooltip,
+html.gog-plus-disabled .gog-plus-toasts {
+  display: none !important;
+}
+
+/* ===== Currency conversion note ===== */
+.gog-plus-conv-note {
+  display: inline-block;
+  margin-inline-start: 6px;
+  padding: 1px 7px;
+  border-radius: 3px;
+  background: rgba(0, 240, 255, 0.10);
+  color: #62e2ff;
+  font-family: var(--gp-mono);
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  vertical-align: middle;
+  white-space: nowrap;
+  cursor: help;
+}
+.gog-plus-conv-note.gog-plus-with-tax::after {
+  content: "*";
+  margin-inline-start: 2px;
+  opacity: 0.7;
+}
+
+/* ===== Card badges =====
+   Badges are scoped to the cover image wrapper, NEVER the card root.
+   GOG cards contain absolutely-positioned overlays (carousel previews,
+   hover screenshots) that snap to the nearest positioned ancestor —
+   if we make the card itself relative, those overlays explode in size. */
+.gog-plus-cover-host--has-badges .gog-plus-badges {
+  position: absolute;
+  top: 6px;
+  inset-inline-start: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 5;
+  pointer-events: auto;
+}
+.gog-plus-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: var(--gp-mono);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  white-space: nowrap;
+  line-height: 1.1;
+  cursor: help;
+}
+.gog-plus-badge svg { display: block; }
+.gog-plus-badge-refund {
+  background: rgba(15, 8, 30, 0.85);
+  color: var(--gp-green);
+  border: 1px solid rgba(127, 255, 166, 0.35);
+}
+.gog-plus-badge-mod {
+  background: rgba(198, 79, 255, 0.92);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* ===== DRM-free top banner ===== */
+.gog-plus-banner {
+  position: relative;
+  z-index: 9999;
+  background:
+    radial-gradient(circle at 0% 50%, rgba(198, 79, 255, 0.18), transparent 40%),
+    radial-gradient(circle at 100% 50%, rgba(0, 240, 255, 0.16), transparent 45%),
+    rgba(15, 8, 30, 0.98);
+  border-bottom: 1px solid rgba(198, 79, 255, 0.35);
+  color: var(--gp-text);
+  font-family: var(--gp-body);
+  font-size: 13px;
+}
+.gog-plus-banner-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 9px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.gog-plus-banner-shield {
+  flex: 0 0 auto;
+  color: var(--gp-cyan);
+  display: flex;
+  align-items: center;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.5));
+}
+.gog-plus-banner-text {
+  flex: 1 1 auto;
+  line-height: 1.4;
+}
+.gog-plus-banner-text strong {
+  color: #fff;
+  margin-inline-end: 6px;
+  font-family: var(--gp-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.gog-plus-banner-pill {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--gp-magenta), var(--gp-cyan));
+  color: var(--gp-bg);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  font-family: var(--gp-mono);
+}
+.gog-plus-banner-close {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.gog-plus-banner-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ===== Expired sales ===== */
+.gog-plus-expired {
+  opacity: 0.30 !important;
+  filter: grayscale(0.75);
+  position: relative;
+}
+.gog-plus-expired::after {
+  content: "ENDED";
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px;
+  background: rgba(0, 0, 0, 0.85);
+  color: var(--gp-pink);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  font-family: var(--gp-mono);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* ===== RTL ===== */
+html.gog-plus-rtl body { direction: rtl; }
+html.gog-plus-rtl .gog-plus-conv-note { direction: ltr; unicode-bidi: isolate; }
+html.gog-plus-rtl .gog-plus-banner-inner { flex-direction: row-reverse; }
+html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
+
+/* ===== Wishlist filters ===== */
+.gog-plus-wlfilters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 18px;
+  margin: 0 0 16px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(198, 79, 255, 0.10), transparent 50%),
+    rgba(15, 8, 30, 0.95);
+  border: 1px solid rgba(198, 79, 255, 0.25);
+  border-radius: 6px;
+  font-family: var(--gp-body);
+}
+.gog-plus-wlfilters-label {
+  color: var(--gp-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: var(--gp-mono);
+  margin-inline-end: 4px;
+}
+.gog-plus-wlfilters button {
+  background: transparent;
+  border: 1px solid var(--gp-border-strong);
+  color: var(--gp-text-dim);
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.gog-plus-wlfilters button:hover {
+  border-color: var(--gp-cyan);
+  color: var(--gp-cyan);
+}
+.gog-plus-wlfilters button.active {
+  background: linear-gradient(135deg, var(--gp-magenta), var(--gp-cyan));
+  color: var(--gp-bg);
+  border-color: transparent;
+}
+.gog-plus-filtered-out { display: none !important; }
+
+/* ===== Game page panel ===== */
+.gog-plus-gamepanel {
+  margin: 24px 0;
+  padding: 0;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(198, 79, 255, 0.12), transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(0, 240, 255, 0.10), transparent 50%),
+    rgba(15, 8, 30, 0.95);
+  border: 1px solid rgba(198, 79, 255, 0.30);
+  border-radius: 8px;
+  color: var(--gp-text);
+  font-family: var(--gp-body);
+  font-size: 14px;
+  overflow: hidden;
+}
+.gog-plus-gp-header {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--gp-border);
+  background: rgba(0, 0, 0, 0.25);
+}
+.gog-plus-gp-title {
+  font-family: var(--gp-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gp-text);
+}
+.gog-plus-gp-pill {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--gp-magenta), var(--gp-cyan));
+  color: var(--gp-bg);
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 13px;
+}
+.gog-plus-gp-body { padding: 8px 20px 20px; }
+.gog-plus-gp-section {
+  padding: 16px 0;
+  border-bottom: 1px dashed var(--gp-border);
+}
+.gog-plus-gp-section:last-child { border-bottom: none; }
+.gog-plus-gp-section h3 {
+  margin: 0 0 10px;
+  font-family: var(--gp-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--gp-text-dim);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.gog-plus-gp-since {
+  font-family: var(--gp-mono);
+  font-size: 10px;
+  color: var(--gp-text-muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.gog-plus-gp-muted {
+  color: var(--gp-text-muted);
+  font-size: 13px;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+/* Price stats grid */
+.gog-plus-pricestat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.gog-plus-pricestat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.30);
+  border: 1px solid var(--gp-border);
+  border-radius: 4px;
+}
+.gog-plus-pricestat-label {
+  font-size: 10px;
+  font-family: var(--gp-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gp-text-muted);
+}
+.gog-plus-pricestat-value {
+  font-family: var(--gp-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gp-text);
+}
+.gog-plus-pricestat-value.is-low {
+  color: var(--gp-green);
+  text-shadow: 0 0 12px rgba(127, 255, 166, 0.4);
+}
+
+/* Sparkline */
+.gog-plus-spark {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(198, 79, 255, 0.18);
+  border-radius: 8px;
+}
+.gog-plus-spark svg {
+  display: block;
+  width: 100%;
+  height: 80px;
+}
+.gog-plus-spark-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--gp-text-muted);
+  font-family: var(--gp-mono);
+  letter-spacing: 0.04em;
+}
+.gog-plus-spark-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.gog-plus-spark-legend .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.gog-plus-spark-legend .dot-low {
+  background: var(--gp-green);
+  box-shadow: 0 0 6px rgba(127, 255, 166, 0.5);
+}
+.gog-plus-spark-legend .dot-now {
+  background: var(--gp-magenta);
+  box-shadow: 0 0 6px rgba(198, 79, 255, 0.5);
+}
+.gog-plus-spark-empty {
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+/* ITAD button */
+.gog-plus-itad-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: transparent;
+  border: 1px solid var(--gp-cyan);
+  color: var(--gp-cyan);
+  font-family: var(--gp-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+.gog-plus-itad-btn:hover {
+  background: rgba(0, 240, 255, 0.10);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.2);
+}
+
+/* Tags */
+.gog-plus-tag-input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.gog-plus-tag-input-row input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.40);
+  border: 1px solid var(--gp-border-strong);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: var(--gp-text);
+  font-size: 13px;
+  font-family: inherit;
+}
+.gog-plus-tag-input-row input:focus {
+  outline: none;
+  border-color: var(--gp-cyan);
+  box-shadow: 0 0 0 1px var(--gp-cyan);
+}
+.gog-plus-tag-input-row button {
+  background: linear-gradient(135deg, var(--gp-magenta), var(--gp-cyan));
+  color: var(--gp-bg);
+  border: none;
+  padding: 8px 18px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.gog-plus-tag-input-row button:hover { filter: brightness(1.12); }
+.gog-plus-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 4px;
+  margin-bottom: 12px;
+}
+.gog-plus-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.40);
+  border-radius: 12px;
+  font-size: 12px;
+  color: #62e2ff;
+}
+.gog-plus-tag-chip button {
+  background: transparent;
+  border: none;
+  color: rgba(98, 226, 255, 0.7);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 0 0 2px;
+  cursor: pointer;
+}
+.gog-plus-tag-chip button:hover { color: var(--gp-pink); }
+.gog-plus-gamepanel textarea {
+  width: 100%;
+  min-height: 60px;
+  background: rgba(0, 0, 0, 0.40);
+  border: 1px solid var(--gp-border-strong);
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: var(--gp-text);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+.gog-plus-gamepanel textarea:focus {
+  outline: none;
+  border-color: var(--gp-cyan);
+}
+.gog-plus-tag-dashboard-link {
+  display: inline-block;
+  font-size: 11px;
+  font-family: var(--gp-mono);
+  color: var(--gp-text-muted);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  border-bottom: 1px dashed transparent;
+  padding-bottom: 1px;
+}
+.gog-plus-tag-dashboard-link:hover {
+  color: var(--gp-cyan);
+  border-bottom-color: var(--gp-cyan);
+}
+
+/* ===== Tooltip ===== */
+.gog-plus-tooltip {
+  position: absolute;
+  z-index: 99999;
+  max-width: 280px;
+  padding: 10px 14px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(198, 79, 255, 0.15), transparent 60%),
+    rgba(10, 6, 18, 0.98);
+  border: 1px solid var(--gp-border-strong);
+  border-radius: 6px;
+  color: var(--gp-text);
+  font-family: var(--gp-body);
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.gog-plus-tooltip strong {
+  display: block;
+  margin-bottom: 3px;
+  font-family: var(--gp-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gp-cyan);
+}
+
+/* ===== Toasts ===== */
+.gog-plus-toasts {
+  position: fixed;
+  bottom: 24px;
+  inset-inline-end: 24px;
+  z-index: 99998;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.gog-plus-toast {
+  padding: 11px 18px;
+  background:
+    linear-gradient(135deg, rgba(198, 79, 255, 0.16), rgba(0, 240, 255, 0.16)),
+    rgba(10, 6, 18, 0.96);
+  border: 1px solid rgba(198, 79, 255, 0.4);
+  border-radius: 6px;
+  color: var(--gp-text);
+  font-family: var(--gp-body);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.gog-plus-toast--in { opacity: 1; transform: translateY(0); }
+.gog-plus-toast--out { opacity: 0; transform: translateY(-4px); }
+.gog-plus-toast--muted {
+  border-color: var(--gp-border-strong);
+  background:
+    linear-gradient(135deg, rgba(244, 234, 255, 0.04), rgba(244, 234, 255, 0.02)),
+    rgba(10, 6, 18, 0.96);
+}

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GOG Enhancer — Settings</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <span class="brand-pill">GOG Enhancer</span>
+      <h1 class="brand-title">Enhanced</h1>
+    </div>
+    <label class="master-toggle" aria-label="Enable GOG Enhancer">
+      <input type="checkbox" id="masterEnabled" />
+      <span class="master-track"><span class="master-thumb"></span></span>
+    </label>
+  </header>
+
+  <div class="rate-strip" id="rateStrip" role="status" aria-live="polite"></div>
+
+  <main class="content">
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-num">01</span>
+        Currency &amp; pricing
+      </h2>
+
+      <div class="row">
+        <label class="row-label" for="targetCurrency">Display alongside USD</label>
+        <select id="targetCurrency" class="select">
+          <option value="none">Off (USD only)</option>
+          <option value="ILS">₪ ILS — Israeli Shekel</option>
+          <option value="EUR">€ EUR — Euro</option>
+          <option value="GBP">£ GBP — Pound</option>
+          <option value="RUB">₽ RUB — Russian Rouble</option>
+          <option value="PLN">zł PLN — Polish Zloty</option>
+        </select>
+      </div>
+
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Estimate VAT / sales tax</div>
+          <div class="toggle-sub">Adds tax-inclusive price next to USD.</div>
+        </div>
+        <label class="toggle" aria-label="VAT estimator">
+          <input type="checkbox" id="taxEstimator" />
+          <span class="track"><span class="thumb"></span></span>
+        </label>
+      </div>
+
+      <div class="row inline-row">
+        <label class="inline-label" for="vatPercent">VAT %</label>
+        <input type="number" id="vatPercent" class="input small" min="0" max="40" step="0.5" />
+        <button id="refreshRates" class="ghost-btn-mini" title="Refresh exchange rates now">↻ rates</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-num">02</span>
+        On-page enhancements
+      </h2>
+
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">"30-day refund" badge</div>
+          <div class="toggle-sub">Reminder on every game card.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="refundBadge" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">DRM-free top banner</div>
+          <div class="toggle-sub">Surfaces GOG's core promise.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="drmFreeBanner" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Mod indicator on cards</div>
+          <div class="toggle-sub">★ MOD badge for moddable titles.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="modIndicator" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Hide expired sales</div>
+          <div class="toggle-sub">Greys out promos with stale year stamps.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="hideExpiredSales" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Cleaner homepage layout</div>
+          <div class="toggle-sub">Collapses duplicate sale strips.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="cleanLayout" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Skeleton loaders</div>
+          <div class="toggle-sub">Replace bare placeholders with shimmer.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="skeletonLoaders" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-num">03</span>
+        Visual upgrade
+      </h2>
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Design injection</div>
+          <div class="toggle-sub">Mono prices, era-aware cards, depth, golden "Good Old Game" pill.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="designInjection" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Rich tooltips</div>
+          <div class="toggle-sub">Custom-styled hover tips with details.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="richTooltips" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-num">04</span>
+        Library &amp; account
+      </h2>
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Custom tags &amp; notes</div>
+          <div class="toggle-sub">Plus autocomplete &amp; dashboard.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="customTags" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Wishlist quick filters</div>
+          <div class="toggle-sub">By sale, price, rating.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="wishlistFilters" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Wishlist sale alerts</div>
+          <div class="toggle-sub">Toolbar badge counts wishlist deals.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="wishlistAlerts" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Price history tracking</div>
+          <div class="toggle-sub">Records prices on every visit.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="priceHistoryTracking" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Compare on IsThereAnyDeal</div>
+          <div class="toggle-sub">One-click cross-store price check.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="itadCompare" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">
+        <span class="section-num">05</span>
+        Localization
+      </h2>
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">Hebrew translation overlay</div>
+          <div class="toggle-sub">Translates stable nav &amp; UI strings.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="hebrewTranslations" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+      <div class="row toggle-row">
+        <div>
+          <div class="toggle-title">RTL layout</div>
+          <div class="toggle-sub">Mirrors layout for right-to-left.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="rtlLayout" /><span class="track"><span class="thumb"></span></span></label>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <button id="openTags" class="ghost-btn">Tag dashboard</button>
+    <button id="openOptions" class="ghost-btn">Advanced</button>
+    <button id="reload" class="primary-btn">Reload tab</button>
+  </footer>
+
+  <p class="hint">
+    Shortcuts:
+    <kbd>Alt</kbd>+<kbd>G</kbd> open ·
+    <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd> toggle
+  </p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+/* ============================================================
+   GOG+ — Design injection
+   Stylistic upgrades applied to GOG.com itself, gated by
+   html.gog-plus-design (toggleable from popup).
+   ============================================================ */
+
+/* ===== Mono numerals for prices everywhere =====
+   Targets the price elements specifically with class-name
+   pattern matching, since GOG uses several variants. */
+html.gog-plus-design [class*="price-text"],
+html.gog-plus-design [class*="ProductPrice"],
+html.gog-plus-design [class*="product-actions-price"],
+html.gog-plus-design [class*="product-price"],
+html.gog-plus-design [class*="discount"],
+html.gog-plus-design .product-tile__price,
+html.gog-plus-design [class*="-discount"] {
+  font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", "SF Mono",
+    Menlo, Consolas, monospace !important;
+  font-feature-settings: "tnum" 1, "lnum" 1, "ss01" 1;
+  letter-spacing: -0.01em;
+}
+
+/* ===== Era-aware game cards =====
+   Effects are attached to .gog-plus-cover-host (the cover image wrapper),
+   NOT to the card anchor itself. Touching the card root caused GOG's own
+   carousel/preview overlays to snap to the wrong positioning context. */
+
+/* "Good Old Game" cover — retro CRT treatment */
+.gog-plus-cover--classic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0.05) 1px,
+      rgba(0, 0, 0, 0) 2px
+    );
+  mix-blend-mode: multiply;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  border-radius: inherit;
+}
+.gog-plus-cover--classic:hover::before { opacity: 0.6; }
+.gog-plus-cover--classic::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 22px rgba(255, 196, 70, 0),
+    inset 0 0 1px rgba(255, 196, 70, 0);
+  transition: box-shadow 0.35s ease;
+}
+.gog-plus-cover--classic:hover::after {
+  box-shadow:
+    inset 0 0 22px rgba(255, 196, 70, 0.15),
+    inset 0 0 1px rgba(255, 196, 70, 0.4);
+}
+
+/* Cyberpunk / Witcher era — neon underglow on the cover */
+.gog-plus-cover--neon {
+  transition: box-shadow 0.35s ease;
+}
+.gog-plus-cover--neon:hover {
+  box-shadow:
+    0 6px 18px rgba(198, 79, 255, 0.20),
+    0 0 0 1px rgba(0, 240, 255, 0.4),
+    0 0 24px rgba(0, 240, 255, 0.15);
+}
+
+/* Generic card hover micro-interaction — tiny, no positioning change */
+html.gog-plus-design .gog-plus-card {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+html.gog-plus-design .gog-plus-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ===== Skeleton loaders =====
+   The previous heuristic (matching :empty on every product-tile) was
+   far too broad — GOG cards contain many lazy-loaded empty containers
+   that aren't actually skeleton states. Disabled until we have a
+   reliable signal for "this is a real loading skeleton".
+
+   If you want to re-enable, target a very specific GOG class
+   (e.g. .product-tile--placeholder) rather than :empty matching. */
+html.gog-plus-skeletons {
+  /* intentionally empty — see note above */
+}
+
+/* ===== Clean layout =====
+   Collapse expired-year promo strips. The :nth-of-type rule was too
+   aggressive (could hide active sales). Now we only hide promos with
+   explicit 2023/2024 dates in the URL. */
+html.gog-plus-clean a[href*="/promo/20240"],
+html.gog-plus-clean a[href*="/promo/20230"] {
+  display: none;
+}
+
+/* ===== Subtle depth on the global page ===== */
+html.gog-plus-design body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(
+      ellipse at 90% 10%,
+      rgba(198, 79, 255, 0.05),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 10% 90%,
+      rgba(0, 240, 255, 0.04),
+      transparent 50%
+    );
+  mix-blend-mode: screen;
+}
+
+/* Card shadows pick up gentle warmth */
+html.gog-plus-design [class*="product-tile"],
+html.gog-plus-design [class*="ProductCard"] {
+  transition: box-shadow 0.3s ease;
+}
+html.gog-plus-design [class*="product-tile"]:hover,
+html.gog-plus-design [class*="ProductCard"]:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(244, 234, 255, 0.05);
+}
+
+/* ===== Add-to-cart micro-celebration =====
+   When user clicks a button containing "Add to cart", briefly pulse it. */
+html.gog-plus-design button:active[class*="add-to-cart"],
+html.gog-plus-design button:active[class*="AddToCart"],
+html.gog-plus-design [class*="add-to-cart"]:active,
+html.gog-plus-design [class*="AddToCart"]:active {
+  transform: scale(0.96);
+}
+
+/* ===== "Good Old Game" pill — make it actually distinctive ===== */
+html.gog-plus-design [class*="good-old-game"],
+html.gog-plus-design [class*="GoodOldGame"] {
+  background: linear-gradient(135deg, #d4a445, #f0d088) !important;
+  color: #2a1a08 !important;
+  border: 1px solid rgba(212, 164, 69, 0.6) !important;
+  font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", monospace !important;
+  letter-spacing: 0.06em !important;
+  text-shadow: none !important;
+  box-shadow: 0 2px 8px rgba(212, 164, 69, 0.3) !important;
+}

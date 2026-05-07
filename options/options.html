@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GOG Enhancer — Advanced Settings</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-brand">
+        <span class="hero-pill">GOG Enhancer</span>
+        <span class="hero-version">v2.0</span>
+      </div>
+      <h1 class="hero-title">Advanced settings</h1>
+      <p class="hero-sub">
+        Fine-tune behavior, manage your data, and tweak what GOG Enhancer injects.
+      </p>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <!-- Region presets -->
+    <section class="card">
+      <div class="card-num">01</div>
+      <h2>Region preset</h2>
+      <p class="card-sub">
+        Quick-set currency &amp; VAT for common markets. You can override any
+        field below.
+      </p>
+      <div class="presets" id="presets">
+        <button class="preset" data-preset="il">
+          <span class="flag">🇮🇱</span>
+          <span class="preset-name">Israel</span>
+          <span class="preset-detail">ILS · 18% VAT</span>
+        </button>
+        <button class="preset" data-preset="eu">
+          <span class="flag">🇪🇺</span>
+          <span class="preset-name">EU</span>
+          <span class="preset-detail">EUR · 20% VAT</span>
+        </button>
+        <button class="preset" data-preset="uk">
+          <span class="flag">🇬🇧</span>
+          <span class="preset-name">UK</span>
+          <span class="preset-detail">GBP · 20% VAT</span>
+        </button>
+        <button class="preset" data-preset="pl">
+          <span class="flag">🇵🇱</span>
+          <span class="preset-name">Poland</span>
+          <span class="preset-detail">PLN · 23% VAT</span>
+        </button>
+        <button class="preset" data-preset="us">
+          <span class="flag">🇺🇸</span>
+          <span class="preset-name">USA</span>
+          <span class="preset-detail">USD · 0% VAT</span>
+        </button>
+        <button class="preset" data-preset="custom">
+          <span class="flag">⚙️</span>
+          <span class="preset-name">Custom</span>
+          <span class="preset-detail">manual</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Currency & rates -->
+    <section class="card">
+      <div class="card-num">02</div>
+      <h2>Exchange rates</h2>
+      <p class="card-sub">
+        Fetched live from
+        <a href="https://www.frankfurter.app/" target="_blank" rel="noopener">frankfurter.app</a>
+        every 12&nbsp;hours. You can edit any rate manually — manual edits stick
+        until the next refresh.
+      </p>
+      <div class="rate-status" id="rateStatus"></div>
+      <div class="rate-grid">
+        <label>1 USD =
+          <input id="rate-ILS" type="number" step="0.001" /> ILS
+        </label>
+        <label>1 USD =
+          <input id="rate-EUR" type="number" step="0.001" /> EUR
+        </label>
+        <label>1 USD =
+          <input id="rate-GBP" type="number" step="0.001" /> GBP
+        </label>
+        <label>1 USD =
+          <input id="rate-PLN" type="number" step="0.001" /> PLN
+        </label>
+        <label>1 USD =
+          <input id="rate-RUB" type="number" step="0.01" /> RUB
+        </label>
+      </div>
+      <div class="card-actions">
+        <button id="refreshRates" class="primary">Refresh now</button>
+      </div>
+    </section>
+
+    <!-- VAT -->
+    <section class="card">
+      <div class="card-num">03</div>
+      <h2>Tax estimator</h2>
+      <p class="card-sub">
+        Adds an estimated tax-inclusive price next to USD. Hover the converted
+        figure to see the breakdown.
+      </p>
+      <div class="grid-2">
+        <label>VAT / sales tax %
+          <input id="vatPercent" type="number" step="0.5" min="0" max="40" />
+        </label>
+        <label>Label (e.g. "incl. 18% VAT")
+          <input id="vatLabel" type="text" maxlength="30" />
+        </label>
+      </div>
+    </section>
+
+    <!-- Background sync -->
+    <section class="card">
+      <div class="card-num">04</div>
+      <h2>Background sync</h2>
+      <p class="card-sub">
+        Three small background jobs keep things fresh.
+      </p>
+      <div class="status-grid">
+        <div class="status-row">
+          <span class="status-label">Exchange rates</span>
+          <span class="status-value" id="status-fx">—</span>
+          <button class="ghost-mini" id="forceFx">force run</button>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Mods catalog</span>
+          <span class="status-value" id="status-mods">—</span>
+          <button class="ghost-mini" id="forceMods">force run</button>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Wishlist sale check</span>
+          <span class="status-value" id="status-wl">—</span>
+          <button class="ghost-mini" id="forceWl">force run</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data management -->
+    <section class="card">
+      <div class="card-num">05</div>
+      <h2>Your data</h2>
+      <p class="card-sub">
+        Tags, notes and price history live on this device. Sync settings live
+        in your browser sync (small). Export anything you want.
+      </p>
+      <div class="data-stats" id="dataStats"></div>
+      <div class="card-actions wrap">
+        <button id="exportAll" class="primary">Export everything (JSON)</button>
+        <button id="importAll" class="ghost">Import from JSON…</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+        <button id="exportTagsCsv" class="ghost">Tags → CSV</button>
+        <button id="clearHistory" class="danger">Clear price history</button>
+        <button id="clearTags" class="danger">Clear tags &amp; notes</button>
+        <button id="clearAll" class="danger">Reset everything</button>
+      </div>
+    </section>
+
+    <!-- Privacy note -->
+    <section class="card subtle">
+      <h2>Privacy &amp; transparency</h2>
+      <p class="card-sub">
+        GOG Enhancer talks to two domains and that's it:
+      </p>
+      <ul class="bullet">
+        <li><strong>www.gog.com</strong> — to read what's on the page and inject UI.</li>
+        <li><strong>api.frankfurter.app</strong> — to fetch USD→EUR/ILS/GBP/PLN/RUB rates (no key, no tracking).</li>
+      </ul>
+      <p class="card-sub">
+        No analytics. No third-party fonts. Tags &amp; notes never leave your machine.
+      </p>
+    </section>
+
+    <footer class="page-footer">
+      <span>GOG Enhancer v2.0 · System fonts only · Built for Idan</span>
+      <span id="saveStatus" class="save-status">Saved automatically.</span>
+    </footer>
+  </main>
+
+  <script src="../lib/storage.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

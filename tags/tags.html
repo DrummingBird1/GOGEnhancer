@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GOG Enhancer — Tag Dashboard</title>
+  <link rel="stylesheet" href="tags.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-brand">
+        <span class="brand-pill">GOG Enhancer</span>
+        <span class="hero-version">tag dashboard</span>
+      </div>
+      <h1>Your tags &amp; notes</h1>
+      <p class="hero-sub">
+        Every game you've tagged or written notes about. Click a tag on the
+        left to filter, or search by name.
+      </p>
+      <div class="toolbar">
+        <input type="search" id="search" placeholder="Search by game slug or note text…" autocomplete="off" />
+        <span class="counts" id="counts"></span>
+        <button id="exportCsv" class="ghost">↓ Export CSV</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>All tags</h2>
+      <div id="tagList" class="tag-list-vertical">
+        <p class="empty-msg">Loading…</p>
+      </div>
+    </aside>
+
+    <section class="games">
+      <div id="gameList" class="game-list">
+        <p class="empty-msg">Loading…</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="../lib/storage.js"></script>
+  <script src="tags.js"></script>
+</body>
+</html>

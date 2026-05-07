@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to GOG Enhancer</title>
+  <link rel="stylesheet" href="onboarding.css" />
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <main class="wizard">
+    <header class="wizard-head">
+      <span class="brand-pill">GOG Enhancer</span>
+      <span class="version">v2.0</span>
+    </header>
+
+    <div class="step-track">
+      <span class="step-dot active" data-step="1">1</span>
+      <span class="step-line"></span>
+      <span class="step-dot" data-step="2">2</span>
+      <span class="step-line"></span>
+      <span class="step-dot" data-step="3">3</span>
+    </div>
+
+    <!-- ===== STEP 1: Welcome + currency ===== -->
+    <section class="step active" data-step="1">
+      <h1>Welcome.</h1>
+      <p class="lead">
+        GOG Enhancer adds the bits the store doesn't: live currency conversion, price
+        history, custom tags, Hebrew, and a bunch of small visual upgrades.
+        Two minutes to set up.
+      </p>
+
+      <h2 class="step-h2">First, your currency</h2>
+      <p class="step-sub">
+        We'll show every price in this currency next to the original USD.
+      </p>
+      <div class="currency-grid" id="currencyGrid">
+        <button class="currency-card" data-cur="ILS">
+          <span class="cur-symbol">₪</span>
+          <span class="cur-name">ILS</span>
+          <span class="cur-detail">Israeli Shekel</span>
+        </button>
+        <button class="currency-card" data-cur="EUR">
+          <span class="cur-symbol">€</span>
+          <span class="cur-name">EUR</span>
+          <span class="cur-detail">Euro</span>
+        </button>
+        <button class="currency-card" data-cur="GBP">
+          <span class="cur-symbol">£</span>
+          <span class="cur-name">GBP</span>
+          <span class="cur-detail">British Pound</span>
+        </button>
+        <button class="currency-card" data-cur="PLN">
+          <span class="cur-symbol">zł</span>
+          <span class="cur-name">PLN</span>
+          <span class="cur-detail">Polish Zloty</span>
+        </button>
+        <button class="currency-card" data-cur="RUB">
+          <span class="cur-symbol">₽</span>
+          <span class="cur-name">RUB</span>
+          <span class="cur-detail">Russian Rouble</span>
+        </button>
+        <button class="currency-card" data-cur="none">
+          <span class="cur-symbol">—</span>
+          <span class="cur-name">None</span>
+          <span class="cur-detail">USD only</span>
+        </button>
+      </div>
+
+      <footer class="wizard-foot">
+        <span></span>
+        <button class="next-btn" data-action="next" disabled id="next1">Continue →</button>
+      </footer>
+    </section>
+
+    <!-- ===== STEP 2: Region preset ===== -->
+    <section class="step" data-step="2">
+      <h1>Tax estimator</h1>
+      <p class="lead">
+        GOG shows USD without sales tax. We can show you the post-tax price too,
+        based on a region preset. Pick what fits, or skip.
+      </p>
+
+      <div class="region-grid" id="regionGrid">
+        <button class="region-card" data-preset="il">
+          <span class="flag">🇮🇱</span>
+          <strong>Israel</strong>
+          <span>18% VAT · ILS</span>
+        </button>
+        <button class="region-card" data-preset="eu">
+          <span class="flag">🇪🇺</span>
+          <strong>European Union</strong>
+          <span>20% VAT (varies) · EUR</span>
+        </button>
+        <button class="region-card" data-preset="uk">
+          <span class="flag">🇬🇧</span>
+          <strong>United Kingdom</strong>
+          <span>20% VAT · GBP</span>
+        </button>
+        <button class="region-card" data-preset="pl">
+          <span class="flag">🇵🇱</span>
+          <strong>Poland</strong>
+          <span>23% VAT · PLN</span>
+        </button>
+        <button class="region-card" data-preset="us">
+          <span class="flag">🇺🇸</span>
+          <strong>USA</strong>
+          <span>0% (state-dependent)</span>
+        </button>
+        <button class="region-card" data-preset="none">
+          <span class="flag">—</span>
+          <strong>Skip</strong>
+          <span>No tax estimation</span>
+        </button>
+      </div>
+
+      <footer class="wizard-foot">
+        <button class="back-btn" data-action="back">← Back</button>
+        <button class="next-btn" data-action="next" id="next2">Continue →</button>
+      </footer>
+    </section>
+
+    <!-- ===== STEP 3: Features ===== -->
+    <section class="step" data-step="3">
+      <h1>Choose your toggles</h1>
+      <p class="lead">
+        Everything is on by default. Untick anything you don't want — you can
+        change all of these later from the popup.
+      </p>
+
+      <div class="feature-list">
+        <label class="feature-row">
+          <input type="checkbox" id="f-design" checked />
+          <span>
+            <strong>Visual upgrade</strong>
+            <small>Mono prices, era-aware cards (retro CRT for classics, neon for cyber/witcher), depth.</small>
+          </span>
+        </label>
+        <label class="feature-row">
+          <input type="checkbox" id="f-banner" checked />
+          <span>
+            <strong>DRM-free banner</strong>
+            <small>Top-of-page reminder of GOG's "you own it" promise.</small>
+          </span>
+        </label>
+        <label class="feature-row">
+          <input type="checkbox" id="f-refund" checked />
+          <span>
+            <strong>30-day refund badges</strong>
+            <small>Adds a refund chip to every game card.</small>
+          </span>
+        </label>
+        <label class="feature-row">
+          <input type="checkbox" id="f-mods" checked />
+          <span>
+            <strong>Mod indicator</strong>
+            <small>★ MOD badge on cards for moddable titles.</small>
+          </span>
+        </label>
+        <label class="feature-row">
+          <input type="checkbox" id="f-history" checked />
+          <span>
+            <strong>Price history</strong>
+            <small>Records prices on visit. Mini-stats panel on game pages.</small>
+          </span>
+        </label>
+        <label class="feature-row">
+          <input type="checkbox" id="f-itad" checked />
+          <span>
+            <strong>Compare via IsThereAnyDeal</strong>
+            <small>One-click button to check Steam/Epic/Humble/Fanatical.</small>
+          </span>
+        </label>
+        <label class="feature-row">
+          <input type="checkbox" id="f-wlAlerts" checked />
+          <span>
+            <strong>Wishlist sale alerts</strong>
+            <small>Toolbar badge counts wishlist items currently on sale.</small>
+          </span>
+        </label>
+        <label class="feature-row">
+          <input type="checkbox" id="f-tags" checked />
+          <span>
+            <strong>Custom tags &amp; notes</strong>
+            <small>Tag any game with autocomplete + dashboard.</small>
+          </span>
+        </label>
+        <label class="feature-row">
+          <input type="checkbox" id="f-hebrew" />
+          <span>
+            <strong>Hebrew translations</strong>
+            <small>Translates stable nav &amp; UI strings to Hebrew. Off by default.</small>
+          </span>
+        </label>
+        <label class="feature-row">
+          <input type="checkbox" id="f-rtl" />
+          <span>
+            <strong>RTL layout</strong>
+            <small>Right-to-left mirroring. Off by default.</small>
+          </span>
+        </label>
+      </div>
+
+      <footer class="wizard-foot">
+        <button class="back-btn" data-action="back">← Back</button>
+        <button class="primary-btn" id="finish">Finish setup</button>
+      </footer>
+    </section>
+
+    <!-- ===== STEP 4: Done ===== -->
+    <section class="step" data-step="4">
+      <div class="done-wrap">
+        <div class="done-icon">✓</div>
+        <h1>You're set.</h1>
+        <p class="lead">
+          GOG Enhancer is active. Visit
+          <a href="https://www.gog.com" target="_blank" rel="noopener">gog.com</a>
+          to see it in action.
+        </p>
+        <ul class="shortcut-list">
+          <li><kbd>Alt</kbd>+<kbd>G</kbd> — open settings popup</li>
+          <li><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd> — toggle on/off</li>
+          <li><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>H</kbd> — toggle Hebrew</li>
+        </ul>
+        <p class="step-sub">
+          You can revisit any of these settings from the toolbar icon.
+        </p>
+        <button class="primary-btn" id="closeBtn">Close window</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="../lib/storage.js"></script>
+  <script src="onboarding.js"></script>
+</body>
+</html>
