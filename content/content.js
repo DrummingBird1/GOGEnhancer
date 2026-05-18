@@ -25,30 +25,7 @@
 
   /* ============== state & defaults ============== */
 
-  const DEFAULTS = {
-    enabled: true,
-    currencyConverter: true,
-    taxEstimator: true,
-    refundBadge: true,
-    drmFreeBanner: true,
-    hideExpiredSales: true,
-    hebrewTranslations: false,
-    rtlLayout: false,
-    customTags: true,
-    wishlistFilters: true,
-    modIndicator: true,
-    cleanLayout: true,
-    designInjection: true,
-    priceHistoryTracking: true,
-    itadCompare: true,
-    richTooltips: true,
-    skeletonLoaders: true,
-    targetCurrency: "ILS",
-    rates: { ILS: 3.65, EUR: 0.92, GBP: 0.79, RUB: 92.0, PLN: 4.0 },
-    vatPercent: 18,
-    vatLabel: "כולל מע״מ",
-    modsList: [],
-  };
+  const DEFAULTS = window.GOG_PLUS_DEFAULTS;
 
   let settings = { ...DEFAULTS };
   let pageCurrency = { code: "USD", symbol: "$" };
@@ -66,7 +43,7 @@
   };
 
   const log = (...a) => {
-    if (window.GOG_PLUS_DEBUG) console.log("[GOG+]", ...a);
+    if (settings.debugLogging || window.GOG_PLUS_DEBUG) console.log("[GOG+]", ...a);
   };
 
   const symbolFor = (cur) =>
@@ -115,14 +92,44 @@
     return null;
   };
 
+  // Genre-aware card detection. Cyberpunk + Witcher have their own neon
+  // class so they're intentionally excluded here. First match wins per slug.
+  const GENRE_PATTERNS = [
+    {
+      genre: "horror",
+      re: /silent_hill|resident_evil|amnesia|outlast|alien_isolation|dead_space|the_evil_within|dying_light|layers_of_fear|^soma$|scorn|callisto/i,
+    },
+    {
+      genre: "strategy",
+      re: /civilization|stellaris|crusader_kings|hearts_of_iron|europa_universalis|total_war|age_of_empires|starcraft|^anno|tropico|company_of_heroes|frostpunk/i,
+    },
+    {
+      genre: "scifi",
+      re: /mass_effect|deus_ex|system_shock|^prey|subnautica|no_mans_sky|star_wars|halo|^doom|outer_wilds|outer_worlds|^stray$|disco_elysium/i,
+    },
+    {
+      genre: "rpg",
+      re: /baldurs_gate|divinity|pillars_of_eternity|pathfinder|neverwinter|planescape|dragon_age|kingdom_come|^gothic|^risen|dark_souls|elden_ring|skyrim|morrowind|oblivion|fallout|wasteland|tyranny/i,
+    },
+    {
+      genre: "indie",
+      re: /stardew|hollow_knight|cuphead|^hades|celeste|undertale|dead_cells|terraria|factorio|rimworld|^inside|^limbo|owlboy|tunic|cocoon/i,
+    },
+  ];
+
   /* ============== currency conversion ============== */
 
-  function convertedFromUsd(usd) {
-    const cur = settings.targetCurrency;
-    if (!cur || cur === "none") return null;
-    const rate = settings.rates[cur];
-    if (!rate) return null;
-    let v = usd * rate;
+  // Convert from any source currency to settings.targetCurrency via the USD
+  // rate matrix. `rates` is { CUR: <units per USD> } so `amount / srcRate`
+  // gives USD, then `* tgtRate` gives the target currency.
+  function convertedFromCurrency(amount, srcCur) {
+    const targetCur = settings.targetCurrency;
+    if (!targetCur || targetCur === "none") return null;
+    if (srcCur === targetCur) return null;
+    const srcRate = srcCur === "USD" ? 1 : settings.rates[srcCur];
+    const tgtRate = targetCur === "USD" ? 1 : settings.rates[targetCur];
+    if (!srcRate || !tgtRate) return null;
+    let v = (amount / srcRate) * tgtRate;
     if (settings.taxEstimator && settings.vatPercent > 0) {
       v *= 1 + settings.vatPercent / 100;
     }
@@ -131,16 +138,17 @@
 
   function applyCurrencyConversion(root = document) {
     if (!settings.currencyConverter || settings.targetCurrency === "none") return;
-    if (pageCurrency.code !== "USD") {
-      // Future: implement non-USD conversion. For now, skip silently if GOG
-      // is already showing the user a non-USD currency (e.g. EUR locale).
-      return;
-    }
+    if (pageCurrency.code === settings.targetCurrency) return; // already in target
+
+    const srcSym = pageCurrency.symbol;
+    if (!srcSym) return;
+    const escSym = srcSym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const symRe = new RegExp(escSym + "\\s?\\d");
 
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
         if (!node.nodeValue || node.nodeValue.length > 80) return NodeFilter.FILTER_REJECT;
-        if (!/\$\s?\d/.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+        if (!symRe.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
         const parent = node.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
         if (parent.classList.contains("gog-plus-converted")) return NodeFilter.FILTER_REJECT;
@@ -155,9 +163,9 @@
     while ((n = walker.nextNode())) targets.push(n);
 
     for (const node of targets) {
-      const usd = window.GOGPlusCurrency.parsePrice(node.nodeValue, "USD");
-      if (!usd) continue;
-      const value = convertedFromUsd(usd);
+      const price = window.GOGPlusCurrency.parsePrice(node.nodeValue, pageCurrency.code);
+      if (!price) continue;
+      const value = convertedFromCurrency(price, pageCurrency.code);
       if (value === null) continue;
 
       const note = document.createElement("span");
@@ -173,13 +181,13 @@
             : "";
         note.dataset.gogPlusTip = `
           <strong>Conversion details</strong><br>
-          $${usd.toFixed(2)} USD × ${settings.rates[settings.targetCurrency]} = ${formatPrice(
+          ${formatPrice(price, pageCurrency.code)} ${pageCurrency.code} → ${formatPrice(
             value,
             settings.targetCurrency
           )}${taxLine}
         `;
       } else {
-        note.title = `1 USD = ${settings.rates[settings.targetCurrency]} ${settings.targetCurrency}`;
+        note.title = `${formatPrice(price, pageCurrency.code)} → ${formatPrice(value, settings.targetCurrency)}`;
       }
       node.parentElement.classList.add("gog-plus-converted");
       node.parentElement.appendChild(note);
@@ -248,6 +256,14 @@
       if (/cyberpunk|witcher/i.test(slug) && settings.designInjection) {
         host.classList.add("gog-plus-cover--neon");
       }
+      if (settings.designInjection) {
+        for (const { genre, re } of GENRE_PATTERNS) {
+          if (re.test(slug)) {
+            host.classList.add(`gog-plus-cover--genre-${genre}`);
+            break;
+          }
+        }
+      }
 
       const strip = document.createElement("div");
       strip.className = "gog-plus-badges";
@@ -304,12 +320,14 @@
     const currentYear = new Date().getFullYear();
     candidates.forEach((el) => {
       el.classList.add("gog-plus-promo-done");
-      const txt = (el.textContent || "").toLowerCase();
+      // Match year only when it sits inside the URL slug — between separators
+      // or at a path boundary. Card text often mentions years for unrelated
+      // reasons ("top games of 2024") and would false-flag live promos.
       const href = (el.getAttribute("href") || "").toLowerCase();
-      const yearMatch = href.match(/(\d{4})/) || txt.match(/(20\d{2})/);
+      const yearMatch = href.match(/(?:^|[-_/])(20\d{2})(?:[-_/]|$)/);
       if (yearMatch) {
         const y = parseInt(yearMatch[1], 10);
-        if (y > 2010 && y < currentYear) {
+        if (y < currentYear) {
           el.classList.add("gog-plus-expired");
           el.title = "This sale appears to have ended.";
         }
@@ -325,7 +343,6 @@
       return;
     }
     if (document.getElementById("gog-plus-banner")) return;
-    if (sessionStorage.getItem("gog-plus-banner-dismissed") === "1") return;
 
     const banner = document.createElement("div");
     banner.id = "gog-plus-banner";
@@ -349,8 +366,7 @@
         <button class="gog-plus-banner-close" aria-label="Dismiss">×</button>
       </div>`;
     banner.querySelector(".gog-plus-banner-close").addEventListener("click", () => {
-      sessionStorage.setItem("gog-plus-banner-dismissed", "1");
-      banner.remove();
+      window.GOGPlusStorage.set({ drmFreeBanner: false });
     });
     document.body.prepend(banner);
   }
@@ -418,13 +434,27 @@
     const bar = document.createElement("div");
     bar.id = "gog-plus-wlfilters";
     bar.className = "gog-plus-wlfilters";
+    const filters = [
+      { id: "all", label: "All", icon: "▦" },
+      { id: "sale", label: "On sale", icon: "%" },
+      { id: "under10", label: "< $10", icon: "₵" },
+      { id: "under25", label: "< $25", icon: "$" },
+      { id: "rated45", label: "Rated 4.5+", icon: "★" },
+    ];
     bar.innerHTML = `
       <span class="gog-plus-wlfilters-label">Quick filter</span>
-      <button data-f="all" class="active">All</button>
-      <button data-f="sale">On sale</button>
-      <button data-f="under10">Under $10</button>
-      <button data-f="under25">Under $25</button>
-      <button data-f="rated45">Rated 4.5+</button>
+      ${filters
+        .map(
+          (f, i) => `
+        <button data-f="${f.id}" class="gog-plus-wlfilter ${i === 0 ? "active" : ""}" type="button">
+          <span class="gog-plus-wlfilter-icon" aria-hidden="true">${f.icon}</span>
+          <span class="gog-plus-wlfilter-label">${f.label}</span>
+          <span class="gog-plus-wlfilter-count" aria-hidden="true"></span>
+        </button>
+      `
+        )
+        .join("")}
+      <span class="gog-plus-wlfilters-genres" id="gog-plus-wlfilters-genres"></span>
     `;
     target.prepend(bar);
 
@@ -436,17 +466,103 @@
       applyWishlistFilter(btn.dataset.f);
     });
 
+    // Live counts: recompute when the wishlist DOM mutates (debounced).
+    const observer = new MutationObserver(debounce(() => updateWishlistFilterCounts(bar), 400));
+    observer.observe(target, { childList: true, subtree: true });
+    observers.push(observer);
+    setTimeout(() => updateWishlistFilterCounts(bar), 800);
+
     // Report live discounted-item count to background → toolbar badge.
-    // Wait a beat for Angular to render the cards, then count.
     reportWishlistCount();
   }
 
-  let wishlistReportTimer = null;
+  const GENRE_ICONS = {
+    rpg: "⚔",
+    horror: "☠",
+    strategy: "▦",
+    scifi: "✦",
+    indie: "♥",
+  };
+
+  function updateWishlistFilterCounts(bar) {
+    const cards = Array.from(document.querySelectorAll('a[href*="/game/"]'));
+    const counts = { all: 0, sale: 0, under10: 0, under25: 0, rated45: 0 };
+    const genreCounts = {};
+    const seen = new Set();
+    for (const c of cards) {
+      const slug = slugFromHref(c.getAttribute("href"));
+      if (!slug || seen.has(slug)) continue;
+      seen.add(slug);
+      counts.all++;
+      const txt = c.textContent || "";
+      if (/-\d{1,2}%/.test(txt)) counts.sale++;
+      const usdMatches = txt.match(/\$\s?\d+\.\d{2}/g) || [];
+      const finalUsd = usdMatches.length
+        ? window.GOGPlusCurrency.parsePrice(usdMatches[usdMatches.length - 1], "USD")
+        : null;
+      if (finalUsd !== null && finalUsd < 10) counts.under10++;
+      if (finalUsd !== null && finalUsd < 25) counts.under25++;
+      const ratingMatch = txt.match(/(\d\.\d)\s*\d+\s*reviews/);
+      if (ratingMatch && parseFloat(ratingMatch[1]) >= 4.5) counts.rated45++;
+      for (const { genre, re } of GENRE_PATTERNS) {
+        if (re.test(slug)) {
+          genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+          break;
+        }
+      }
+    }
+    bar.querySelectorAll("button[data-f]").forEach((btn) => {
+      const f = btn.dataset.f;
+      const span = btn.querySelector(".gog-plus-wlfilter-count");
+      if (!span) return;
+      const n = counts[f];
+      span.textContent = n > 0 ? String(n) : "";
+    });
+
+    // Rebuild the genre row from scratch — entries appear/disappear as the
+    // wishlist mutates, so we don't try to diff in place.
+    const genreHost = bar.querySelector("#gog-plus-wlfilters-genres");
+    if (!genreHost) return;
+    const existing = Object.fromEntries(
+      [...genreHost.querySelectorAll("button[data-f]")].map((b) => [b.dataset.f, b])
+    );
+    const activeFilter = bar.querySelector("button.active")?.dataset.f;
+    genreHost.innerHTML = "";
+    for (const [genre, n] of Object.entries(genreCounts)) {
+      if (n <= 0) continue;
+      const id = `genre-${genre}`;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.f = id;
+      btn.className =
+        "gog-plus-wlfilter gog-plus-wlfilter--genre" +
+        (activeFilter === id ? " active" : "");
+      btn.innerHTML = `
+        <span class="gog-plus-wlfilter-icon" aria-hidden="true">${GENRE_ICONS[genre] || "·"}</span>
+        <span class="gog-plus-wlfilter-label">${genre[0].toUpperCase() + genre.slice(1)}</span>
+        <span class="gog-plus-wlfilter-count">${n}</span>
+      `;
+      genreHost.appendChild(btn);
+      // Restore focus / aria state if user was on this button
+      if (existing[id] === document.activeElement) btn.focus();
+    }
+  }
+
+  let wishlistReportAttempt = 0;
   function reportWishlistCount() {
-    clearTimeout(wishlistReportTimer);
-    wishlistReportTimer = setTimeout(() => {
-      // Count cards with a visible discount marker. We try a couple of
-      // common GOG patterns and fall back to text scan within game tiles.
+    // Angular renders wishlist cards lazily. Instead of a single fixed wait,
+    // poll until two consecutive ticks see the same count — that's when the
+    // list has finished rendering. Bail after ~6s to avoid spinning forever.
+    wishlistReportAttempt++;
+    const myAttempt = wishlistReportAttempt;
+    let lastTotal = -1;
+    let ticks = 0;
+    const MAX_TICKS = 8;
+    const INTERVAL_MS = 750;
+
+    const tick = () => {
+      if (myAttempt !== wishlistReportAttempt) return; // newer call superseded us
+      ticks++;
       const cards = Array.from(document.querySelectorAll('a[href*="/game/"]'));
       let total = 0;
       let discounted = 0;
@@ -457,24 +573,37 @@
         seen.add(slug);
         total++;
         const txt = c.textContent || "";
-        // GOG renders discounts as "-XX%". Tile-scoped text only.
         if (/-\d{1,2}%/.test(txt)) discounted++;
       }
-      try {
-        chrome.runtime.sendMessage({
-          type: "wishlist-report",
-          discountedCount: discounted,
-          total,
-        });
-      } catch (_) {
-        /* no-op: background may be asleep */
+
+      const stable = total === lastTotal && total > 0;
+      if (stable || ticks >= MAX_TICKS) {
+        try {
+          chrome.runtime.sendMessage({
+            type: "wishlist-report",
+            discountedCount: discounted,
+            total,
+          });
+        } catch (_) {
+          /* no-op: background may be asleep */
+        }
+        return;
       }
-    }, 1500);
+      lastTotal = total;
+      setTimeout(tick, INTERVAL_MS);
+    };
+    setTimeout(tick, INTERVAL_MS);
   }
 
   function applyWishlistFilter(mode) {
     const cards = document.querySelectorAll('a[href*="/game/"]');
+    const genreMatch = mode.startsWith("genre-") ? mode.slice(6) : null;
+    const genrePattern = genreMatch
+      ? GENRE_PATTERNS.find((g) => g.genre === genreMatch)?.re
+      : null;
+
     cards.forEach((c) => {
+      const slug = slugFromHref(c.getAttribute("href"));
       const txt = c.textContent || "";
       const usdMatches = txt.match(/\$\s?\d+\.\d{2}/g) || [];
       const finalUsd = usdMatches.length
@@ -488,9 +617,10 @@
 
       let show = true;
       if (mode === "sale") show = /-\d+%/.test(txt);
-      if (mode === "under10") show = finalUsd !== null && finalUsd < 10;
-      if (mode === "under25") show = finalUsd !== null && finalUsd < 25;
-      if (mode === "rated45") show = rating !== null && rating >= 4.5;
+      else if (mode === "under10") show = finalUsd !== null && finalUsd < 10;
+      else if (mode === "under25") show = finalUsd !== null && finalUsd < 25;
+      else if (mode === "rated45") show = rating !== null && rating >= 4.5;
+      else if (genrePattern) show = !!slug && genrePattern.test(slug);
 
       c.classList.toggle("gog-plus-filtered-out", !show);
     });
@@ -527,7 +657,9 @@
   }
 
   async function ensureGamePagePanel(slug) {
-    if (document.getElementById("gog-plus-gamepanel")) return;
+    const existing = document.getElementById("gog-plus-gamepanel");
+    if (existing?.dataset.slug === slug) return;
+    existing?.remove();
 
     const anchor =
       document.querySelector("h1") ||
@@ -538,6 +670,16 @@
     const panel = document.createElement("aside");
     panel.id = "gog-plus-gamepanel";
     panel.className = "gog-plus-gamepanel";
+    panel.dataset.slug = slug;
+    // Hero blur: use the page's og:image (the cover art) as a heavily-blurred
+    // backdrop on the panel. Only http(s) URLs to avoid mixed-content issues.
+    const heroUrl = document
+      .querySelector('meta[property="og:image"]')
+      ?.getAttribute("content");
+    if (heroUrl && /^https?:\/\//.test(heroUrl)) {
+      panel.style.setProperty("--gp-hero-url", `url("${heroUrl.replace(/"/g, "")}")`);
+      panel.classList.add("gog-plus-gamepanel--has-hero");
+    }
     panel.innerHTML = `
       <header class="gog-plus-gp-header">
         <span class="gog-plus-gp-title">GOG Enhancer insights</span>
@@ -551,6 +693,9 @@
 
     if (settings.priceHistoryTracking) {
       body.appendChild(await renderPriceHistorySection(slug));
+    }
+    if (settings.refundTimer) {
+      body.appendChild(await renderRefundSection(slug));
     }
     if (settings.itadCompare) {
       body.appendChild(renderItadSection(slug));
@@ -576,8 +721,15 @@
     const current = `${sym}${stats.latest.p.toFixed(2)}`;
     const since = stats.first.d;
     const isAtLow = stats.latest.p === stats.min.price;
+    const cheer = isAtLow && stats.count >= 3
+      ? `<div class="gog-plus-allmtl-cheer" role="status">
+           <span class="gog-plus-allmtl-dot"></span>
+           At all-time low — best price since ${since}
+         </div>`
+      : "";
     wrap.innerHTML = `
       <h3>Price history <span class="gog-plus-gp-since">since ${since}</span></h3>
+      ${cheer}
       <div class="gog-plus-pricestat-grid">
         <div class="gog-plus-pricestat">
           <span class="gog-plus-pricestat-label">Current</span>
@@ -596,12 +748,12 @@
           <span class="gog-plus-pricestat-value">${stats.count}</span>
         </div>
       </div>
-      ${renderSparkline(entries, stats)}
+      ${renderSparkline(entries, stats, slug)}
     `;
     return wrap;
   }
 
-  function renderSparkline(entries, stats) {
+  function renderSparkline(entries, stats, slug) {
     if (!entries || entries.length < 2) {
       return `<p class="gog-plus-gp-muted gog-plus-spark-empty">Need at least 2 snapshots for a chart — keep visiting!</p>`;
     }
@@ -624,33 +776,135 @@
     const areaPath = `${linePath} L${points[points.length - 1][0].toFixed(1)},${(H - PAD_Y).toFixed(1)} L${points[0][0].toFixed(1)},${(H - PAD_Y).toFixed(1)} Z`;
     const minIdx = prices.indexOf(minP);
     const lastIdx = points.length - 1;
-    const minPt = points[minIdx];
-    const lastPt = points[lastIdx];
     const sym = symbolFor(stats.currency);
+    const gradId = `gpSparkFill-${slug}`;
+
+    // Detect ≥30% drops between consecutive snapshots — these are likely sale events
+    const saleMarkers = [];
+    for (let i = 1; i < entries.length; i++) {
+      const prev = entries[i - 1].p;
+      const curr = entries[i].p;
+      if (prev > 0 && (prev - curr) / prev >= 0.3) {
+        const dropPct = Math.round(((prev - curr) / prev) * 100);
+        saleMarkers.push({
+          x: points[i][0],
+          tip: `<strong>-${dropPct}% drop</strong><br>${sym}${prev.toFixed(2)} → ${sym}${curr.toFixed(2)}<br>${entries[i].d}`,
+        });
+      }
+    }
+    const saleLines = saleMarkers.map((m) => `
+      <line x1="${m.x.toFixed(1)}" y1="${PAD_Y}" x2="${m.x.toFixed(1)}" y2="${H - PAD_Y}"
+        stroke="#5cff9d" stroke-width="1" stroke-dasharray="2,2" opacity="0.55"/>
+      <circle cx="${m.x.toFixed(1)}" cy="4" r="3" fill="#5cff9d" stroke="#0a0612" stroke-width="1"
+        data-gog-plus-tip="${m.tip}" style="cursor: help;"/>
+    `).join("");
+
+    // Invisible larger hover targets on every data point — must render BEFORE the
+    // colored marker circles so the named circles win the hit test at their position.
+    const hoverDots = entries.map((e, i) => {
+      const [x, y] = points[i];
+      const tip = `<strong>${sym}${e.p.toFixed(2)}</strong><br>${e.d}`;
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7" fill="transparent" data-gog-plus-tip="${tip}" style="cursor: crosshair;"/>`;
+    }).join("");
+
     return `
       <div class="gog-plus-spark">
         <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-label="Price history sparkline">
           <defs>
-            <linearGradient id="gpSparkFill" x1="0" x2="0" y1="0" y2="1">
+            <linearGradient id="${gradId}" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stop-color="#c64fff" stop-opacity="0.5"/>
               <stop offset="100%" stop-color="#c64fff" stop-opacity="0"/>
             </linearGradient>
           </defs>
-          <path d="${areaPath}" fill="url(#gpSparkFill)"/>
+          <path d="${areaPath}" fill="url(#${gradId})"/>
           <path d="${linePath}" fill="none" stroke="#00f0ff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-          <circle cx="${minPt[0].toFixed(1)}" cy="${minPt[1].toFixed(1)}" r="3" fill="#5cff9d" stroke="#0a0612" stroke-width="1.5">
-            <title>All-time low: ${sym}${minP.toFixed(2)} on ${entries[minIdx].d}</title>
-          </circle>
-          <circle cx="${lastPt[0].toFixed(1)}" cy="${lastPt[1].toFixed(1)}" r="3" fill="#c64fff" stroke="#0a0612" stroke-width="1.5">
-            <title>Latest: ${sym}${entries[lastIdx].p.toFixed(2)} on ${entries[lastIdx].d}</title>
-          </circle>
+          ${saleLines}
+          ${hoverDots}
+          <circle cx="${points[minIdx][0].toFixed(1)}" cy="${points[minIdx][1].toFixed(1)}" r="3.5" fill="#5cff9d" stroke="#0a0612" stroke-width="1.5"
+            data-gog-plus-tip="<strong>All-time low</strong><br>${sym}${minP.toFixed(2)} on ${entries[minIdx].d}" style="cursor: help;"/>
+          <circle cx="${points[lastIdx][0].toFixed(1)}" cy="${points[lastIdx][1].toFixed(1)}" r="3.5" fill="#c64fff" stroke="#0a0612" stroke-width="1.5"
+            data-gog-plus-tip="<strong>Latest</strong><br>${sym}${entries[lastIdx].p.toFixed(2)} on ${entries[lastIdx].d}" style="cursor: help;"/>
         </svg>
         <div class="gog-plus-spark-legend">
           <span><i class="dot dot-low"></i>All-time low</span>
           <span><i class="dot dot-now"></i>Latest</span>
+          ${saleMarkers.length ? `<span><i class="dot dot-sale"></i>Sale (-30%+)</span>` : ""}
         </div>
       </div>
     `;
+  }
+
+  async function renderRefundSection(slug) {
+    const { purchaseLog = {} } = await window.GOGPlusStorage.get({ purchaseLog: {} });
+    const purchased = purchaseLog[slug] || "";
+    const today = new Date().toISOString().slice(0, 10);
+    const wrap = document.createElement("section");
+    wrap.className = "gog-plus-gp-section";
+    wrap.innerHTML = `
+      <h3>Refund window</h3>
+      <p class="gog-plus-gp-muted">
+        Mark when you bought this and we'll count down GOG's 30-day refund window.
+      </p>
+      <div class="gog-plus-refund-row">
+        <label for="gog-plus-purchase-date">Purchased on</label>
+        <input type="date" id="gog-plus-purchase-date" max="${today}" value="${escapeHtml(purchased)}" />
+        <button type="button" class="gog-plus-refund-clear" id="gog-plus-refund-clear" title="Clear date">×</button>
+      </div>
+      <div id="gog-plus-refund-status" class="gog-plus-refund-status" role="status"></div>
+    `;
+
+    setTimeout(() => {
+      const input = wrap.querySelector("#gog-plus-purchase-date");
+      const status = wrap.querySelector("#gog-plus-refund-status");
+      const clearBtn = wrap.querySelector("#gog-plus-refund-clear");
+
+      const renderStatus = (d) => {
+        status.className = "gog-plus-refund-status";
+        if (!d) {
+          status.textContent = "";
+          return;
+        }
+        const purchaseDate = new Date(d + "T00:00:00");
+        if (Number.isNaN(purchaseDate.getTime())) {
+          status.textContent = "";
+          return;
+        }
+        const expiresAt = purchaseDate.getTime() + 30 * 24 * 60 * 60 * 1000;
+        const msLeft = expiresAt - Date.now();
+        const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+        if (daysLeft > 7) {
+          status.textContent = `${daysLeft} days left in your refund window`;
+          status.classList.add("is-safe");
+        } else if (daysLeft > 0) {
+          const word = daysLeft === 1 ? "day" : "days";
+          status.textContent = `Only ${daysLeft} ${word} left — refund window closing`;
+          status.classList.add("is-warn");
+        } else {
+          const ago = Math.abs(daysLeft);
+          const word = ago === 1 ? "day" : "days";
+          status.textContent = `Refund window expired ${ago} ${word} ago`;
+          status.classList.add("is-expired");
+        }
+      };
+
+      renderStatus(purchased);
+
+      const save = async (val) => {
+        const { purchaseLog: cur = {} } = await window.GOGPlusStorage.get({ purchaseLog: {} });
+        if (val) cur[slug] = val;
+        else delete cur[slug];
+        await window.GOGPlusStorage.set({ purchaseLog: cur });
+        renderStatus(val);
+      };
+
+      input.addEventListener("change", () => save(input.value));
+      clearBtn.addEventListener("click", () => {
+        input.value = "";
+        save("");
+      });
+    }, 0);
+
+    return wrap;
   }
 
   function renderItadSection(slug) {
@@ -669,9 +923,10 @@
   }
 
   async function renderTagsSection(slug) {
-    const { tags = {}, notes = {} } = await window.GOGPlusStorage.get({
+    const { tags = {}, notes = {}, tagColors = {} } = await window.GOGPlusStorage.get({
       tags: {},
       notes: {},
+      tagColors: {},
     });
     const existing = tags[slug] || [];
     const note = notes[slug] || "";
@@ -708,6 +963,7 @@
         (settings._tagsCache?.[slug] || existing).forEach((t) => {
           const chip = document.createElement("span");
           chip.className = "gog-plus-tag-chip";
+          if (tagColors[t]) chip.style.setProperty("--tag-accent", tagColors[t]);
           // Build safely — t is user input, must NOT go through innerHTML raw.
           const tNode = document.createTextNode(t + " ");
           const rmBtn = document.createElement("button");
@@ -802,6 +1058,14 @@
       !!settings.skeletonLoaders
     );
 
+    // Theme: strip prior theme- class then add the current one. "neon" is the
+    // CSS default so applying it is a no-op but kept for explicitness.
+    [...document.documentElement.classList]
+      .filter((c) => c.startsWith("gog-plus-theme--"))
+      .forEach((c) => document.documentElement.classList.remove(c));
+    const theme = settings.theme || "neon";
+    document.documentElement.classList.add(`gog-plus-theme--${theme}`);
+
     try {
       pageCurrency = window.GOGPlusCurrency.detect();
       ensureDrmFreeBanner();
@@ -866,6 +1130,15 @@
     document.querySelectorAll(".gog-plus-conv-note, .gog-plus-badges").forEach((el) =>
       el.remove()
     );
+    // Strip era-aware cover classes so toggling designInjection off doesn't
+    // leave classic-CRT or neon-glow effects stuck on existing cards.
+    document
+      .querySelectorAll(".gog-plus-cover--classic, .gog-plus-cover--neon, [class*='gog-plus-cover--genre-']")
+      .forEach((el) => {
+        [...el.classList]
+          .filter((c) => c === "gog-plus-cover--classic" || c === "gog-plus-cover--neon" || c.startsWith("gog-plus-cover--genre-"))
+          .forEach((c) => el.classList.remove(c));
+      });
     document.getElementById("gog-plus-gamepanel")?.remove();
     document.getElementById("gog-plus-wlfilters")?.remove();
 

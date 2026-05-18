@@ -16,19 +16,7 @@ const PRESETS = {
   us: { targetCurrency: "USD", vatPercent: 0, vatLabel: "" },
 };
 
-const DEFAULTS = {
-  targetCurrency: "ILS",
-  rates: { ILS: 3.65, EUR: 0.92, GBP: 0.79, PLN: 4.0, RUB: 92.0 },
-  ratesUpdatedAt: 0,
-  vatPercent: 18,
-  vatLabel: "כולל מע״מ",
-  regionPreset: "il",
-  modsUpdatedAt: 0,
-  wishlistCacheUpdatedAt: 0,
-  tags: {},
-  notes: {},
-  priceHistory: {},
-};
+const DEFAULTS = window.GOG_PLUS_DEFAULTS;
 
 let saveStatusTimer = null;
 function flashSaved() {
@@ -61,7 +49,14 @@ async function load() {
 
   // Rate status
   const rs = $("rateStatus");
-  if (s.ratesUpdatedAt) {
+  rs.classList.remove("fresh", "has-error");
+  if (s.lastFxError) {
+    const ageStr = s.ratesUpdatedAt
+      ? formatTimeSince(s.ratesUpdatedAt)
+      : "never refreshed";
+    rs.textContent = `Last refresh failed: ${s.lastFxError} · rates ${ageStr}`;
+    rs.classList.add("has-error");
+  } else if (s.ratesUpdatedAt) {
     const ageH = Math.round((Date.now() - s.ratesUpdatedAt) / 3600000);
     rs.textContent =
       ageH < 1
@@ -70,8 +65,17 @@ async function load() {
     rs.classList.toggle("fresh", ageH < 1);
   } else {
     rs.textContent = "Using bundled fallback rates. Click refresh.";
-    rs.classList.remove("fresh");
   }
+
+  // Debug toggle
+  if ($("debugLogging")) $("debugLogging").checked = !!s.debugLogging;
+  if ($("desktopNotifications")) $("desktopNotifications").checked = !!s.desktopNotifications;
+
+  // Active theme swatch
+  const activeTheme = s.theme || "neon";
+  document.querySelectorAll(".theme-swatch").forEach((b) => {
+    b.classList.toggle("active", b.dataset.theme === activeTheme);
+  });
 
   // Background sync statuses
   $("status-fx").textContent = formatTimeSince(s.ratesUpdatedAt);
@@ -90,6 +94,42 @@ async function load() {
     `${tagsCount} tag(s) across ${Object.keys(s.tags).length} game(s) · ` +
     `${notesCount} note(s) · ` +
     `${histPoints} price snapshot(s) for ${histGames} game(s)`;
+}
+
+// Minimal RFC4180-ish CSV parser. Handles quoted fields, embedded commas,
+// escaped double-quotes ("") and CRLF/LF line endings.
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { cell += '"'; i++; }
+        else inQuotes = false;
+      } else {
+        cell += c;
+      }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { row.push(cell); cell = ""; }
+      else if (c === "\r") { /* ignore */ }
+      else if (c === "\n") {
+        row.push(cell);
+        rows.push(row);
+        row = []; cell = "";
+      } else {
+        cell += c;
+      }
+    }
+  }
+  if (cell.length || row.length) {
+    row.push(cell);
+    rows.push(row);
+  }
+  return rows.filter((r) => r.some((c) => c !== ""));
 }
 
 function formatTimeSince(ts) {
@@ -151,6 +191,29 @@ function bind() {
     flashSaved();
   });
 
+  $("debugLogging").addEventListener("change", async () => {
+    await window.GOGPlusStorage.set({ debugLogging: $("debugLogging").checked });
+    flashSaved();
+  });
+
+  $("desktopNotifications").addEventListener("change", async () => {
+    await window.GOGPlusStorage.set({
+      desktopNotifications: $("desktopNotifications").checked,
+    });
+    flashSaved();
+  });
+
+  // Theme swatches
+  document.querySelectorAll(".theme-swatch").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const theme = btn.dataset.theme;
+      document.querySelectorAll(".theme-swatch").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      await window.GOGPlusStorage.set({ theme });
+      flashSaved();
+    });
+  });
+
   // Force jobs
   $("refreshRates").addEventListener("click", () => {
     chrome.runtime.sendMessage({ type: "force-fx-refresh" }, () => setTimeout(load, 400));
@@ -203,6 +266,71 @@ function bind() {
     }
   });
 
+  // Tags ← CSV
+  $("importTagsCsv").addEventListener("click", () => $("importTagsCsvFile").click());
+  $("importTagsCsvFile").addEventListener("change", async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (!rows.length) throw new Error("Empty CSV.");
+      // Header row check (case-insensitive); accept any column order.
+      const header = rows[0].map((c) => c.trim().toLowerCase());
+      const slugIdx = header.indexOf("slug");
+      const tagsIdx = header.indexOf("tags");
+      const noteIdx = header.indexOf("note");
+      if (slugIdx === -1) throw new Error("CSV needs a 'slug' column.");
+
+      const incomingTags = {};
+      const incomingNotes = {};
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const slug = (row[slugIdx] || "").trim();
+        if (!slug) continue;
+        if (tagsIdx >= 0 && row[tagsIdx]) {
+          incomingTags[slug] = row[tagsIdx]
+            .split(";")
+            .map((t) => t.trim())
+            .filter(Boolean);
+        }
+        if (noteIdx >= 0 && row[noteIdx]) {
+          incomingNotes[slug] = row[noteIdx];
+        }
+      }
+
+      const tagCount = Object.values(incomingTags).reduce((a, b) => a + b.length, 0);
+      const noteCount = Object.keys(incomingNotes).length;
+      const mode = confirm(
+        `Import ${tagCount} tag(s) across ${Object.keys(incomingTags).length} game(s) ` +
+          `and ${noteCount} note(s).\n\n` +
+          `OK = merge (add to existing without losing current).\n` +
+          `Cancel = abort.`
+      );
+      if (!mode) return;
+
+      const { tags = {}, notes = {} } = await window.GOGPlusStorage.get({
+        tags: {},
+        notes: {},
+      });
+      for (const [slug, arr] of Object.entries(incomingTags)) {
+        tags[slug] = Array.from(new Set([...(tags[slug] || []), ...arr]));
+      }
+      for (const [slug, note] of Object.entries(incomingNotes)) {
+        // Don't clobber existing non-empty notes silently
+        if (!notes[slug]) notes[slug] = note;
+      }
+      await window.GOGPlusStorage.set({ tags, notes });
+      flashSaved();
+      load();
+      alert(`Imported. Tags now span ${Object.keys(tags).length} game(s).`);
+    } catch (err) {
+      alert("CSV import failed: " + err.message);
+    } finally {
+      e.target.value = "";
+    }
+  });
+
   // Tags → CSV
   $("exportTagsCsv").addEventListener("click", async () => {
     const { tags = {}, notes = {} } = await window.GOGPlusStorage.get({
@@ -240,8 +368,19 @@ function bind() {
     load();
   });
   $("clearAll").addEventListener("click", async () => {
-    if (!confirm("RESET EVERYTHING (settings, tags, notes, history)? This cannot be undone.")) return;
-    if (!confirm("Are you really sure? Type-style confirmation.")) return;
+    if (
+      !confirm(
+        "RESET EVERYTHING?\n\nThis wipes all settings, tags, notes, price history, " +
+          "and refund-window entries from both sync and local storage. Cannot be undone."
+      )
+    ) {
+      return;
+    }
+    const phrase = prompt('Type RESET (uppercase, no quotes) to confirm:');
+    if (phrase !== "RESET") {
+      if (phrase !== null) alert("Phrase didn't match. Nothing was deleted.");
+      return;
+    }
     await new Promise((r) => chrome.storage.sync.clear(r));
     await new Promise((r) => chrome.storage.local.clear(r));
     flashSaved();

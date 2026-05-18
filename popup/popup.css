@@ -141,6 +141,7 @@ body::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
 }
 .rate-strip.fresh { color: var(--accent-green); }
+.rate-strip.has-error { color: var(--accent-pink, #ff6b9d); }
 
 /* Sections */
 .content { padding: 14px 18px 18px; }

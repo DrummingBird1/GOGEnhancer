@@ -1,8 +1,8 @@
 # Privacy Policy — GOG Enhancer
 
-**Last updated:** May 6, 2026
-**Extension version:** 2.0.3+
-**Contact:** [insert your contact email or GitHub issues URL before publishing]
+**Last updated:** May 18, 2026
+**Extension version:** 2.1.0+
+**Contact:** https://github.com/DrummingBird1/GOGEnhancer/issues
 
 GOG Enhancer is an unofficial third-party browser extension that enhances the
 shopping experience on GOG.com. It is not affiliated with, endorsed by, or
@@ -35,13 +35,16 @@ extension:
 
 | What | Where | Why |
 |---|---|---|
-| Your settings (which features are on, currency choice, VAT rate, region preset) | `chrome.storage.sync` | So your preferences survive across devices if you are signed into Chrome with sync enabled |
-| Tags and notes you add to games | `chrome.storage.local` | Personal organization on the GOG store |
-| Price snapshots from game pages you visit | `chrome.storage.local` | Personal price-history charts (max 30 snapshots per game) |
+| Your feature toggles (which UI pieces are on, including the refund timer and desktop notifications switches) | `chrome.storage.sync` | So your preferences survive across devices if you are signed into Chrome with sync enabled |
+| Your currency choice, VAT rate, region preset, and selected theme | `chrome.storage.sync` | Same — small preferences that should travel with you |
+| Tags, per-tag colors, your custom tag ordering, and notes you add to games | `chrome.storage.local` | Personal organization on the GOG store |
+| Price snapshots from game pages you visit | `chrome.storage.local` | Personal price-history charts (up to 100 snapshots per game; duplicates of the same price are collapsed) |
+| Manual purchase dates you enter for the refund-window timer | `chrome.storage.local` | Local-only countdown of GOG's 30-day refund window |
+| Dedup log for desktop notifications you've already received | `chrome.storage.local` | So we don't fire the same alert twice |
 | Cached list of moddable games | `chrome.storage.local` | To show the "★ MOD" badge without re-fetching constantly |
 | Cached count of discounted wishlist items | `chrome.storage.local` | To set the toolbar badge counter |
-| Cached currency exchange rates | `chrome.storage.sync` | So we don't refetch on every page |
-| Onboarding completion flag | `chrome.storage.sync` | So we don't show the welcome wizard twice |
+| Cached currency exchange rates and the last fetch error (if any) | `chrome.storage.sync` | So we don't refetch on every page; the error string lets the popup tell you when the rate refresh failed |
+| Onboarding completion flag and the verbose-logging toggle | `chrome.storage.sync` | So we don't show the welcome wizard twice; the debug toggle is yours to flip in Advanced Options |
 
 You can wipe all of this at any time from the **Advanced Settings** page
 (toolbar icon → Advanced → Reset everything).
@@ -52,10 +55,11 @@ of this extension.
 
 ---
 
-## 3. Network requests we make
+## 3. Background jobs and network requests
 
-The extension makes network requests to exactly two destinations. Both are
-public endpoints. Neither receives any identifying information from us.
+The extension runs four background jobs on a schedule. Two make network
+requests (to two destinations only — both public, both unauthenticated);
+the other two are entirely local.
 
 ### 3.1 `api.frankfurter.app` — currency exchange rates
 
@@ -73,6 +77,16 @@ public endpoints. Neither receives any identifying information from us.
 - **Why:** To keep the list of "★ MOD" badges accurate without your having to visit `/mods` yourself.
 - **What this could reveal:** That you visited a public page. GOG cannot tie this request to your account because we explicitly omit your cookies.
 
+### 3.3 Wishlist badge refresh — *no network request*
+
+- **What happens:** Every 6 hours we read the locally-cached count of discounted wishlist items (last seen when you visited `/account/wishlist`) and update the toolbar badge text. If the cache is older than 24 hours, the badge is cleared and the tooltip tells you to revisit your wishlist.
+- **Why it's not a network request:** GOG's wishlist page is an Angular app — the items only render in the live page DOM. We can't fetch it server-side meaningfully, so we don't try. The content script reports the count next time you actually visit the page.
+
+### 3.4 Daily refund-window check — *no network request*
+
+- **What happens:** Once a day, we walk the `purchaseLog` you've entered manually and compare each entry to today's date. If your opt-in "Desktop notifications" toggle is on AND any entry has 1–2 days left of GOG's 30-day refund window, we fire a local `chrome.notifications.create` so you know to decide on the refund. We also dedupe via the local `notifLog` so the same alert never fires twice.
+- **Why it's not a network request:** Everything happens inside the browser. `chrome.notifications` is local to your machine. No data goes anywhere.
+
 ---
 
 ## 4. Permissions we request and why
@@ -81,7 +95,8 @@ public endpoints. Neither receives any identifying information from us.
 |---|---|
 | `storage` | To save your settings, tags, notes, and price history on your device |
 | `activeTab` | When you click the toolbar icon, this lets the popup reload the active tab if you press the "Reload tab" button |
-| `alarms` | To schedule the periodic FX-rate refresh and mods-list refresh in the background |
+| `alarms` | To schedule four periodic background jobs: exchange-rate refresh (12 h), mods-catalog refresh (24 h), wishlist sale-count badge update (6 h), and a once-daily local check for refund windows about to close |
+| `notifications` | **Opt-in only.** When you enable "Desktop notifications" in Advanced Options, the extension can show a system notification when a refund window has 1–2 days left or when new wishlist items go on sale. Uses `chrome.notifications`, which is local to the browser — nothing is transmitted off-device. Off by default. |
 | Host permission for `https://www.gog.com/*` | To run the content script on GOG pages and to fetch the public `/en/mods` page in the background |
 | Host permission for `https://api.frankfurter.app/*` | To fetch currency exchange rates |
 

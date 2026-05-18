@@ -12,7 +12,7 @@
   <main class="wizard">
     <header class="wizard-head">
       <span class="brand-pill">GOG Enhancer</span>
-      <span class="version">v2.0</span>
+      <span class="version">v2.1</span>
     </header>
 
     <div class="step-track">
@@ -21,6 +21,8 @@
       <span class="step-dot" data-step="2">2</span>
       <span class="step-line"></span>
       <span class="step-dot" data-step="3">3</span>
+      <span class="step-line"></span>
+      <span class="step-dot" data-step="4">4</span>
     </div>
 
     <!-- ===== STEP 1: Welcome + currency ===== -->
@@ -205,12 +207,47 @@
 
       <footer class="wizard-foot">
         <button class="back-btn" data-action="back">← Back</button>
+        <button class="next-btn" id="next3">Continue →</button>
+      </footer>
+    </section>
+
+    <!-- ===== STEP 4: Theme picker ===== -->
+    <section class="step" data-step="4">
+      <h1>Pick a look</h1>
+      <p class="lead">
+        Sets the accent colors across badges, the game-page panel, and the
+        era-aware card effects. Change anytime in Advanced Options.
+      </p>
+      <div class="theme-grid" id="onboardingThemes">
+        <button class="theme-card" data-theme="neon">
+          <span class="theme-card-preview theme-card--neon" aria-hidden="true"></span>
+          <strong>Neon</strong>
+          <small>magenta + cyan (default)</small>
+        </button>
+        <button class="theme-card" data-theme="classic">
+          <span class="theme-card-preview theme-card--classic" aria-hidden="true"></span>
+          <strong>Classic GOG</strong>
+          <small>deep purple</small>
+        </button>
+        <button class="theme-card" data-theme="crt">
+          <span class="theme-card-preview theme-card--crt" aria-hidden="true"></span>
+          <strong>CRT Green</strong>
+          <small>phosphor screen</small>
+        </button>
+        <button class="theme-card" data-theme="sunset">
+          <span class="theme-card-preview theme-card--sunset" aria-hidden="true"></span>
+          <strong>Sunset</strong>
+          <small>orange + pink</small>
+        </button>
+      </div>
+      <footer class="wizard-foot">
+        <button class="back-btn" data-action="back">← Back</button>
         <button class="primary-btn" id="finish">Finish setup</button>
       </footer>
     </section>
 
-    <!-- ===== STEP 4: Done ===== -->
-    <section class="step" data-step="4">
+    <!-- ===== STEP 5: Done ===== -->
+    <section class="step" data-step="5">
       <div class="done-wrap">
         <div class="done-icon">✓</div>
         <h1>You're set.</h1>
@@ -232,6 +269,7 @@
     </section>
   </main>
 
+  <script src="../lib/defaults.js"></script>
   <script src="../lib/storage.js"></script>
   <script src="onboarding.js"></script>
 </body>

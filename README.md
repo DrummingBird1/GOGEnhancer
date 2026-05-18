@@ -1,6 +1,6 @@
 # GOG Enhancer
 
-**Version 2.0.3** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
+**Version 2.1.0** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
 
 תוסף third-party (לא רשמי) ל-GOG.com — מטבע חי, היסטוריית מחירים, השוואת מחירים בין חנויות, תגיות אישיות, שדרוג עיצובי מלא, עברית ו-RTL, והכל ללא Google Fonts וללא analytics.
 
@@ -17,11 +17,15 @@
 | `PRIVACY.md` | Privacy policy — host this at a public URL before submitting to the Web Store |
 | `LICENSE` | MIT license |
 | `STORE_LISTING.md` | Copy-paste material for the Chrome Web Store Developer Dashboard |
+| `build.ps1` | Build script — produces `gog-enhancer-webstore.zip` for submission |
+| `tests/`, `package.json`, `vitest.config.js` | Vitest harness for the pure utility modules (`lib/storage.js`, `content/currency-detection.js`). Not shipped in the extension zip. |
 | `README.md` | This file |
 
 ---
 
-## ✨ What's new in v2.0 / מה חדש בגרסה 2
+## ✨ Feature overview / סקירת פיצ'רים
+
+> *(The list below covers the major v2.x feature surface. For per-version detail, see the [Changelog](#-changelog--יומן-שינויים) further down.)*
 
 ### Architecture / ארכיטקטורה
 - **שכבת אחסון מאוחדת** — preferences ב-`storage.sync` (קל ומסונכרן בין מכשירים), data בכבד (תגיות, היסטוריה, cache) ב-`storage.local`. שום דבר לא נופל מעבר למכסות.
@@ -128,17 +132,54 @@ gog-plus/
 
 ## 🛠️ Known limitations / מגבלות ידועות
 
-- **Sparkline צ'ארט** של היסטוריית מחירים — בגרסה 2.0 רק הסטטיסטיקות מוצגות; הוויזואליזציה נשארת ל-v2.1.
-- **Refund window timer** — תוכנן ל-v2.0 אבל הוסר. GOG לא חושף תאריך רכישה דרך DOM פומבי, וטיימר מבוסס "ביקור ראשון בעמוד" יוצר ציפייה לא מדויקת. בגרסה הנוכחית מוצג רק badge סטטי "30-day refund" שמזכיר את המדיניות. תכנון ל-v2.1: שדה ידני לתאריך רכישה עם countdown.
-- **המרת מטבע בעמודים שאינם USD** — אם GOG כבר מציג לך EUR/PLN/GBP, ההרחבה מזהה ולא ממירה שוב כדי לא לשבש. אם תרצה המרה צולבת, פתח issue.
 - **Mods list scraping** — תלוי בכך ש-`gog.com/en/mods` שומר על מבנה דומה. אם תהיה רגרסיה, force-refresh דרך Advanced settings.
-- **Wishlist badge counter** — מבוסס על ספירת DOM חיה כשהמשתמש מבקר ב-`/account/wishlist` (פעם אחרונה ב-24 שעות אחרונות). אם לא ביקרת לאחרונה — ה-badge יהיה ריק עד הביקור הבא. ה-tooltip של אייקון ההרחבה ימליץ לבקר.
+- **Wishlist badge counter** — מבוסס על ספירת DOM חיה כשהמשתמש מבקר ב-`/account/wishlist` (TTL של 24 שעות). אם לא ביקרת לאחרונה — ה-badge יהיה ריק עד הביקור הבא. ה-tooltip של אייקון ההרחבה ימליץ לבקר.
+- **Refund timer מבוסס על תאריך ידני** — GOG לא חושף תאריך רכישה דרך DOM פומבי, אז ה-countdown של 30 הימים נשען על תאריך שאתה מקליד ב-panel. אם לא הקלדת תאריך — אין countdown.
+- **Genre detection הוא slug-pattern matching** — ה-card classes (RPG/Horror/Strategy/Sci-fi/Indie) מבוססים על regex ידני של שמות משחקים מוכרים. משחקים חדשים או פחות-מפורסמים לא יזוהו אוטומטית.
+- **Cross-currency conversion דרך USD** — ההמרה מבוצעת תמיד דרך USD כ-pivot. אם השער של אחד הזוגות חסר ב-`rates`, ההמרה לא תתבצע. כל ה-rates נשלפים אוטומטית כל 12 שעות מ-frankfurter.app.
 
 ---
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.0.3 (current) — Web Store readiness
+### v2.1.0 (current) — Tag management, themes, refund timer, notifications
+
+**New features**
+- **Theme picker** — four presets (Neon, Classic GOG, CRT Green, Sunset) overriding the accent variables across the whole UI. Now part of the onboarding wizard (step 4) and live-switchable from Advanced Options → Look & feel.
+- **Refund window timer** — manual purchase-date entry on the game-page panel counts down GOG's 30-day refund window in three states (safe / warning / expired). Toggleable from the popup.
+- **Library year-in-review** — new section in the tag dashboard summarising the current year: games tracked, biggest price drop, most-watched title, watch advantage (current vs. peak), refund windows opened.
+- **Cross-currency conversion** — EUR / GBP / PLN / RUB users now get conversion alongside the page's native currency, not just USD. Done via the existing USD rate matrix.
+- **Genre-aware cards** — `applyCardBadges` now classifies covers by slug pattern (RPG / Horror / Strategy / Sci-fi / Indie) and applies mood-matched hover effects layered on top of the existing CRT-classic and neon-cyberpunk treatments.
+- **All-time-low celebration** — when current price matches the recorded all-time-low on a tracked game, the price-history section shows an animated green banner.
+- **Sparkline upgrades** — sale-event markers (vertical dashed lines at every ≥30% drop) + rich `data-gog-plus-tip` hover tooltips on every data point + per-render unique gradient IDs.
+- **Glassmorphism + hero blur** — the game-page panel uses `backdrop-filter: blur+saturate` and pulls the page's `og:image` into a 60px-blurred backdrop layer.
+- **Wishlist filter bar** — pill-shape buttons with live counters, icons, and dynamic genre chips (RPG / Horror / Strategy / Sci-fi / Indie) that auto-appear when matching wishlist items are present.
+- **Tag management** — color picker (8 brand swatches), rename / merge / delete-from-all-games via a ⋯ menu, HTML5 drag-to-reorder with persisted `tagOrder`, and CSV import (symmetric to the existing CSV export).
+- **Markdown in notes** — bold, italic, links (https only), inline code, and `- ` lists rendered in the dashboard view. Source stays plain text in the editor.
+- **Desktop notifications (opt-in)** — system notifications when a refund window has 1–2 days left or when wishlist deals jump. New `notifications` permission, OFF by default; toggle from Advanced Options. Uses local `chrome.notifications` only.
+- **Verbose console logging toggle** — exposes `window.GOG_PLUS_DEBUG` as a checkbox in Advanced Options → Developer & diagnostics.
+
+**Behavior fixes**
+- `parsePrice` now correctly handles EUR-style decimal commas (`€19,99` → 19.99) by tail-digit disambiguation. Was returning 1999.
+- Game-page panel re-renders on SPA navigation between games (tagged with `data-slug`, recreated on mismatch) so it no longer shows stale data for the previous title.
+- Era-aware cover classes (`gog-plus-cover--classic` / `--neon` / `--genre-*`) are cleared when the user toggles `designInjection` off; previously they stuck around until page reload.
+- Wishlist count timing replaced a fixed 1.5 s wait with a stable-count poll (up to ~6 s) — survives slow connections and large wishlists.
+- DRM banner X button now persists dismissal via the `drmFreeBanner` toggle (was sessionStorage, returned in every new tab/window).
+- Currency-detection cache invalidates on SPA-navigation pathname change.
+- `hideExpiredSales` regex tightened to slug-position years only; dropped the text fallback that could false-flag live promos containing "2024" in their description.
+- `Storage.get(string|array)` now honors `GOG_PLUS_DEFAULTS` — was inconsistent with the object form.
+- `Reset everything` now requires typing `RESET` to confirm; the previous "type-style confirmation" was just another OK/Cancel dialog.
+- Tag pill click on the dashboard works across the whole row again (sub-controls properly scoped).
+- FX-fetch errors are stored in `lastFxError` and surfaced in the popup rate strip + Advanced Options.
+- `MAX_ENTRIES` for price history bumped 30 → 100 (still well under storage.local quota).
+
+**Architecture**
+- New **`lib/defaults.js`** as the canonical source for `GOG_PLUS_DEFAULTS` and `SETTINGS_VERSION` — eliminates the four-way duplication that existed in background/content/popup/options.
+- Popup now uses `window.GOGPlusStorage` instead of `chrome.storage.sync` directly. Storage scripts now load from popup.html too.
+- The duplicated `gog-enhancer-webstore/` directory is gone; `build.ps1` at the repo root produces `gog-enhancer-webstore.zip` on demand from a single source of truth.
+- **Vitest** harness added (`package.json`, `vitest.config.js`, `tests/`) with chrome.* shimming under happy-dom. 24 tests cover storage partitioning, defaults completeness, and parsePrice across locales.
+
+### v2.0.3 — Web Store readiness rename
 - **Renamed** "GOG+" → "GOG Enhancer". The new name follows the nominative-fair-use pattern (RES, YouTube Enhancer etc.) which substantially reduces trademark risk.
 - Added `PRIVACY.md` — a complete privacy policy ready to be hosted publicly before submitting to the Chrome Web Store.
 - Added `LICENSE` — MIT, with a trademark clarification appendix about the GOG name.

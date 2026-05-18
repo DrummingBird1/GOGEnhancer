@@ -11,7 +11,7 @@
     <div class="hero-inner">
       <div class="hero-brand">
         <span class="hero-pill">GOG Enhancer</span>
-        <span class="hero-version">v2.0</span>
+        <span class="hero-version">v2.1</span>
       </div>
       <h1 class="hero-title">Advanced settings</h1>
       <p class="hero-sub">
@@ -115,9 +115,42 @@
       </div>
     </section>
 
-    <!-- Background sync -->
+    <!-- Look & feel -->
     <section class="card">
       <div class="card-num">04</div>
+      <h2>Look &amp; feel</h2>
+      <p class="card-sub">
+        Pick a color theme. Applies to badges, tooltips, the game panel, and
+        all era-aware cover effects. Requires "Design injection" enabled in the
+        popup to see the cover effects.
+      </p>
+      <div class="theme-picker" id="themePicker">
+        <button class="theme-swatch" data-theme="neon" type="button" aria-label="Neon theme">
+          <span class="theme-swatch-preview theme-swatch--neon" aria-hidden="true"></span>
+          <span class="theme-swatch-name">Neon</span>
+          <span class="theme-swatch-sub">magenta + cyan</span>
+        </button>
+        <button class="theme-swatch" data-theme="classic" type="button" aria-label="Classic GOG theme">
+          <span class="theme-swatch-preview theme-swatch--classic" aria-hidden="true"></span>
+          <span class="theme-swatch-name">Classic GOG</span>
+          <span class="theme-swatch-sub">deep purple</span>
+        </button>
+        <button class="theme-swatch" data-theme="crt" type="button" aria-label="CRT Green theme">
+          <span class="theme-swatch-preview theme-swatch--crt" aria-hidden="true"></span>
+          <span class="theme-swatch-name">CRT Green</span>
+          <span class="theme-swatch-sub">phosphor</span>
+        </button>
+        <button class="theme-swatch" data-theme="sunset" type="button" aria-label="Sunset theme">
+          <span class="theme-swatch-preview theme-swatch--sunset" aria-hidden="true"></span>
+          <span class="theme-swatch-name">Sunset</span>
+          <span class="theme-swatch-sub">orange + pink</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Background sync -->
+    <section class="card">
+      <div class="card-num">05</div>
       <h2>Background sync</h2>
       <p class="card-sub">
         Three small background jobs keep things fresh.
@@ -143,7 +176,7 @@
 
     <!-- Data management -->
     <section class="card">
-      <div class="card-num">05</div>
+      <div class="card-num">06</div>
       <h2>Your data</h2>
       <p class="card-sub">
         Tags, notes and price history live on this device. Sync settings live
@@ -155,10 +188,43 @@
         <button id="importAll" class="ghost">Import from JSON…</button>
         <input type="file" id="importFile" accept="application/json,.json" hidden />
         <button id="exportTagsCsv" class="ghost">Tags → CSV</button>
+        <button id="importTagsCsv" class="ghost">Tags ← CSV</button>
+        <input type="file" id="importTagsCsvFile" accept=".csv,text/csv" hidden />
         <button id="clearHistory" class="danger">Clear price history</button>
         <button id="clearTags" class="danger">Clear tags &amp; notes</button>
         <button id="clearAll" class="danger">Reset everything</button>
       </div>
+    </section>
+
+    <!-- Developer / diagnostics -->
+    <section class="card">
+      <div class="card-num">07</div>
+      <h2>Developer &amp; diagnostics</h2>
+      <p class="card-sub">
+        Knobs that help when troubleshooting. Off by default.
+      </p>
+      <label class="dev-toggle">
+        <input type="checkbox" id="debugLogging" />
+        <span class="dev-toggle-text">
+          <span class="dev-toggle-title">Verbose console logging</span>
+          <span class="dev-toggle-sub">
+            Prints <code>[GOG+]</code> debug lines to the gog.com DevTools console.
+            Equivalent to setting <code>window.GOG_PLUS_DEBUG = true</code> manually.
+          </span>
+        </span>
+      </label>
+
+      <label class="dev-toggle">
+        <input type="checkbox" id="desktopNotifications" />
+        <span class="dev-toggle-text">
+          <span class="dev-toggle-title">Desktop notifications</span>
+          <span class="dev-toggle-sub">
+            Opt-in. Fires a system notification when a refund window has 1–2 days
+            left, or when new wishlist items go on sale. Nothing is transmitted —
+            <code>chrome.notifications</code> is local to the browser.
+          </span>
+        </span>
+      </label>
     </section>
 
     <!-- Privacy note -->
@@ -177,11 +243,12 @@
     </section>
 
     <footer class="page-footer">
-      <span>GOG Enhancer v2.0 · System fonts only · Built for Idan</span>
+      <span>GOG Enhancer v2.1 · System fonts only · Built for Idan</span>
       <span id="saveStatus" class="save-status">Saved automatically.</span>
     </footer>
   </main>
 
+  <script src="../lib/defaults.js"></script>
   <script src="../lib/storage.js"></script>
   <script src="options.js"></script>
 </body>

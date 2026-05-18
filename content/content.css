@@ -37,6 +37,26 @@ html.gog-plus-disabled .gog-plus-toasts {
     system-ui, sans-serif;
 }
 
+/* ===== Theme variants =====
+   Override the accent vars on the <html> element. "neon" is the default
+   already baked into :root, so the class is harmless on first paint. */
+html.gog-plus-theme--classic {
+  --gp-magenta: #8a2be2;
+  --gp-cyan: #b388ff;
+  --gp-pink: #ff6b9d;
+}
+html.gog-plus-theme--crt {
+  --gp-magenta: #00ff66;
+  --gp-cyan: #7fffa6;
+  --gp-green: #00ff66;
+  --gp-pink: #ffd166;
+}
+html.gog-plus-theme--sunset {
+  --gp-magenta: #ff7a00;
+  --gp-cyan: #ff3d8b;
+  --gp-pink: #ffd166;
+}
+
 /* When master toggle is off, hide everything we injected */
 html.gog-plus-disabled .gog-plus-conv-note,
 html.gog-plus-disabled .gog-plus-badges,
@@ -126,6 +146,24 @@ html.gog-plus-disabled .gog-plus-toasts {
   color: var(--gp-text);
   font-family: var(--gp-body);
   font-size: 13px;
+  animation: gog-plus-banner-in 360ms cubic-bezier(0.2, 0.85, 0.3, 1);
+  transform-origin: top center;
+}
+@keyframes gog-plus-banner-in {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.gog-plus-banner-shield svg {
+  animation: gog-plus-shield-pulse 2.4s ease-in-out 0.5s infinite;
+}
+@keyframes gog-plus-shield-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(0, 240, 255, 0)); }
+  50%      { filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.5)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gog-plus-banner { animation: none; }
+  .gog-plus-banner-shield svg { animation: none; }
 }
 .gog-plus-banner-inner {
   max-width: 1400px;
@@ -235,44 +273,116 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   font-family: var(--gp-mono);
   margin-inline-end: 4px;
 }
-.gog-plus-wlfilters button {
+.gog-plus-wlfilters .gog-plus-wlfilter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: transparent;
   border: 1px solid var(--gp-border-strong);
   color: var(--gp-text-dim);
-  padding: 6px 14px;
-  border-radius: 4px;
-  font-size: 13px;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease,
+    transform 0.15s ease;
 }
-.gog-plus-wlfilters button:hover {
+.gog-plus-wlfilters .gog-plus-wlfilter:hover {
   border-color: var(--gp-cyan);
   color: var(--gp-cyan);
+  transform: translateY(-1px);
 }
-.gog-plus-wlfilters button.active {
+.gog-plus-wlfilters .gog-plus-wlfilter.active {
   background: linear-gradient(135deg, var(--gp-magenta), var(--gp-cyan));
   color: var(--gp-bg);
   border-color: transparent;
+}
+.gog-plus-wlfilter-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(244, 234, 255, 0.10);
+  font-size: 11px;
+  font-family: var(--gp-mono);
+  line-height: 1;
+}
+.gog-plus-wlfilters .gog-plus-wlfilter.active .gog-plus-wlfilter-icon {
+  background: rgba(10, 6, 18, 0.25);
+  color: var(--gp-bg);
+}
+.gog-plus-wlfilter-count {
+  font-family: var(--gp-mono);
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(244, 234, 255, 0.08);
+  color: var(--gp-text-dim);
+  min-width: 14px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.gog-plus-wlfilter-count:empty { display: none; }
+.gog-plus-wlfilters .gog-plus-wlfilter.active .gog-plus-wlfilter-count {
+  background: rgba(10, 6, 18, 0.25);
+  color: var(--gp-bg);
+}
+
+/* Genre chips row — sits at the end of the filter bar */
+.gog-plus-wlfilters-genres {
+  display: contents;
+}
+.gog-plus-wlfilter--genre {
+  border-color: rgba(244, 234, 255, 0.15);
+}
+.gog-plus-wlfilter--genre:hover {
+  border-color: var(--gp-magenta);
+  color: var(--gp-magenta);
+}
+.gog-plus-wlfilter--genre.active {
+  background: linear-gradient(135deg, var(--gp-magenta), var(--gp-pink));
 }
 .gog-plus-filtered-out { display: none !important; }
 
 /* ===== Game page panel ===== */
 .gog-plus-gamepanel {
+  position: relative;
   margin: 24px 0;
   padding: 0;
   background:
     radial-gradient(circle at 0% 0%, rgba(198, 79, 255, 0.12), transparent 50%),
     radial-gradient(circle at 100% 100%, rgba(0, 240, 255, 0.10), transparent 50%),
-    rgba(15, 8, 30, 0.95);
+    rgba(15, 8, 30, 0.62);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
   border: 1px solid rgba(198, 79, 255, 0.30);
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--gp-text);
   font-family: var(--gp-body);
   font-size: 14px;
   overflow: hidden;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(244, 234, 255, 0.05);
 }
+/* Hero blur backdrop — only shown when meta[property=og:image] resolved */
+.gog-plus-gamepanel--has-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--gp-hero-url, none);
+  background-size: cover;
+  background-position: center;
+  filter: blur(60px) saturate(1.4);
+  opacity: 0.35;
+  z-index: 0;
+  pointer-events: none;
+}
+.gog-plus-gamepanel > * { position: relative; z-index: 1; }
 .gog-plus-gp-header {
   padding: 14px 20px;
   display: flex;
@@ -477,15 +587,16 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   margin-bottom: 12px;
 }
 .gog-plus-tag-chip {
+  --tag-accent: var(--gp-cyan);
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: rgba(0, 240, 255, 0.12);
-  border: 1px solid rgba(0, 240, 255, 0.40);
+  background: color-mix(in srgb, var(--tag-accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tag-accent) 45%, transparent);
   border-radius: 12px;
   font-size: 12px;
-  color: #62e2ff;
+  color: var(--tag-accent);
 }
 .gog-plus-tag-chip button {
   background: transparent;
@@ -537,10 +648,12 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   max-width: 280px;
   padding: 10px 14px;
   background:
-    radial-gradient(circle at 0% 0%, rgba(198, 79, 255, 0.15), transparent 60%),
-    rgba(10, 6, 18, 0.98);
+    radial-gradient(circle at 0% 0%, rgba(198, 79, 255, 0.18), transparent 60%),
+    rgba(10, 6, 18, 0.72);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  backdrop-filter: blur(10px) saturate(180%);
   border: 1px solid var(--gp-border-strong);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--gp-text);
   font-family: var(--gp-body);
   font-size: 12px;
@@ -548,7 +661,9 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   pointer-events: none;
   transform: translateY(4px);
   transition: opacity 0.18s ease, transform 0.18s ease;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(244, 234, 255, 0.06);
 }
 .gog-plus-tooltip strong {
   display: block;
@@ -595,4 +710,114 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   background:
     linear-gradient(135deg, rgba(244, 234, 255, 0.04), rgba(244, 234, 255, 0.02)),
     rgba(10, 6, 18, 0.96);
+}
+
+/* ============================================================
+   All-time-low celebration banner (inside price-history section)
+   ============================================================ */
+.gog-plus-allmtl-cheer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+    rgba(92, 255, 157, 0.18),
+    rgba(92, 255, 157, 0.04));
+  border: 1px solid rgba(92, 255, 157, 0.4);
+  color: var(--gp-green);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  animation: gog-plus-atl-pulse 2.4s ease-in-out infinite;
+}
+.gog-plus-allmtl-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gp-green);
+  box-shadow: 0 0 10px var(--gp-green);
+}
+@keyframes gog-plus-atl-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(92, 255, 157, 0.0); }
+  50%      { box-shadow: 0 0 0 6px rgba(92, 255, 157, 0.15); }
+}
+
+/* ============================================================
+   Sparkline sale-event legend dot
+   ============================================================ */
+.gog-plus-spark-legend .dot.dot-sale {
+  background: transparent;
+  border: 1px dashed var(--gp-green);
+  box-shadow: none;
+}
+
+/* ============================================================
+   Refund window section
+   ============================================================ */
+.gog-plus-refund-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.gog-plus-refund-row label {
+  font-size: 12px;
+  color: var(--gp-text-secondary);
+  margin-inline-end: 4px;
+}
+.gog-plus-refund-row input[type="date"] {
+  flex: 1;
+  background: rgba(244, 234, 255, 0.06);
+  border: 1px solid var(--gp-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--gp-text);
+  font-family: var(--gp-mono);
+  font-size: 12.5px;
+  color-scheme: dark;
+}
+.gog-plus-refund-row input[type="date"]:focus {
+  outline: none;
+  border-color: var(--gp-cyan);
+}
+.gog-plus-refund-clear {
+  background: transparent;
+  border: 1px solid var(--gp-border);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--gp-text-secondary);
+  font-size: 14px;
+  line-height: 1;
+}
+.gog-plus-refund-clear:hover {
+  border-color: var(--gp-pink);
+  color: var(--gp-pink);
+}
+.gog-plus-refund-status {
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  min-height: 18px;
+}
+.gog-plus-refund-status.is-safe {
+  color: var(--gp-green);
+  background: rgba(92, 255, 157, 0.08);
+  border: 1px solid rgba(92, 255, 157, 0.25);
+}
+.gog-plus-refund-status.is-warn {
+  color: #ffd166;
+  background: rgba(255, 209, 102, 0.08);
+  border: 1px solid rgba(255, 209, 102, 0.3);
+}
+.gog-plus-refund-status.is-expired {
+  color: var(--gp-pink);
+  background: rgba(255, 107, 157, 0.08);
+  border: 1px solid rgba(255, 107, 157, 0.3);
 }

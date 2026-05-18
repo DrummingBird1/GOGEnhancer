@@ -1,0 +1,12 @@
+node_modules/
+*.log
+.vitest-cache/
+
+# Build artifacts — produced by build.ps1 on demand
+gog-enhancer-webstore.zip
+gog-enhancer-source.zip
+
+# Local tooling config (Claude Code, IDE)
+.claude/
+.vscode/
+.idea/

@@ -16,7 +16,7 @@
 (() => {
   "use strict";
 
-  const MAX_ENTRIES = 30;
+  const MAX_ENTRIES = 100;
 
   async function load() {
     const { priceHistory = {} } = await window.GOGPlusStorage.get({

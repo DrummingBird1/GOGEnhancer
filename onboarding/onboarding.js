@@ -95,7 +95,7 @@ document.getElementById("next2").addEventListener("click", async () => {
 
 /* ---- step 3: features ---- */
 
-document.getElementById("finish").addEventListener("click", async () => {
+document.getElementById("next3").addEventListener("click", async () => {
   const features = {
     designInjection: document.getElementById("f-design").checked,
     drmFreeBanner: document.getElementById("f-banner").checked,
@@ -107,11 +107,31 @@ document.getElementById("finish").addEventListener("click", async () => {
     customTags: document.getElementById("f-tags").checked,
     hebrewTranslations: document.getElementById("f-hebrew").checked,
     rtlLayout: document.getElementById("f-rtl").checked,
-    onboardingComplete: true,
     enabled: true,
   };
   await window.GOGPlusStorage.set(features);
+  // Pre-select default theme on entry
+  document.querySelector('.theme-card[data-theme="neon"]')?.classList.add("selected");
+  state.selectedTheme = "neon";
   showStep(4);
+});
+
+/* ---- step 4: theme ---- */
+
+document.querySelectorAll(".theme-card").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".theme-card").forEach((b) => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    state.selectedTheme = btn.dataset.theme;
+  });
+});
+
+document.getElementById("finish").addEventListener("click", async () => {
+  await window.GOGPlusStorage.set({
+    theme: state.selectedTheme || "neon",
+    onboardingComplete: true,
+  });
+  showStep(5);
 });
 
 /* ---- back buttons ---- */

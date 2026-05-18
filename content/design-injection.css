@@ -74,6 +74,112 @@ html.gog-plus-design [class*="-discount"] {
     0 0 24px rgba(0, 240, 255, 0.15);
 }
 
+/* ===== Genre-aware cover treatments =====
+   Each genre gets a mood-matched hover. Pure visual; no functional change. */
+
+/* RPG — warm gold parchment glow */
+.gog-plus-cover--genre-rpg {
+  transition: box-shadow 0.35s ease, filter 0.35s ease;
+}
+.gog-plus-cover--genre-rpg:hover {
+  box-shadow:
+    0 8px 22px rgba(212, 164, 69, 0.22),
+    inset 0 0 0 1px rgba(212, 164, 69, 0.55),
+    inset 0 0 30px rgba(212, 164, 69, 0.10);
+  filter: saturate(1.1);
+}
+
+/* Horror — red glitch on hover, slight desaturation at rest */
+.gog-plus-cover--genre-horror {
+  filter: saturate(0.85);
+  transition: filter 0.35s ease, box-shadow 0.35s ease;
+}
+.gog-plus-cover--genre-horror:hover {
+  filter: saturate(1.1) contrast(1.05);
+  box-shadow:
+    0 6px 18px rgba(180, 30, 60, 0.32),
+    inset 0 0 0 1px rgba(180, 30, 60, 0.5);
+}
+.gog-plus-cover--genre-horror::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 3px,
+      rgba(180, 30, 60, 0.06) 3px,
+      rgba(180, 30, 60, 0.06) 4px
+    );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.gog-plus-cover--genre-horror:hover::after { opacity: 1; }
+
+/* Strategy — subtle grid overlay */
+.gog-plus-cover--genre-strategy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: inherit;
+  background-image:
+    linear-gradient(rgba(0, 240, 255, 0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.10) 1px, transparent 1px);
+  background-size: 16px 16px;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  mix-blend-mode: overlay;
+}
+.gog-plus-cover--genre-strategy:hover::before { opacity: 0.7; }
+.gog-plus-cover--genre-strategy:hover {
+  box-shadow: 0 6px 18px rgba(0, 240, 255, 0.18);
+}
+
+/* Sci-fi — cool blue glow + faint starfield dots on hover */
+.gog-plus-cover--genre-scifi {
+  transition: box-shadow 0.35s ease;
+}
+.gog-plus-cover--genre-scifi::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: inherit;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255, 255, 255, 0.6) 50%, transparent 100%),
+    radial-gradient(1px 1px at 70% 70%, rgba(255, 255, 255, 0.5) 50%, transparent 100%),
+    radial-gradient(1px 1px at 40% 80%, rgba(255, 255, 255, 0.4) 50%, transparent 100%),
+    radial-gradient(1px 1px at 85% 20%, rgba(255, 255, 255, 0.5) 50%, transparent 100%),
+    radial-gradient(1px 1px at 10% 60%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.gog-plus-cover--genre-scifi:hover::before { opacity: 0.9; }
+.gog-plus-cover--genre-scifi:hover {
+  box-shadow:
+    0 8px 22px rgba(80, 140, 255, 0.25),
+    inset 0 0 0 1px rgba(80, 140, 255, 0.45);
+}
+
+/* Indie — playful pink+cyan two-tone outline */
+.gog-plus-cover--genre-indie {
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
+}
+.gog-plus-cover--genre-indie:hover {
+  box-shadow:
+    -4px 4px 0 rgba(255, 107, 157, 0.55),
+    4px -4px 0 rgba(0, 240, 255, 0.55),
+    0 0 0 1px rgba(244, 234, 255, 0.15);
+  transform: translateY(-3px);
+}
+
 /* Generic card hover micro-interaction — tiny, no positioning change */
 html.gog-plus-design .gog-plus-card {
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -83,15 +189,31 @@ html.gog-plus-design .gog-plus-card:hover {
 }
 
 /* ===== Skeleton loaders =====
-   The previous heuristic (matching :empty on every product-tile) was
-   far too broad — GOG cards contain many lazy-loaded empty containers
-   that aren't actually skeleton states. Disabled until we have a
-   reliable signal for "this is a real loading skeleton".
-
-   If you want to re-enable, target a very specific GOG class
-   (e.g. .product-tile--placeholder) rather than :empty matching. */
-html.gog-plus-skeletons {
-  /* intentionally empty — see note above */
+   We target only elements GOG itself flags as placeholders/skeletons.
+   Earlier versions used :empty on product tiles, which over-matched
+   (many GOG nodes are lazy-loaded but not actually loading). */
+html.gog-plus-skeletons [class*="placeholder"]:empty,
+html.gog-plus-skeletons [class*="skeleton"]:empty,
+html.gog-plus-skeletons [class*="product-tile--placeholder"] {
+  background: linear-gradient(
+    90deg,
+    rgba(198, 79, 255, 0.08) 0%,
+    rgba(0, 240, 255, 0.18) 50%,
+    rgba(198, 79, 255, 0.08) 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: gog-plus-shimmer 1.6s linear infinite;
+  border-radius: 4px;
+}
+@keyframes gog-plus-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.gog-plus-skeletons [class*="placeholder"]:empty,
+  html.gog-plus-skeletons [class*="skeleton"]:empty {
+    animation: none;
+  }
 }
 
 /* ===== Clean layout =====

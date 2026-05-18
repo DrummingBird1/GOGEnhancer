@@ -9,41 +9,11 @@
  *   - Handle keyboard commands
  */
 
+import "../lib/defaults.js";
 import "../lib/storage.js";
 
-const CURRENT_SETTINGS_VERSION = 2;
-
-const DEFAULTS = {
-  settingsVersion: CURRENT_SETTINGS_VERSION,
-
-  enabled: true,
-  currencyConverter: true,
-  taxEstimator: true,
-  refundBadge: true,
-  drmFreeBanner: true,
-  hideExpiredSales: true,
-  hebrewTranslations: false,
-  rtlLayout: false,
-  customTags: true,
-  wishlistFilters: true,
-  modIndicator: true,
-  cleanLayout: true,
-  designInjection: true,
-  priceHistoryTracking: true,
-  itadCompare: true,
-  richTooltips: true,
-  skeletonLoaders: true,
-  wishlistAlerts: true,
-
-  targetCurrency: "ILS",
-  rates: { ILS: 3.65, EUR: 0.92, GBP: 0.79, RUB: 92.0, PLN: 4.0 },
-  ratesUpdatedAt: 0,
-  vatPercent: 18,
-  vatLabel: "כולל מע״מ",
-  regionPreset: "il",
-
-  onboardingComplete: false,
-};
+const CURRENT_SETTINGS_VERSION = self.GOG_PLUS_SETTINGS_VERSION;
+const DEFAULTS = self.GOG_PLUS_DEFAULTS;
 
 /* ---------------- migration ---------------- */
 
@@ -92,10 +62,17 @@ async function fetchLiveRates() {
 
     const { rates: prior } = await self.GOGPlusStorage.get({ rates: DEFAULTS.rates });
     const merged = { ...prior, ...next };
-    await self.GOGPlusStorage.set({ rates: merged, ratesUpdatedAt: Date.now() });
+    await self.GOGPlusStorage.set({
+      rates: merged,
+      ratesUpdatedAt: Date.now(),
+      lastFxError: null,
+    });
     console.log("[GOG+ bg] FX updated", merged);
   } catch (err) {
     console.warn("[GOG+ bg] FX fetch failed", err);
+    await self.GOGPlusStorage.set({
+      lastFxError: String(err?.message || err).slice(0, 200),
+    });
   }
 }
 
@@ -179,6 +156,94 @@ async function refreshWishlistBadge() {
   }
 }
 
+/* ---------------- desktop notifications (opt-in) ---------------- */
+
+const DAILY_ALARM = "gog-plus-daily";
+const DAILY_INTERVAL_MIN = 24 * 60;
+const REFUND_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+const NOTIF_ICON = "icons/icon128.png";
+
+async function fireNotification(id, title, message, contextMessage) {
+  try {
+    chrome.notifications.create(id, {
+      type: "basic",
+      iconUrl: NOTIF_ICON,
+      title,
+      message,
+      contextMessage: contextMessage || "GOG Enhancer",
+      priority: 1,
+    });
+  } catch (err) {
+    console.warn("[GOG+ bg] notification failed", err);
+  }
+}
+
+function slugToTitle(slug) {
+  return slug
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+async function checkRefundWindowExpirations() {
+  const { desktopNotifications, purchaseLog = {}, notifLog = {} } =
+    await self.GOGPlusStorage.get({
+      desktopNotifications: false,
+      purchaseLog: {},
+      notifLog: {},
+    });
+  if (!desktopNotifications) return;
+
+  const now = Date.now();
+  let touched = false;
+  for (const [slug, dateStr] of Object.entries(purchaseLog)) {
+    if (!dateStr) continue;
+    const purchasedAt = new Date(dateStr + "T00:00:00").getTime();
+    if (!Number.isFinite(purchasedAt)) continue;
+    const expiresAt = purchasedAt + REFUND_WINDOW_MS;
+    const msLeft = expiresAt - now;
+    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+    // Notify when 1 or 2 days remain — but only once per slug+remaining bucket.
+    if (daysLeft === 2 || daysLeft === 1) {
+      const key = `refund:${slug}:${daysLeft}`;
+      if (notifLog[key]) continue;
+      const word = daysLeft === 1 ? "day" : "days";
+      await fireNotification(
+        key,
+        `Refund window closing — ${slugToTitle(slug)}`,
+        `${daysLeft} ${word} left on GOG's 30-day refund guarantee.`,
+        "Tracked via your manual purchase date"
+      );
+      notifLog[key] = now;
+      touched = true;
+    }
+  }
+  if (touched) await self.GOGPlusStorage.set({ notifLog });
+}
+
+async function maybeNotifyWishlistJump(prevCount, newCount) {
+  if (newCount <= prevCount) return;
+  const { desktopNotifications, notifLog = {} } = await self.GOGPlusStorage.get({
+    desktopNotifications: false,
+    notifLog: {},
+  });
+  if (!desktopNotifications) return;
+  const added = newCount - prevCount;
+  // Throttle: only one wishlist notification per hour.
+  const last = notifLog.__wishlistJump || 0;
+  if (Date.now() - last < 60 * 60 * 1000) return;
+  await fireNotification(
+    `wishlist-jump:${Date.now()}`,
+    `Wishlist deals updated`,
+    added === 1
+      ? `1 new wishlist item is on sale.`
+      : `${added} new wishlist items are on sale.`,
+    "Click the toolbar icon to visit your wishlist"
+  );
+  notifLog.__wishlistJump = Date.now();
+  await self.GOGPlusStorage.set({ notifLog });
+}
+
 /* ---------------- lifecycle ---------------- */
 
 chrome.runtime.onInstalled.addListener(async (details) => {
@@ -197,6 +262,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     periodInMinutes: WL_INTERVAL_MIN,
     when: Date.now() + 60000,
   });
+  chrome.alarms.create(DAILY_ALARM, {
+    periodInMinutes: DAILY_INTERVAL_MIN,
+    when: Date.now() + 90000,
+  });
 
   if (details.reason === "install") {
     chrome.tabs.create({
@@ -213,6 +282,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === FX_ALARM) fetchLiveRates();
   if (alarm.name === MODS_ALARM) refreshModsList();
   if (alarm.name === WL_ALARM) refreshWishlistBadge();
+  if (alarm.name === DAILY_ALARM) checkRefundWindowExpirations();
 });
 
 /* ---------------- commands ---------------- */
@@ -248,11 +318,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "wishlist-report") {
     // Content script saw the user's wishlist and counted discounted items live.
     const count = Math.max(0, Math.min(99, msg.discountedCount | 0));
-    self.GOGPlusStorage.set({
-      wishlistCache: { discountedCount: count, total: msg.total | 0 },
-      wishlistCacheUpdatedAt: Date.now(),
-    }).then(() => {
-      refreshWishlistBadge().then(() => sendResponse({ ok: true }));
+    self.GOGPlusStorage.get({
+      wishlistCache: { discountedCount: 0 },
+    }).then((prev) => {
+      const prevCount = prev.wishlistCache?.discountedCount | 0;
+      self.GOGPlusStorage.set({
+        wishlistCache: { discountedCount: count, total: msg.total | 0 },
+        wishlistCacheUpdatedAt: Date.now(),
+      }).then(() => {
+        maybeNotifyWishlistJump(prevCount, count);
+        refreshWishlistBadge().then(() => sendResponse({ ok: true }));
+      });
     });
     return true;
   }

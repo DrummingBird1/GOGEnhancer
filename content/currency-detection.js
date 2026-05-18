@@ -37,9 +37,11 @@
   }, {});
 
   let cached = null;
+  let cachedFor = null;
 
   function detect() {
-    if (cached) return cached;
+    if (cached && cachedFor === location.pathname) return cached;
+    cached = null;
 
     // Probe: scan a few visible price-like nodes
     const candidates = document.querySelectorAll(
@@ -76,7 +78,46 @@
     }
 
     cached = { code: topCode, symbol: CODE_TO_SYMBOL[topCode] || "$" };
+    cachedFor = location.pathname;
     return cached;
+  }
+
+  // Currencies where comma is conventionally the decimal mark.
+  // We disambiguate per-number by looking at the digits after the separator;
+  // 2 digits → decimal, 3 digits → thousands.
+  const COMMA_DECIMAL_LOCALES = new Set(["EUR", "PLN", "RUB", "CZK", "SEK", "BRL"]);
+
+  function normalizeNumber(raw, currency) {
+    // raw is a token like "1,234.56" / "1.234,56" / "19,99" / "1234"
+    const commaDecimal = COMMA_DECIMAL_LOCALES.has(currency);
+    const hasDot = raw.includes(".");
+    const hasComma = raw.includes(",");
+
+    if (hasDot && hasComma) {
+      // Both present — the LAST one is the decimal separator.
+      const lastDot = raw.lastIndexOf(".");
+      const lastComma = raw.lastIndexOf(",");
+      if (lastDot > lastComma) {
+        return parseFloat(raw.replace(/,/g, ""));
+      }
+      return parseFloat(raw.replace(/\./g, "").replace(",", "."));
+    }
+    if (hasComma && !hasDot) {
+      // Ambiguous: 2 digits after → decimal; 3 digits → thousands group.
+      const parts = raw.split(",");
+      const tail = parts[parts.length - 1];
+      if (commaDecimal && tail.length === 2) {
+        return parseFloat(raw.replace(",", "."));
+      }
+      if (!commaDecimal && tail.length === 3) {
+        return parseFloat(raw.replace(/,/g, ""));
+      }
+      // Fall back to locale default
+      return commaDecimal
+        ? parseFloat(raw.replace(/,/g, "."))
+        : parseFloat(raw.replace(/,/g, ""));
+    }
+    return parseFloat(raw);
   }
 
   /**
@@ -86,23 +127,23 @@
   function parsePrice(text, knownCurrency = null) {
     if (!text) return null;
 
+    const grab = (sym, currency) => {
+      const escSym = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp(`${escSym}\\s?([\\d.,]+)`);
+      const m = text.match(re);
+      if (!m) return null;
+      const v = normalizeNumber(m[1], currency);
+      return Number.isFinite(v) ? v : null;
+    };
+
     if (knownCurrency) {
       const sym = CODE_TO_SYMBOL[knownCurrency];
       if (!sym) return null;
-      // Escape regex chars; "$" is special
-      const escSym = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const re = new RegExp(`${escSym}\\s?([\\d,]+(?:\\.\\d{2})?|\\d+)`);
-      const m = text.match(re);
-      if (!m) return null;
-      return parseFloat(m[1].replace(/,/g, ""));
+      return grab(sym, knownCurrency);
     }
-
-    // Try every known symbol
-    for (const [sym] of Object.entries(SYMBOL_TO_CODE)) {
-      const escSym = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const re = new RegExp(`${escSym}\\s?([\\d,]+(?:\\.\\d{2})?|\\d+)`);
-      const m = text.match(re);
-      if (m) return parseFloat(m[1].replace(/,/g, ""));
+    for (const [sym, code] of Object.entries(SYMBOL_TO_CODE)) {
+      const v = grab(sym, code);
+      if (v !== null) return v;
     }
     return null;
   }
@@ -110,6 +151,7 @@
   // Re-detect after a delay (some prices load lazily)
   setTimeout(() => {
     cached = null;
+    cachedFor = null;
     detect();
   }, 3000);
 
