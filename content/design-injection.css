@@ -217,11 +217,10 @@ html.gog-plus-skeletons [class*="product-tile--placeholder"] {
 }
 
 /* ===== Clean layout =====
-   Collapse expired-year promo strips. The :nth-of-type rule was too
-   aggressive (could hide active sales). Now we only hide promos with
-   explicit 2023/2024 dates in the URL. */
-html.gog-plus-clean a[href*="/promo/20240"],
-html.gog-plus-clean a[href*="/promo/20230"] {
+   `hideExpiredSales` in content.js handles the dynamic year detection
+   (slug-position regex + currentYear check) and stamps .gog-plus-expired
+   on stale anchors. We just hide them here when clean mode is on. */
+html.gog-plus-clean .gog-plus-expired {
   display: none;
 }
 

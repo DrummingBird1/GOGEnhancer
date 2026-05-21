@@ -24,6 +24,39 @@
     Menlo, Consolas, monospace;
 }
 
+/* Theme overrides — applied to <html> for live preview on the options page itself.
+   The picker JS toggles `gog-plus-theme--{name}` on documentElement so the user
+   sees the change before saving. Matches the same class scheme content.css uses. */
+html.gog-plus-theme--classic {
+  --accent-magenta: #8a2be2;
+  --accent-cyan: #b388ff;
+}
+html.gog-plus-theme--crt {
+  --accent-magenta: #00ff66;
+  --accent-cyan: #7fffa6;
+  --accent-green: #00ff66;
+  --accent-pink: #ffd166;
+}
+html.gog-plus-theme--sunset {
+  --accent-magenta: #ff7a00;
+  --accent-cyan: #ff3d8b;
+  --accent-pink: #ffd166;
+}
+html.gog-plus-theme--light {
+  --bg-base: #f8f5ff;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f3eeff;
+  --text-primary: #1a0a2a;
+  --text-secondary: rgba(26, 10, 42, 0.72);
+  --text-tertiary: rgba(26, 10, 42, 0.50);
+  --border: rgba(26, 10, 42, 0.10);
+  --border-strong: rgba(26, 10, 42, 0.22);
+  --accent-magenta: #7a1fc7;
+  --accent-cyan: #00a8b8;
+  --accent-green: #1fa05c;
+  --accent-pink: #d63a82;
+}
+
 * { box-sizing: border-box; }
 html, body {
   margin: 0;
@@ -445,3 +478,7 @@ button.danger:hover {
 .theme-swatch--classic { background: linear-gradient(135deg, #8a2be2, #b388ff); }
 .theme-swatch--crt     { background: linear-gradient(135deg, #00ff66, #00cc4d); }
 .theme-swatch--sunset  { background: linear-gradient(135deg, #ff7a00, #ff3d8b); }
+.theme-swatch--light {
+  background: linear-gradient(135deg, #ffffff 0%, #f3eeff 60%, #7a1fc7 100%);
+  border: 1px solid rgba(26, 10, 42, 0.20);
+}

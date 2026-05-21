@@ -1,6 +1,6 @@
 # GOG Enhancer
 
-**Version 2.1.0** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
+**Version 2.1.1** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
 
 תוסף third-party (לא רשמי) ל-GOG.com — מטבע חי, היסטוריית מחירים, השוואת מחירים בין חנויות, תגיות אישיות, שדרוג עיצובי מלא, עברית ו-RTL, והכל ללא Google Fonts וללא analytics.
 
@@ -142,7 +142,25 @@ gog-plus/
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.1.0 (current) — Tag management, themes, refund timer, notifications
+### v2.1.1 (current) — Cross-currency wishlist filters, Light theme, polish
+
+**Bug fixes**
+- Wishlist `< $10` / `< $25` filters now work in any locale. Page price is parsed in `pageCurrency.code` and converted to USD via the rate matrix before comparing — previously the regex only matched `$` and silently no-op'd for EU/UK/IL users.
+- `cleanLayout` CSS no longer hardcodes `/promo/20230` and `/promo/20240`. It now keys off `.gog-plus-expired` which `hideExpiredSales` stamps dynamically against `currentYear`, so the layout stays accurate as years roll.
+- Toolbar badge color now follows the picked theme (Neon → magenta, CRT → green, Sunset → orange, Classic → purple, Light → deep purple). Previously locked to magenta regardless.
+
+**New features**
+- **Light theme** added as the fifth picker option. Inverts the background/text palette while keeping accents recognizable. Renders panels and tooltips as bright "windows" on GOG's dark pages — high contrast, very scannable. Selectable from Advanced Options → Look & feel and from onboarding step 4.
+- **Live theme preview** on the options page. Clicking a swatch now updates the page's accent colors immediately (the surrounding UI flashes to the new palette) instead of requiring a reload to see the change.
+- **Compact density toggle** in the tag dashboard toolbar. One click switches the entire dashboard (stat cards, year-in-review, tag pills, game cards) to a tighter layout. Useful for power users with many tags. Persisted per device in `tagDashboardDensity`.
+
+**Infrastructure**
+- GitHub Actions CI: `.github/workflows/test.yml` runs `npm test` + `npm run lint` on every push to `main` and on every PR.
+- ESLint flat config with extension-specific globals (chrome.*, GOGPlusStorage, GOG_PLUS_DEFAULTS, etc.). `npm run lint` is now part of the test workflow.
+- `.gitattributes` pins LF for text files in the repo (PowerShell stays CRLF, binaries unchanged). Keeps diffs on GitHub clean across contributors with different `core.autocrlf` settings.
+- 10 new Vitest specs for `content/price-history.js`: `record` dedup + trim to 100, `lowest`, `stats`, and the input-validation edge cases. Total 34 tests, all passing.
+
+### v2.1.0 — Tag management, themes, refund timer, notifications
 
 **New features**
 - **Theme picker** — four presets (Neon, Classic GOG, CRT Green, Sunset) overriding the accent variables across the whole UI. Now part of the onboarding wizard (step 4) and live-switchable from Advanced Options → Look & feel.

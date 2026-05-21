@@ -18,6 +18,17 @@ const PRESETS = {
 
 const DEFAULTS = window.GOG_PLUS_DEFAULTS;
 
+function applyThemeClassToHtml(theme) {
+  // Strip any prior gog-plus-theme--* class so themes don't compose,
+  // then add the current one. "neon" is the CSS default so the class
+  // is harmless; we still add it for consistency with content.js.
+  const html = document.documentElement;
+  [...html.classList]
+    .filter((c) => c.startsWith("gog-plus-theme--"))
+    .forEach((c) => html.classList.remove(c));
+  html.classList.add(`gog-plus-theme--${theme || "neon"}`);
+}
+
 let saveStatusTimer = null;
 function flashSaved() {
   const el = $("saveStatus");
@@ -71,8 +82,9 @@ async function load() {
   if ($("debugLogging")) $("debugLogging").checked = !!s.debugLogging;
   if ($("desktopNotifications")) $("desktopNotifications").checked = !!s.desktopNotifications;
 
-  // Active theme swatch
+  // Active theme swatch + live preview on the options page itself
   const activeTheme = s.theme || "neon";
+  applyThemeClassToHtml(activeTheme);
   document.querySelectorAll(".theme-swatch").forEach((b) => {
     b.classList.toggle("active", b.dataset.theme === activeTheme);
   });
@@ -203,12 +215,13 @@ function bind() {
     flashSaved();
   });
 
-  // Theme swatches
+  // Theme swatches — live preview on the options page, then persist.
   document.querySelectorAll(".theme-swatch").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const theme = btn.dataset.theme;
       document.querySelectorAll(".theme-swatch").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
+      applyThemeClassToHtml(theme);
       await window.GOGPlusStorage.set({ theme });
       flashSaved();
     });

@@ -1,0 +1,16 @@
+# Normalize text files to LF in the repository, regardless of OS.
+# Windows checkouts will see CRLF (controlled by core.autocrlf) but the
+# committed bytes stay LF — keeps diffs on GitHub clean.
+* text=auto eol=lf
+
+# PowerShell scripts are Windows-only — keep CRLF.
+*.ps1 text eol=crlf
+
+# Binary assets — never normalize.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.zip  binary
+*.woff binary
+*.woff2 binary

@@ -56,6 +56,22 @@ html.gog-plus-theme--sunset {
   --gp-cyan: #ff3d8b;
   --gp-pink: #ffd166;
 }
+/* Light theme — inverts the background/text palette while keeping the
+   accents recognizable. GOG itself is dark, so the extension's panels
+   render as bright "windows" on the dark site — high contrast, scannable. */
+html.gog-plus-theme--light {
+  --gp-bg: #f8f5ff;
+  --gp-surface: #ffffff;
+  --gp-text: #1a0a2a;
+  --gp-text-dim: rgba(26, 10, 42, 0.65);
+  --gp-text-muted: rgba(26, 10, 42, 0.45);
+  --gp-border: rgba(26, 10, 42, 0.12);
+  --gp-border-strong: rgba(26, 10, 42, 0.28);
+  --gp-magenta: #7a1fc7;
+  --gp-cyan: #00a8b8;
+  --gp-green: #1fa05c;
+  --gp-pink: #d63a82;
+}
 
 /* When master toggle is off, hide everything we injected */
 html.gog-plus-disabled .gog-plus-conv-note,

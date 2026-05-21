@@ -1,7 +1,7 @@
 # Privacy Policy — GOG Enhancer
 
 **Last updated:** May 18, 2026
-**Extension version:** 2.1.0+
+**Extension version:** 2.1.1+
 **Contact:** https://github.com/DrummingBird1/GOGEnhancer/issues
 
 GOG Enhancer is an unofficial third-party browser extension that enhances the
@@ -45,6 +45,7 @@ extension:
 | Cached count of discounted wishlist items | `chrome.storage.local` | To set the toolbar badge counter |
 | Cached currency exchange rates and the last fetch error (if any) | `chrome.storage.sync` | So we don't refetch on every page; the error string lets the popup tell you when the rate refresh failed |
 | Onboarding completion flag and the verbose-logging toggle | `chrome.storage.sync` | So we don't show the welcome wizard twice; the debug toggle is yours to flip in Advanced Options |
+| Tag-dashboard density preference (comfortable / compact) | `chrome.storage.local` | Per-device UI preference — the dashboard remembers your choice between visits |
 
 You can wipe all of this at any time from the **Advanced Settings** page
 (toolbar icon → Advanced → Reset everything).

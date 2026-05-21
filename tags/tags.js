@@ -14,6 +14,7 @@ let allHistory = {}; // { slug: [{d, p, c}, ...] }
 let allPurchases = {}; // { slug: "YYYY-MM-DD" }
 let tagColors = {}; // { tagName: "#hex" }
 let tagOrder = []; // explicit order of tags after drag-reorder; unordered = end
+let density = "comfortable"; // "comfortable" | "compact"
 let activeTag = null;
 let searchTerm = "";
 
@@ -36,6 +37,7 @@ async function init() {
     purchaseLog: {},
     tagColors: {},
     tagOrder: [],
+    tagDashboardDensity: "comfortable",
   });
   allTags = data.tags || {};
   allNotes = data.notes || {};
@@ -43,11 +45,17 @@ async function init() {
   allPurchases = data.purchaseLog || {};
   tagColors = data.tagColors || {};
   tagOrder = Array.isArray(data.tagOrder) ? data.tagOrder : [];
+  density = data.tagDashboardDensity === "compact" ? "compact" : "comfortable";
+  applyDensityClass();
   renderStats();
   renderYearReview();
   renderTagList();
   renderGames();
   bind();
+}
+
+function applyDensityClass() {
+  document.body.classList.toggle("density-compact", density === "compact");
 }
 
 function sortedTags() {
@@ -465,6 +473,11 @@ function bind() {
     renderGames();
   });
   $("exportCsv").addEventListener("click", exportCsv);
+  $("densityToggle").addEventListener("click", async () => {
+    density = density === "compact" ? "comfortable" : "compact";
+    applyDensityClass();
+    await window.GOGPlusStorage.set({ tagDashboardDensity: density });
+  });
   document.addEventListener("click", (e) => {
     const picker = document.getElementById("tagColorPicker");
     if (picker && !picker.contains(e.target) && !e.target.closest(".tag-pill-swatch")) {

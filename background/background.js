@@ -118,13 +118,22 @@ const WL_ALARM = "gog-plus-wishlist";
 const WL_INTERVAL_MIN = 6 * 60;
 const WL_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
+const THEME_BADGE_COLORS = {
+  neon: "#c64fff",
+  classic: "#8a2be2",
+  crt: "#00ff66",
+  sunset: "#ff7a00",
+  light: "#8a2be2",
+};
+
 async function refreshWishlistBadge() {
   try {
-    const { wishlistAlerts, wishlistCache, wishlistCacheUpdatedAt } =
+    const { wishlistAlerts, wishlistCache, wishlistCacheUpdatedAt, theme } =
       await self.GOGPlusStorage.get({
         wishlistAlerts: true,
         wishlistCache: { discountedCount: 0 },
         wishlistCacheUpdatedAt: 0,
+        theme: "neon",
       });
 
     if (!wishlistAlerts) {
@@ -138,7 +147,9 @@ async function refreshWishlistBadge() {
 
     if (count > 0) {
       chrome.action.setBadgeText({ text: String(Math.min(count, 99)) });
-      chrome.action.setBadgeBackgroundColor({ color: "#c64fff" });
+      chrome.action.setBadgeBackgroundColor({
+        color: THEME_BADGE_COLORS[theme] || THEME_BADGE_COLORS.neon,
+      });
       chrome.action.setTitle({
         title: `GOG Enhancer — ${count} wishlist item${count === 1 ? "" : "s"} on sale`,
       });

@@ -30,7 +30,6 @@
   let settings = { ...DEFAULTS };
   let pageCurrency = { code: "USD", symbol: "$" };
   let observers = [];
-  let scheduled = null;
 
   /* ============== utils ============== */
 
@@ -91,6 +90,25 @@
     if (og) return (og.getAttribute("content") || "").replace(/\s*on GOG\.com\s*$/, "");
     return null;
   };
+
+  // Pulls the last price token from `txt` (assumed to be in pageCurrency),
+  // converts it to USD via the rate matrix so filters like "Under $10" work
+  // regardless of which locale GOG is showing the user.
+  function priceInUsdFromText(txt) {
+    const sym = pageCurrency.symbol;
+    if (!sym || !txt) return null;
+    const escSym = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matches = txt.match(new RegExp(escSym + "\\s?[\\d.,]+", "g"));
+    if (!matches?.length) return null;
+    const native = window.GOGPlusCurrency.parsePrice(
+      matches[matches.length - 1],
+      pageCurrency.code
+    );
+    if (native == null) return null;
+    if (pageCurrency.code === "USD") return native;
+    const rate = settings.rates[pageCurrency.code];
+    return rate ? native / rate : null;
+  }
 
   // Genre-aware card detection. Cyberpunk + Witcher have their own neon
   // class so they're intentionally excluded here. First match wins per slug.
@@ -496,12 +514,9 @@
       counts.all++;
       const txt = c.textContent || "";
       if (/-\d{1,2}%/.test(txt)) counts.sale++;
-      const usdMatches = txt.match(/\$\s?\d+\.\d{2}/g) || [];
-      const finalUsd = usdMatches.length
-        ? window.GOGPlusCurrency.parsePrice(usdMatches[usdMatches.length - 1], "USD")
-        : null;
-      if (finalUsd !== null && finalUsd < 10) counts.under10++;
-      if (finalUsd !== null && finalUsd < 25) counts.under25++;
+      const usdEq = priceInUsdFromText(txt);
+      if (usdEq !== null && usdEq < 10) counts.under10++;
+      if (usdEq !== null && usdEq < 25) counts.under25++;
       const ratingMatch = txt.match(/(\d\.\d)\s*\d+\s*reviews/);
       if (ratingMatch && parseFloat(ratingMatch[1]) >= 4.5) counts.rated45++;
       for (const { genre, re } of GENRE_PATTERNS) {
@@ -605,20 +620,14 @@
     cards.forEach((c) => {
       const slug = slugFromHref(c.getAttribute("href"));
       const txt = c.textContent || "";
-      const usdMatches = txt.match(/\$\s?\d+\.\d{2}/g) || [];
-      const finalUsd = usdMatches.length
-        ? window.GOGPlusCurrency.parsePrice(
-            usdMatches[usdMatches.length - 1],
-            "USD"
-          )
-        : null;
+      const usdEq = priceInUsdFromText(txt);
       const ratingMatch = txt.match(/(\d\.\d)\s*\d+\s*reviews/);
       const rating = ratingMatch ? parseFloat(ratingMatch[1]) : null;
 
       let show = true;
       if (mode === "sale") show = /-\d+%/.test(txt);
-      else if (mode === "under10") show = finalUsd !== null && finalUsd < 10;
-      else if (mode === "under25") show = finalUsd !== null && finalUsd < 25;
+      else if (mode === "under10") show = usdEq !== null && usdEq < 10;
+      else if (mode === "under25") show = usdEq !== null && usdEq < 25;
       else if (mode === "rated45") show = rating !== null && rating >= 4.5;
       else if (genrePattern) show = !!slug && genrePattern.test(slug);
 

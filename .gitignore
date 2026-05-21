@@ -5,6 +5,9 @@ node_modules/
 # Build artifacts — produced by build.ps1 on demand
 gog-enhancer-webstore.zip
 gog-enhancer-source.zip
+# Manual extractions of the webstore zip (for testing in Chrome)
+gog-enhancer-webstore/
+gog-enhancer-source/
 
 # Local tooling config (Claude Code, IDE)
 .claude/

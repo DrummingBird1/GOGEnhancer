@@ -573,3 +573,32 @@ a:hover { text-decoration: underline; }
   color: var(--text-tertiary);
   font-style: italic;
 }
+
+/* ============================================================
+   Compact density — reduces padding/gap/font sizes across cards
+   so power users with many tags fit more on-screen.
+   Toggle from the dashboard toolbar.
+   ============================================================ */
+body.density-compact .stats-panel { gap: 6px; padding-bottom: 14px; }
+body.density-compact .stat-card { padding: 8px 12px; gap: 2px; }
+body.density-compact .stat-value { font-size: 17px; }
+body.density-compact .stat-label { font-size: 9.5px; }
+body.density-compact .stat-sub { font-size: 10px; }
+
+body.density-compact .year-review { padding-bottom: 14px; }
+body.density-compact .yr-grid { gap: 6px; }
+body.density-compact .yr-card { padding: 10px 12px; gap: 3px; }
+body.density-compact .yr-value { font-size: 19px; }
+body.density-compact .yr-value--small { font-size: 12.5px; }
+body.density-compact .yr-header h2 { font-size: 18px; }
+
+body.density-compact .tag-pill { padding: 4px 10px; font-size: 12px; gap: 6px; }
+body.density-compact .tag-pill-name { font-size: 12px; }
+body.density-compact .tag-pill-count { font-size: 10px; }
+
+body.density-compact .game-card { padding: 12px 14px; }
+body.density-compact .game-card-title { font-size: 14px; margin-bottom: 4px; }
+body.density-compact .game-card-slug { font-size: 10px; margin-bottom: 6px; }
+body.density-compact .game-card-tags { gap: 3px; margin-bottom: 6px; }
+body.density-compact .game-card-note { font-size: 11px; max-height: 90px; padding: 6px 8px; }
+body.density-compact .game-list { gap: 8px; }

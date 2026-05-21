@@ -401,6 +401,10 @@ a:hover { text-decoration: underline; }
 .theme-card--classic { background: linear-gradient(135deg, #8a2be2, #b388ff); }
 .theme-card--crt     { background: linear-gradient(135deg, #00ff66, #00cc4d); }
 .theme-card--sunset  { background: linear-gradient(135deg, #ff7a00, #ff3d8b); }
+.theme-card--light {
+  background: linear-gradient(135deg, #ffffff 0%, #f3eeff 60%, #7a1fc7 100%);
+  border: 1px solid rgba(26, 10, 42, 0.20);
+}
 
 /* Done state */
 .done-wrap {
