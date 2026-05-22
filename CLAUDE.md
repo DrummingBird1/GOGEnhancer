@@ -16,15 +16,24 @@ The extension lives directly at the repo root — `background/`, `content/`, `li
 
 ## Running and debugging
 
-Plain vanilla JS — no `npm install`, no test runner, no linter configured.
+The extension itself is plain vanilla JS — no bundler, no framework. A Vitest + ESLint harness lives alongside for pure-utility testing and linting (`npm install` once, see Run tests / Lint below).
 
-- **Load unpacked**: `chrome://extensions/` → enable Developer mode → "Load unpacked" → pick `gog-enhancer-source/`. On install, the onboarding wizard opens in a new tab automatically.
+- **Load unpacked**: `chrome://extensions/` → enable Developer mode → "Load unpacked" → pick the repo root. On install, the onboarding wizard opens in a new tab automatically.
 - **Reload after edits**: click the reload icon for the extension on `chrome://extensions/`, then refresh the gog.com tab. The popup has a "Reload tab" button that does the latter for the active tab.
 - **Content-script debug logging**: flip "Verbose console logging" in Advanced Options, or set `window.GOG_PLUS_DEBUG = true` in the gog.com DevTools console for one-off use. The content script logs prefixed `[GOG+]`.
 - **Inspect the service worker**: `chrome://extensions/` → "service worker" link under the extension card. Use its console to inspect alarms, FX fetches, and `runtime.onMessage` traffic.
 - **Force background jobs** (no need to wait for alarms): in the SW console, send `chrome.runtime.sendMessage({type: "force-fx-refresh"})` / `"force-mods-refresh"` / `"force-wishlist-refresh"`. Or use the buttons on the options page.
 - **Repack for Web Store**: `.\build.ps1` → writes `gog-enhancer-webstore.zip` at the repo root.
 - **Run tests**: `npm install` (one-time) → `npm test` (one-shot) or `npm run test:watch`. Specs live under `tests/`; environment is happy-dom with a chrome.* shim in `tests/setup.js`.
+- **Lint**: `npm run lint` (runs ESLint flat config in `eslint.config.js`). CI also runs this on every push and PR via `.github/workflows/test.yml`.
+
+## GitHub workflow
+
+- `main` is the only branch. Two existing remote commits ("Add files via upload") plus the v2.1+ commits sit on it.
+- The repo is at https://github.com/DrummingBird1/GOGEnhancer. Push uses the GitHub noreply email (`1979036+DrummingBird1@users.noreply.github.com`) — the user has the "block pushes that expose my email" privacy guard enabled, so commits authored as `idan062@gmail.com` will bounce. Use `git -c user.email=1979036+DrummingBird1@users.noreply.github.com -c user.name=DrummingBird1` for per-command override (no global config write).
+- Local Windows-on-D: triggers git's "dubious ownership" warning. Prefix git commands with `-c safe.directory=D:/AI/Claude/GOGEnhancer` to bypass per command without writing global config.
+- **Auto-push convention**: after a finished round of work (multiple related changes, lint+tests green, build verified), commit + push to `main` without requiring per-push confirmation. The user has authorized this end-to-end pattern. Show the resulting commit SHA in the wrap-up message. Don't push WIP mid-conversation; don't push if tests are failing.
+- **Releases are tag-driven**: `.github/workflows/release.yml` watches `v*.*.*` tags. To cut a release after a version bump, run `git tag v2.1.2 && git push origin v2.1.2` — the workflow verifies the tag matches `manifest.json`'s `version`, runs `build.ps1` via `pwsh` on the Ubuntu runner, and publishes a GitHub Release with `gog-enhancer-webstore.zip` attached.
 
 ## Architecture
 

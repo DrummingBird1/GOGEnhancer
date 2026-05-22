@@ -1,0 +1,39 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+# The workflow needs write access to create the Release.
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag matches manifest.json version
+        shell: pwsh
+        run: |
+          $manifestVersion = (Get-Content manifest.json -Raw | ConvertFrom-Json).version
+          $tagVersion = "${{ github.ref_name }}".TrimStart("v")
+          if ($manifestVersion -ne $tagVersion) {
+            Write-Error "Tag $tagVersion does not match manifest.json version $manifestVersion."
+            exit 1
+          }
+          Write-Output "Tag v$tagVersion matches manifest.json — proceeding."
+
+      - name: Build extension zip
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: gog-enhancer-webstore.zip
+          fail_on_unmatched_files: true
