@@ -91,6 +91,34 @@
     return null;
   };
 
+  // Build the quick-look HTML stamped on each game card as data-gog-plus-tip.
+  // Shows price-history stats + user's tags. Returns "" for cards with no data
+  // so we don't clutter every fresh card with an empty tooltip.
+  function buildQuickLookHtml(slug) {
+    const ph = settings.priceHistory?.[slug];
+    const tags = settings.tags?.[slug] || [];
+    if ((!ph || !ph.length) && !tags.length) return "";
+    const title = slug.split("_").map((w) => w[0]?.toUpperCase() + w.slice(1)).join(" ");
+    let body = `<strong>${escapeHtml(title)}</strong>`;
+    if (ph && ph.length) {
+      const prices = ph.map((e) => e.p);
+      const minP = Math.min(...prices);
+      const latest = ph[ph.length - 1];
+      const sym = symbolFor(latest.c || "USD");
+      const minIdx = prices.indexOf(minP);
+      const isAtLow = latest.p === minP;
+      body += `<br><span class="gog-plus-ql-row"><em>Current:</em> ${sym}${latest.p.toFixed(2)}${isAtLow ? " ⭐" : ""}</span>`;
+      body += `<span class="gog-plus-ql-row"><em>All-time low:</em> ${sym}${minP.toFixed(2)} <span class="gog-plus-ql-dim">(${ph[minIdx].d})</span></span>`;
+      body += `<span class="gog-plus-ql-row"><em>Snapshots:</em> ${ph.length}</span>`;
+      body += `<span class="gog-plus-ql-row"><em>Last visit:</em> ${latest.d}</span>`;
+    }
+    if (tags.length) {
+      const chips = tags.map((t) => `<span class="gog-plus-ql-tag">${escapeHtml(t)}</span>`).join("");
+      body += `<div class="gog-plus-ql-tags">${chips}</div>`;
+    }
+    return body;
+  }
+
   // Pulls the last price token from `txt` (assumed to be in pageCurrency),
   // converts it to USD via the rate matrix so filters like "Under $10" work
   // regardless of which locale GOG is showing the user.
@@ -255,6 +283,10 @@
       seenSlugs.add(slug);
       card.classList.add("gog-plus-card-done");
       card.classList.add("gog-plus-card");
+      if (settings.richTooltips) {
+        const ql = buildQuickLookHtml(slug);
+        if (ql) card.dataset.gogPlusTip = ql;
+      }
 
       // Mark the chosen cover host so CSS scopes badges to it.
       host.classList.add("gog-plus-cover-host");
@@ -714,17 +746,48 @@
     }
   }
 
+  // Convert one history entry to a target currency via the USD rate matrix.
+  // Returns the original entry if either rate is missing (best-effort).
+  function normalizeEntryToCurrency(e, targetCur) {
+    if (!e || !targetCur || e.c === targetCur) return e;
+    const srcRate = e.c === "USD" ? 1 : settings.rates[e.c];
+    const tgtRate = targetCur === "USD" ? 1 : settings.rates[targetCur];
+    if (!srcRate || !tgtRate) return e;
+    return { ...e, p: (e.p / srcRate) * tgtRate, c: targetCur, _origP: e.p, _origC: e.c };
+  }
+
   async function renderPriceHistorySection(slug) {
     const wrap = document.createElement("section");
     wrap.className = "gog-plus-gp-section";
-    const stats = await window.GOGPlusPriceHistory.stats(slug);
-    if (!stats) {
+    const rawStats = await window.GOGPlusPriceHistory.stats(slug);
+    if (!rawStats) {
       wrap.innerHTML = `
         <h3>Price history</h3>
         <p class="gog-plus-gp-muted">No history yet — we'll start tracking from this visit.</p>`;
       return wrap;
     }
-    const entries = await window.GOGPlusPriceHistory.get(slug);
+    const rawEntries = await window.GOGPlusPriceHistory.get(slug);
+
+    // Normalize every snapshot to the user's target currency (falling back to
+    // the latest snapshot's currency if no target is set). Stops mixed-currency
+    // sparklines when the user has changed targetCurrency mid-tracking.
+    const displayCur =
+      settings.targetCurrency && settings.targetCurrency !== "none"
+        ? settings.targetCurrency
+        : rawStats.currency;
+    const entries = rawEntries.map((e) => normalizeEntryToCurrency(e, displayCur));
+    const prices = entries.map((e) => e.p);
+    const minP = Math.min(...prices);
+    const maxP = Math.max(...prices);
+    const stats = {
+      count: entries.length,
+      min: { price: minP, date: entries[prices.indexOf(minP)].d },
+      max: { price: maxP, date: entries[prices.indexOf(maxP)].d },
+      avg: prices.reduce((a, b) => a + b, 0) / entries.length,
+      first: entries[0],
+      latest: entries[entries.length - 1],
+      currency: displayCur,
+    };
     const sym = symbolFor(stats.currency);
     const lowest = `${sym}${stats.min.price.toFixed(2)}`;
     const current = `${sym}${stats.latest.p.toFixed(2)}`;

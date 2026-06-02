@@ -25,9 +25,38 @@ async function runMigrations() {
     const toLocal = {};
     if (syncAll.tags) toLocal.tags = syncAll.tags;
     if (syncAll.notes) toLocal.notes = syncAll.notes;
+
     if (Object.keys(toLocal).length) {
-      await new Promise((r) => chrome.storage.local.set(toLocal, r));
-      await new Promise((r) => chrome.storage.sync.remove(["tags", "notes"], r));
+      // Step 1: write to local. If this fails, abort migration entirely —
+      // settingsVersion stays at 1 so the next run retries.
+      try {
+        await new Promise((resolve, reject) => {
+          chrome.storage.local.set(toLocal, () => {
+            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+            else resolve();
+          });
+        });
+      } catch (err) {
+        console.error("[GOG+ bg] migration v1→v2 local.set failed, aborting:", err);
+        return;
+      }
+
+      // Step 2: remove the now-duplicate sync keys. If this fails, the data
+      // is still safely in local — we just leave stale sync entries behind
+      // and continue. They'll be wiped if the user ever runs Reset Everything.
+      try {
+        await new Promise((resolve, reject) => {
+          chrome.storage.sync.remove(["tags", "notes"], () => {
+            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+            else resolve();
+          });
+        });
+      } catch (err) {
+        console.warn(
+          "[GOG+ bg] migration v1→v2 sync cleanup failed (data preserved in local, sync may have stale tags/notes):",
+          err
+        );
+      }
     }
   }
   await self.GOGPlusStorage.set({ settingsVersion: CURRENT_SETTINGS_VERSION });

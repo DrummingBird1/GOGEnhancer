@@ -243,6 +243,16 @@ html.gog-plus-design body::before {
       transparent 50%
     );
   mix-blend-mode: screen;
+  animation: gog-plus-ambient-drift 90s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes gog-plus-ambient-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(0.8%, -0.5%) scale(1.02); }
+  66%      { transform: translate(-0.6%, 0.4%) scale(1.015); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.gog-plus-design body::before { animation: none; }
 }
 
 /* Card shadows pick up gentle warmth */

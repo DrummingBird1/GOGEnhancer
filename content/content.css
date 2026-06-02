@@ -73,6 +73,24 @@ html.gog-plus-theme--light {
   --gp-pink: #d63a82;
 }
 
+/* Smooth cross-fade on theme switch. Only color-family properties animate. */
+.gog-plus-gamepanel, .gog-plus-tooltip, .gog-plus-banner,
+.gog-plus-wlfilters, .gog-plus-wlfilter, .gog-plus-badge,
+.gog-plus-conv-note, .gog-plus-tag-chip {
+  transition:
+    background-color 280ms ease,
+    color 280ms ease,
+    border-color 280ms ease,
+    box-shadow 280ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gog-plus-gamepanel, .gog-plus-tooltip, .gog-plus-banner,
+  .gog-plus-wlfilters, .gog-plus-wlfilter, .gog-plus-badge,
+  .gog-plus-conv-note, .gog-plus-tag-chip {
+    transition: none;
+  }
+}
+
 /* When master toggle is off, hide everything we injected */
 html.gog-plus-disabled .gog-plus-conv-note,
 html.gog-plus-disabled .gog-plus-badges,
@@ -689,6 +707,38 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--gp-cyan);
+}
+
+/* Quick-look stacks (cards hover popover) */
+.gog-plus-ql-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--gp-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.gog-plus-ql-row em {
+  font-style: normal;
+  color: var(--gp-text-dim);
+}
+.gog-plus-ql-dim { color: var(--gp-text-muted); }
+.gog-plus-ql-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--gp-border);
+}
+.gog-plus-ql-tag {
+  background: rgba(0, 240, 255, 0.10);
+  border: 1px solid rgba(0, 240, 255, 0.30);
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 10px;
   color: var(--gp-cyan);
 }
 

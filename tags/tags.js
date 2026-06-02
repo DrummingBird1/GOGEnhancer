@@ -86,10 +86,27 @@ async function reorderTagBefore(fromTag, beforeTag) {
   renderTagList();
 }
 
+let yearReviewYear = null; // null = current year
+
+function availableReviewYears() {
+  const years = new Set();
+  for (const arr of Object.values(allHistory)) {
+    for (const e of arr || []) {
+      const y = (e.d || "").slice(0, 4);
+      if (/^\d{4}$/.test(y)) years.add(y);
+    }
+  }
+  for (const d of Object.values(allPurchases)) {
+    const y = (d || "").slice(0, 4);
+    if (/^\d{4}$/.test(y)) years.add(y);
+  }
+  return [...years].sort().reverse(); // newest first
+}
+
 function renderYearReview() {
   const panel = document.getElementById("yearReview");
   if (!panel) return;
-  const year = new Date().getFullYear();
+  const year = parseInt(yearReviewYear || String(new Date().getFullYear()), 10);
   const yearPrefix = String(year);
 
   let snapshotsThisYear = 0;
@@ -164,10 +181,21 @@ function renderYearReview() {
     ? `<strong>${escapeHtml(slugToTitle(mostTracked.slug))}</strong> <span class="yr-detail">${mostTracked.count} snapshots</span>`
     : `<span class="yr-empty">—</span>`;
 
+  const years = availableReviewYears();
+  const yearOptions = years
+    .map(
+      (y) =>
+        `<option value="${y}"${parseInt(y, 10) === year ? " selected" : ""}>${y}</option>`
+    )
+    .join("");
+
   panel.innerHTML = `
     <header class="yr-header">
       <span class="yr-eyebrow">Your ${year} in GOG</span>
-      <h2>Library year-in-review</h2>
+      <div class="yr-title-row">
+        <h2>Library year-in-review</h2>
+        ${years.length > 1 ? `<select class="yr-year-select" id="yrYearSelect" aria-label="Select year">${yearOptions}</select>` : ""}
+      </div>
     </header>
     <div class="yr-grid">
       <div class="yr-card">
@@ -195,6 +223,14 @@ function renderYearReview() {
       </div>
     </div>
   `;
+
+  const yrSel = document.getElementById("yrYearSelect");
+  if (yrSel) {
+    yrSel.addEventListener("change", () => {
+      yearReviewYear = yrSel.value;
+      renderYearReview();
+    });
+  }
 }
 
 function renderStats() {
@@ -241,6 +277,20 @@ function renderStats() {
     return ms >= 0 && ms <= 30 * 24 * 60 * 60 * 1000;
   }).length;
 
+  // Storage usage estimate — sum stringified sizes of the local-side blobs.
+  // chrome.storage.local quota is 5 MB so we render usage / quota.
+  const localBytes = JSON.stringify({
+    tags: allTags,
+    tagColors,
+    tagOrder,
+    notes: allNotes,
+    priceHistory: allHistory,
+    purchaseLog: allPurchases,
+  }).length;
+  const localKb = (localBytes / 1024).toFixed(1);
+  const quotaPct = Math.min(100, (localBytes / (5 * 1024 * 1024)) * 100);
+  const storageSub = `${quotaPct < 1 ? "<1" : quotaPct.toFixed(1)}% of 5 MB local quota`;
+
   const cards = [
     { label: "Tagged games", value: taggedGames, sub: `${uniqueTags.size} unique tag${uniqueTags.size === 1 ? "" : "s"} · ${totalTagsSpent} total` },
     { label: "Notes written", value: notesCount, sub: notesCount === 1 ? "across 1 game" : `across ${notesCount} game${notesCount === 1 ? "" : "s"}` },
@@ -248,6 +298,7 @@ function renderStats() {
     { label: "Tracking since", value: oldest || "—", sub: oldest ? daysSince(oldest) : "no snapshots yet" },
     { label: "Watch advantage", value: savingsParts || "—", sub: "current vs. peak across tracked games" },
     { label: "Refunds open", value: activeRefunds, sub: activeRefunds ? "within 30-day window" : "no purchases logged" },
+    { label: "Storage used", value: `${localKb} KB`, sub: storageSub },
   ];
 
   panel.innerHTML = cards
@@ -355,6 +406,8 @@ function renderTagList() {
   }
 }
 
+let sortBy = "name"; // "name" | "lastVisit" | "tagCount" | "snapshots"
+
 function matchingSlugs() {
   const slugs = new Set([...Object.keys(allTags), ...Object.keys(allNotes)]);
   const out = [];
@@ -369,7 +422,28 @@ function matchingSlugs() {
     if (!tags.length && !note) continue;
     out.push(slug);
   }
-  return out.sort();
+  return applySort(out);
+}
+
+function applySort(slugs) {
+  const lastVisit = (slug) => {
+    const arr = allHistory[slug];
+    return arr?.length ? arr[arr.length - 1].d : "";
+  };
+  const tagCount = (slug) => (allTags[slug]?.length) || 0;
+  const snapshots = (slug) => (allHistory[slug]?.length) || 0;
+
+  switch (sortBy) {
+    case "lastVisit":
+      return slugs.sort((a, b) => lastVisit(b).localeCompare(lastVisit(a)));
+    case "tagCount":
+      return slugs.sort((a, b) => tagCount(b) - tagCount(a) || a.localeCompare(b));
+    case "snapshots":
+      return slugs.sort((a, b) => snapshots(b) - snapshots(a) || a.localeCompare(b));
+    case "name":
+    default:
+      return slugs.sort();
+  }
 }
 
 function renderGames() {
@@ -392,7 +466,10 @@ function renderGames() {
     const note = allNotes[slug] || "";
     const title = slugToTitle(slug);
     card.innerHTML = `
-      <h3 class="game-card-title">${escapeHtml(title)}</h3>
+      <div class="game-card-header">
+        <h3 class="game-card-title">${escapeHtml(title)}</h3>
+        <button class="game-card-export" type="button" data-slug="${escapeHtml(slug)}" title="Export this game's data as JSON" aria-label="Export ${escapeHtml(title)}">↓</button>
+      </div>
       <span class="game-card-slug">${escapeHtml(slug)}</span>
       <div class="game-card-tags">
         ${tags
@@ -408,8 +485,35 @@ function renderGames() {
         Open on GOG →
       </a>
     `;
+    card.querySelector(".game-card-export").addEventListener("click", (e) => {
+      e.stopPropagation();
+      exportSingleGame(slug);
+    });
     list.appendChild(card);
   }
+}
+
+function exportSingleGame(slug) {
+  const payload = {
+    slug,
+    exportedAt: new Date().toISOString(),
+    tags: allTags[slug] || [],
+    note: allNotes[slug] || "",
+    purchaseDate: allPurchases[slug] || null,
+    priceHistory: allHistory[slug] || [],
+    tagColors: Object.fromEntries(
+      (allTags[slug] || []).filter((t) => tagColors[t]).map((t) => [t, tagColors[t]])
+    ),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `gog-plus-${slug}-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function slugToTitle(slug) {
@@ -477,6 +581,10 @@ function bind() {
     density = density === "compact" ? "comfortable" : "compact";
     applyDensityClass();
     await window.GOGPlusStorage.set({ tagDashboardDensity: density });
+  });
+  $("sortBy").addEventListener("change", (e) => {
+    sortBy = e.target.value;
+    renderGames();
   });
   document.addEventListener("click", (e) => {
     const picker = document.getElementById("tagColorPicker");
@@ -592,8 +700,13 @@ function openColorPicker(tag, anchor) {
         data-color="${c}" style="background:${c}" type="button"
         aria-label="Use ${c}"></button>`
   ).join("");
+  const currentColor = tagColors[tag] || "#c64fff";
   picker.innerHTML = `
     ${swatchesHtml}
+    <label class="tag-color-custom" title="Pick any color">
+      <input type="color" id="tagColorCustom" value="${currentColor}" />
+      <span class="tag-color-custom-label">Custom</span>
+    </label>
     <button class="tag-color-clear" data-clear="1" type="button">Default</button>
   `;
   document.body.appendChild(picker);
@@ -602,18 +715,24 @@ function openColorPicker(tag, anchor) {
   picker.style.left = `${Math.round(r.left + window.scrollX)}px`;
   picker.style.top = `${Math.round(r.bottom + window.scrollY + 6)}px`;
 
-  picker.addEventListener("click", async (e) => {
-    const btn = e.target.closest("[data-color], [data-clear]");
-    if (!btn) return;
-    if (btn.dataset.clear) {
-      delete tagColors[tag];
-    } else {
-      tagColors[tag] = btn.dataset.color;
-    }
+  const saveColor = async (color) => {
+    if (color === null) delete tagColors[tag];
+    else tagColors[tag] = color;
     await window.GOGPlusStorage.set({ tagColors });
     picker.remove();
     renderTagList();
     renderGames();
+  };
+
+  picker.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-color], [data-clear]");
+    if (!btn) return;
+    saveColor(btn.dataset.clear ? null : btn.dataset.color);
+  });
+  // The native color input doesn't fire "click" usefully — use "change".
+  // We don't dismiss on input — let the user open the OS picker freely.
+  picker.querySelector("#tagColorCustom").addEventListener("change", (e) => {
+    saveColor(e.target.value);
   });
 }
 

@@ -57,6 +57,27 @@ html.gog-plus-theme--light {
   --accent-pink: #d63a82;
 }
 
+/* Smooth color cross-fade when the theme changes. Limited to color-family
+   properties so layout never animates. Disabled for reduced-motion users. */
+body, .hero, .card, .card.subtle, .preset, .theme-swatch, .stat-card,
+.yr-card, .ghost-mini, button.primary, button.ghost, button.danger,
+.rate-grid input, .grid-2 input, .grid-2 input:focus,
+.dev-toggle input[type="checkbox"], .save-status, .rate-status, .hero-pill {
+  transition:
+    background-color 280ms ease,
+    color 280ms ease,
+    border-color 280ms ease,
+    box-shadow 280ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  body, .hero, .card, .card.subtle, .preset, .theme-swatch, .stat-card,
+  .yr-card, .ghost-mini, button.primary, button.ghost, button.danger,
+  .rate-grid input, .grid-2 input, .grid-2 input:focus,
+  .dev-toggle input[type="checkbox"], .save-status, .rate-status, .hero-pill {
+    transition: none;
+  }
+}
+
 * { box-sizing: border-box; }
 html, body {
   margin: 0;
@@ -420,6 +441,28 @@ button.danger:hover {
   border-radius: 3px;
   font-size: 11.5px;
 }
+
+/* Dev row — for non-toggle controls (e.g. number inputs) */
+.dev-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0 4px;
+}
+.dev-num {
+  width: 90px;
+  background: rgba(244, 234, 255, 0.06);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color-scheme: dark;
+}
+.dev-num:focus { outline: none; border-color: var(--accent-cyan); }
 
 /* FX error surface */
 .rate-status.has-error {

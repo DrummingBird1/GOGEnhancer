@@ -81,6 +81,7 @@ async function load() {
   // Debug toggle
   if ($("debugLogging")) $("debugLogging").checked = !!s.debugLogging;
   if ($("desktopNotifications")) $("desktopNotifications").checked = !!s.desktopNotifications;
+  if ($("historyMaxEntries")) $("historyMaxEntries").value = s.historyMaxEntries ?? 100;
 
   // Active theme swatch + live preview on the options page itself
   const activeTheme = s.theme || "neon";
@@ -212,6 +213,15 @@ function bind() {
     await window.GOGPlusStorage.set({
       desktopNotifications: $("desktopNotifications").checked,
     });
+    flashSaved();
+  });
+
+  $("historyMaxEntries").addEventListener("change", async () => {
+    let v = parseInt($("historyMaxEntries").value, 10);
+    if (!Number.isFinite(v)) v = 100;
+    v = Math.min(500, Math.max(10, v));
+    $("historyMaxEntries").value = v;
+    await window.GOGPlusStorage.set({ historyMaxEntries: v });
     flashSaved();
   });
 

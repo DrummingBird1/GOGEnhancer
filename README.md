@@ -1,6 +1,6 @@
 # GOG Enhancer
 
-**Version 2.1.1** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
+**Version 2.2.0** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
 
 תוסף third-party (לא רשמי) ל-GOG.com — מטבע חי, היסטוריית מחירים, השוואת מחירים בין חנויות, תגיות אישיות, שדרוג עיצובי מלא, עברית ו-RTL, והכל ללא Google Fonts וללא analytics.
 
@@ -142,7 +142,26 @@ gog-plus/
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.1.1 (current) — Cross-currency wishlist filters, Light theme, polish
+### v2.2.0 (current) — Hover quick-look, year selector, dashboard polish
+
+**New features**
+- **Hover quick-look on game cards** — hover any game card in a listing and a rich tooltip shows current price, all-time low, your tags, and last visit date. Reuses the existing `data-gog-plus-tip` tooltip system; only stamped on cards that have data.
+- **Year-in-review with year selector** — the dashboard's year-in-review section is no longer locked to the current year. A dropdown appears when you have history spanning multiple years; pick any year to see its stats.
+- **Sortable dashboard columns** — sort tagged games by name, last visit date, tag count, or snapshot count. New toolbar dropdown.
+- **Per-game JSON export** — small `↓` button on every dashboard game card. One click downloads `gog-plus-{slug}-{date}.json` with that game's tags, note, purchase date, and full price history. Backup-friendly.
+- **Custom hex tag colors** — beyond the 8 preset swatches, the color picker now has a native color input. Pick any color from the OS color dial.
+- **History depth control** — number input in Advanced Options → Developer (range 10–500, default 100). `lib/storage` `historyMaxEntries` setting feeds `content/price-history.js` via cached read + onChange.
+- **Storage usage estimate** — extra stat card in the dashboard shows `X KB · Y% of 5 MB local quota` (computed locally, no Web Storage API call needed).
+
+**Bug fixes**
+- Sparkline + price-history stats now normalize every snapshot to the user's target currency via the USD rate matrix. Previously, after changing target currency the chart silently mixed old-currency and new-currency values.
+- `runMigrations()` is now atomic across the v1→v2 split. If `local.set` fails, settingsVersion stays at 1 and the migration retries next run. If only `sync.remove` fails afterwards, data is preserved in local and the stale sync entries are logged but don't block progress.
+
+**Visual polish**
+- 280 ms color cross-fade across panels, tooltips, badges, banner, and wishlist filter chips when switching themes. Disabled for `prefers-reduced-motion`.
+- Ambient background drift — the radial-gradient overlay on `body::before` now subtly shifts position+scale over a 90 s loop. Imperceptible motion, hints at depth. Reduced-motion friendly.
+
+### v2.1.1 — Cross-currency wishlist filters, Light theme, polish
 
 **Bug fixes**
 - Wishlist `< $10` / `< $25` filters now work in any locale. Page price is parsed in `pageCurrency.code` and converted to USD via the rate matrix before comparing — previously the regex only matched `$` and silently no-op'd for EU/UK/IL users.

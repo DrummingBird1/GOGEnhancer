@@ -16,7 +16,21 @@
 (() => {
   "use strict";
 
-  const MAX_ENTRIES = 100;
+  // MAX_ENTRIES per game. Default 100, user-overridable via the
+  // `historyMaxEntries` setting (clamped 10..500). We cache the value and
+  // refresh on storage change so we don't async-fetch on every record().
+  let MAX_ENTRIES = 100;
+  const clampMax = (n) => Math.min(500, Math.max(10, Math.floor(n)));
+  if (typeof window !== "undefined" && window.GOGPlusStorage) {
+    window.GOGPlusStorage.get({ historyMaxEntries: 100 }).then((s) => {
+      if (Number.isFinite(s.historyMaxEntries)) MAX_ENTRIES = clampMax(s.historyMaxEntries);
+    });
+    window.GOGPlusStorage.onChange(({ key, newValue }) => {
+      if (key === "historyMaxEntries" && Number.isFinite(newValue)) {
+        MAX_ENTRIES = clampMax(newValue);
+      }
+    });
+  }
 
   async function load() {
     const { priceHistory = {} } = await window.GOGPlusStorage.get({

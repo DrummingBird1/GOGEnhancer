@@ -230,6 +230,17 @@
           </span>
         </span>
       </label>
+
+      <div class="dev-row">
+        <div class="dev-toggle-text">
+          <span class="dev-toggle-title">Price history depth</span>
+          <span class="dev-toggle-sub">
+            Snapshots kept per game before oldest are dropped. Default 100.
+            Range 10–500. Higher = richer sparkline, more storage usage.
+          </span>
+        </div>
+        <input type="number" id="historyMaxEntries" min="10" max="500" step="10" class="dev-num" />
+      </div>
     </section>
 
     <!-- Privacy note -->

@@ -20,6 +20,12 @@
       </p>
       <div class="toolbar">
         <input type="search" id="search" placeholder="Search by game slug or note text…" autocomplete="off" />
+        <select id="sortBy" class="toolbar-select" title="Sort games by…">
+          <option value="name">Name</option>
+          <option value="lastVisit">Last visit</option>
+          <option value="tagCount">Tag count</option>
+          <option value="snapshots">Snapshot count</option>
+        </select>
         <span class="counts" id="counts"></span>
         <button id="densityToggle" class="ghost" type="button" title="Toggle compact / comfortable density">⇅ Density</button>
         <button id="exportCsv" class="ghost">↓ Export CSV</button>

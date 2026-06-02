@@ -290,6 +290,32 @@ a:hover { text-decoration: underline; }
   border-color: var(--border-strong);
   color: var(--text-primary);
 }
+
+.tag-color-custom {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.tag-color-custom:hover { border-color: var(--accent-cyan); }
+.tag-color-custom input[type="color"] {
+  width: 24px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.tag-color-custom-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text-secondary);
+}
 .tag-pill-name {
   font-weight: 600;
   text-overflow: ellipsis;
@@ -337,14 +363,55 @@ a:hover { text-decoration: underline; }
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
+.game-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+}
 .game-card-title {
   font-family: var(--display);
   font-weight: 700;
   font-size: 16px;
-  margin: 0 0 8px;
+  margin: 0;
   color: var(--text-primary);
   line-height: 1.3;
 }
+.game-card-export {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-tertiary);
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.game-card-export:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+/* Toolbar select (sort by) */
+.toolbar-select {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  color-scheme: dark;
+}
+.toolbar-select:focus { outline: none; border-color: var(--accent-cyan); }
 .game-card-slug {
   font-family: var(--mono);
   font-size: 11px;
@@ -519,6 +586,25 @@ a:hover { text-decoration: underline; }
   margin: 0;
   color: var(--text-primary);
 }
+.yr-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.yr-year-select {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+  color-scheme: dark;
+}
+.yr-year-select:focus { outline: none; border-color: var(--accent-cyan); }
 .yr-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
