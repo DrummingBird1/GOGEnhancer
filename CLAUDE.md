@@ -8,11 +8,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository layout
 
-The extension lives directly at the repo root — `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `icons/`, and `manifest.json`. Docs (`README.md`, `PRIVACY.md`, `STORE_LISTING.md`, `LICENSE`) and the 5 listing screenshots also sit at the root.
+The extension lives directly at the repo root — `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `icons/`, and `manifest.json`. User-facing docs (`README.md`, `PRIVACY.md`, `LICENSE`) also sit at the root.
 
-`build.ps1` produces `gog-enhancer-webstore.zip` for Chrome Web Store submission — code + manifest + icons only, no docs or screenshots. Its `$include` list is the explicit allow-list of what ships.
+Auxiliary folders keep the rest tidy:
+- `docs/` — internal dev docs (`STORE_LISTING.md` for Web Store submission text).
+- `screenshots/` — the 5 listing PNGs (uploaded separately to the Web Store, not bundled in the zip).
+- `dist/` — build outputs (gitignored). `build.ps1` writes `dist/gog-enhancer-webstore.zip`; you can also unzip there for Chrome's "Load unpacked".
+- `tests/` — Vitest specs for the pure utilities (`lib/storage.js`, `content/currency-detection.js`).
+- `.github/workflows/` — CI (`test.yml`) and release automation (`release.yml`).
 
-`tests/` holds Vitest specs for the pure utilities (`lib/storage.js`, `content/currency-detection.js`). `package.json` + `vitest.config.js` + `package-lock.json` + `node_modules/` exist solely for the test harness — none of that ships with the extension.
+`build.ps1` produces `dist/gog-enhancer-webstore.zip` for Chrome Web Store submission — code + manifest + icons only. Its `$include` list is the explicit allow-list of what ships. `package.json` + `vitest.config.js` + `package-lock.json` + `eslint.config.js` + `node_modules/` exist solely for the test/lint harness — none of that ships with the extension.
 
 ## Running and debugging
 

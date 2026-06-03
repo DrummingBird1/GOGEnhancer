@@ -5,9 +5,7 @@ export default [
     ignores: [
       "node_modules/**",
       ".vitest-cache/**",
-      "gog-enhancer-*.zip",
-      "gog-enhancer-webstore/**",
-      "gog-enhancer-source/**",
+      "dist/**",
     ],
   },
   {

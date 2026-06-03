@@ -1,22 +1,22 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Build a Chrome Web Store-ready zip from gog-enhancer-source/.
+    Build a Chrome Web Store-ready zip from the extension source.
 
 .DESCRIPTION
-    Produces a zip at the repo root containing only the extension files
-    (code, manifest, icons). README/PRIVACY/STORE_LISTING/LICENSE and the
-    screenshots stay out of the package.
+    Produces dist/gog-enhancer-webstore.zip with only the extension files
+    (code, manifest, icons). README/PRIVACY/STORE_LISTING/LICENSE, the
+    screenshots/ folder, tests, and tooling all stay out of the package.
 
 .EXAMPLE
     .\build.ps1
-    # writes gog-enhancer-webstore.zip
+    # writes dist/gog-enhancer-webstore.zip
 
 .EXAMPLE
-    .\build.ps1 -OutPath gog-enhancer-v2.0.3.zip
+    .\build.ps1 -OutPath dist/gog-enhancer-v2.2.0.zip
 #>
 param(
-    [string]$OutPath = "gog-enhancer-webstore.zip"
+    [string]$OutPath = "dist/gog-enhancer-webstore.zip"
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,6 +27,12 @@ $resolvedOut = if ([System.IO.Path]::IsPathRooted($OutPath)) {
     $OutPath
 } else {
     Join-Path $PSScriptRoot $OutPath
+}
+
+# Make sure the output directory exists (dist/ on a fresh checkout otherwise).
+$outDir = Split-Path -Parent $resolvedOut
+if ($outDir -and -not (Test-Path $outDir)) {
+    New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 }
 
 # What goes in the zip. Docs (*.md) and screenshots (*.png at root) stay out.
