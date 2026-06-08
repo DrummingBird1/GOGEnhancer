@@ -261,6 +261,59 @@ async function checkRefundWindowExpirations() {
   if (touched) await self.GOGPlusStorage.set({ notifLog });
 }
 
+async function checkPriceAlerts() {
+  const {
+    desktopNotifications,
+    priceAlerts = {},
+    priceHistory = {},
+    notifLog = {},
+    rates = {},
+  } = await self.GOGPlusStorage.get({
+    desktopNotifications: false,
+    priceAlerts: {},
+    priceHistory: {},
+    notifLog: {},
+    rates: {},
+  });
+  if (!desktopNotifications) return;
+  if (!Object.keys(priceAlerts).length) return;
+
+  let touched = false;
+  for (const [slug, alert] of Object.entries(priceAlerts)) {
+    if (!alert || !Number.isFinite(alert.threshold)) continue;
+    const hist = priceHistory[slug];
+    if (!hist?.length) continue;
+    const latest = hist[hist.length - 1];
+
+    // Normalize the latest recorded price to the alert's currency via USD.
+    let priceInAlertCur = latest.p;
+    if (latest.c !== alert.currency) {
+      const srcRate = latest.c === "USD" ? 1 : rates[latest.c];
+      const tgtRate = alert.currency === "USD" ? 1 : rates[alert.currency];
+      if (!srcRate || !tgtRate) continue;
+      priceInAlertCur = (latest.p / srcRate) * tgtRate;
+    }
+    if (priceInAlertCur > alert.threshold) continue;
+
+    // Dedupe per slug + threshold tier so resetting the threshold re-arms.
+    const key = `priceAlert:${slug}:${alert.threshold}`;
+    if (notifLog[key]) continue;
+
+    const sym =
+      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽" })[alert.currency] ||
+      alert.currency;
+    await fireNotification(
+      key,
+      `Price alert — ${slugToTitle(slug)}`,
+      `Now ${sym}${priceInAlertCur.toFixed(2)} — below your ${sym}${alert.threshold.toFixed(2)} threshold.`,
+      "Visit the GOG page to confirm and buy"
+    );
+    notifLog[key] = Date.now();
+    touched = true;
+  }
+  if (touched) await self.GOGPlusStorage.set({ notifLog });
+}
+
 async function maybeNotifyWishlistJump(prevCount, newCount) {
   if (newCount <= prevCount) return;
   const { desktopNotifications, notifLog = {} } = await self.GOGPlusStorage.get({
@@ -322,7 +375,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === FX_ALARM) fetchLiveRates();
   if (alarm.name === MODS_ALARM) refreshModsList();
   if (alarm.name === WL_ALARM) refreshWishlistBadge();
-  if (alarm.name === DAILY_ALARM) checkRefundWindowExpirations();
+  if (alarm.name === DAILY_ALARM) {
+    checkRefundWindowExpirations();
+    checkPriceAlerts();
+  }
 });
 
 /* ---------------- commands ---------------- */

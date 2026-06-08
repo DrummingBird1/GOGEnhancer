@@ -151,6 +151,15 @@
           <span class="theme-swatch-sub">inverted palette</span>
         </button>
       </div>
+
+      <div class="ui-lang-row">
+        <label for="uiLanguage" class="ui-lang-label" data-i18n="language.label">Interface language</label>
+        <select id="uiLanguage" class="ui-lang-select">
+          <option value="en">English</option>
+          <option value="he">עברית (Hebrew)</option>
+        </select>
+        <span class="ui-lang-hint">Affects popup &amp; options. Doesn't change the gog.com translations toggle.</span>
+      </div>
     </section>
 
     <!-- Background sync -->
@@ -265,6 +274,7 @@
   </main>
 
   <script src="../lib/defaults.js"></script>
+  <script src="../lib/i18n.js"></script>
   <script src="../lib/storage.js"></script>
   <script src="options.js"></script>
 </body>

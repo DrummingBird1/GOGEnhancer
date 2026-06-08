@@ -112,6 +112,7 @@ describe("GOG_PLUS_DEFAULTS", () => {
       "notifLog", "theme", "debugLogging", "desktopNotifications",
       "refundTimer", "settingsVersion", "onboardingComplete",
       "tagDashboardDensity", "historyMaxEntries",
+      "priceAlerts", "uiLanguage",
     ];
     for (const k of expected) {
       expect(d, `missing default for "${k}"`).toHaveProperty(k);

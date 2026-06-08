@@ -417,6 +417,17 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   pointer-events: none;
 }
 .gog-plus-gamepanel > * { position: relative; z-index: 1; }
+/* Hero accent — tinted border + header pill using the dominant cover color */
+.gog-plus-gamepanel--has-hero-accent {
+  border-color: color-mix(in srgb, var(--gp-hero-accent, var(--gp-magenta)) 55%, transparent);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    0 0 0 1px color-mix(in srgb, var(--gp-hero-accent, var(--gp-magenta)) 35%, transparent),
+    inset 0 1px 0 rgba(244, 234, 255, 0.05);
+}
+.gog-plus-gamepanel--has-hero-accent .gog-plus-gp-pill {
+  background: var(--gp-hero-accent, linear-gradient(135deg, var(--gp-magenta), var(--gp-cyan)));
+}
 .gog-plus-gp-header {
   padding: 14px 20px;
   display: flex;
@@ -725,6 +736,14 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   color: var(--gp-text-dim);
 }
 .gog-plus-ql-dim { color: var(--gp-text-muted); }
+.gog-plus-ql-mini-spark {
+  display: block;
+  width: 100%;
+  height: 22px;
+  margin-top: 6px;
+  color: var(--gp-cyan);
+  opacity: 0.85;
+}
 .gog-plus-ql-tags {
   display: flex;
   flex-wrap: wrap;
@@ -886,4 +905,76 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   color: var(--gp-pink);
   background: rgba(255, 107, 157, 0.08);
   border: 1px solid rgba(255, 107, 157, 0.3);
+}
+
+/* ============================================================
+   Price alert section
+   ============================================================ */
+.gog-plus-alert-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.gog-plus-alert-sym {
+  font-family: var(--gp-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gp-cyan);
+  width: 18px;
+  text-align: center;
+}
+.gog-plus-alert-row input[type="number"] {
+  flex: 1;
+  background: rgba(244, 234, 255, 0.06);
+  border: 1px solid var(--gp-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--gp-text);
+  font-family: var(--gp-mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color-scheme: dark;
+}
+.gog-plus-alert-row input[type="number"]:focus {
+  outline: none;
+  border-color: var(--gp-cyan);
+}
+.gog-plus-alert-row button {
+  background: linear-gradient(135deg, var(--gp-magenta), var(--gp-cyan));
+  color: var(--gp-bg);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gog-plus-alert-row button:hover { filter: brightness(1.1); }
+.gog-plus-alert-clear {
+  background: transparent !important;
+  border: 1px solid var(--gp-border) !important;
+  border-radius: 50% !important;
+  width: 24px;
+  height: 24px;
+  padding: 0 !important;
+  color: var(--gp-text-dim) !important;
+  font-size: 14px !important;
+}
+.gog-plus-alert-clear:hover {
+  border-color: var(--gp-pink) !important;
+  color: var(--gp-pink) !important;
+  filter: none !important;
+}
+.gog-plus-alert-status {
+  font-size: 12px;
+  color: var(--gp-text-muted);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.gog-plus-alert-status.is-active {
+  color: var(--gp-green);
+  background: rgba(92, 255, 157, 0.08);
+  border: 1px solid rgba(92, 255, 157, 0.25);
 }

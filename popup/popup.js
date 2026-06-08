@@ -35,6 +35,7 @@ function $(id) { return document.getElementById(id); }
 
 async function load() {
   const s = await window.GOGPlusStorage.get(DEFAULTS);
+  window.GOGPlusI18n?.apply(s.uiLanguage || "en");
   $("masterEnabled").checked = !!s.enabled;
   document.body.classList.toggle("disabled", !s.enabled);
 

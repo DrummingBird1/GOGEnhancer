@@ -661,6 +661,85 @@ a:hover { text-decoration: underline; }
 }
 
 /* ============================================================
+   Sale calendar heatmap — 12 monthly cells colored by frequency
+   of observed price drops across the user's tracked games.
+   ============================================================ */
+.sale-heatmap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px 24px;
+}
+.sale-heatmap:empty { padding: 0; }
+.heatmap-header { margin-bottom: 12px; }
+.heatmap-eyebrow {
+  display: inline-block;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-magenta);
+  font-weight: 700;
+  padding: 4px 10px;
+  border: 1px solid rgba(198, 79, 255, 0.4);
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+.heatmap-header h2 {
+  font-family: var(--display);
+  font-size: 22px;
+  margin: 0 0 6px;
+  color: var(--text-primary);
+}
+.heatmap-sub {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 6px;
+}
+@media (max-width: 720px) {
+  .heatmap-grid { grid-template-columns: repeat(6, 1fr); }
+}
+.heatmap-cell {
+  --intensity: 0;
+  position: relative;
+  aspect-ratio: 1 / 1.1;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-magenta) calc(var(--intensity) * 80%), var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--accent-magenta) calc(var(--intensity) * 50%), var(--border));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px 8px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.heatmap-cell:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-cyan);
+}
+.heatmap-month {
+  font-size: 10px;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+.heatmap-count {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  align-self: flex-end;
+}
+.heatmap-cell[style*="--intensity:0."] .heatmap-count,
+.heatmap-cell[style*="--intensity:1"] .heatmap-count {
+  color: var(--text-primary);
+}
+
+/* ============================================================
    Compact density — reduces padding/gap/font sizes across cards
    so power users with many tags fit more on-screen.
    Toggle from the dashboard toolbar.

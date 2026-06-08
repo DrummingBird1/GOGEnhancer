@@ -1,6 +1,6 @@
 # GOG Enhancer
 
-**Version 2.2.0** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
+**Version 2.3.0** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
 
 תוסף third-party (לא רשמי) ל-GOG.com — מטבע חי, היסטוריית מחירים, השוואת מחירים בין חנויות, תגיות אישיות, שדרוג עיצובי מלא, עברית ו-RTL, והכל ללא Google Fonts וללא analytics.
 
@@ -146,7 +146,18 @@ gog-plus/
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.2.0 (current) — Hover quick-look, year selector, dashboard polish
+### v2.3.0 (current) — i18n, price alerts, sale heatmap, tag packs
+
+**New features**
+- **Hebrew UI** — full Hebrew translation of the popup, plus interface-language selector in Advanced Options → Look & feel. Framework lives in `lib/i18n.js` (dictionary-based, supports `[data-i18n]` and `[data-i18n-attr]` markup). Sets `<html lang>` + `dir="rtl"` automatically.
+- **Per-game price alerts** — every game-page panel now has an alert section. Type a threshold, hit Save, and the daily background alarm fires a desktop notification when the latest recorded price drops below it. Per-slug + per-threshold dedup via `notifLog`. Requires the existing opt-in `desktopNotifications` toggle.
+- **Cover-art color sampling** — the game-page panel's border and header pill take on the dominant color sampled from the page's `og:image` cover art. Spotify-style. Falls back to the theme accent if the image is CORS-blocked.
+- **Mini sparkline in hover quick-look** — the tooltip that appears when you hover a game card in a listing now contains a tiny SVG sparkline of the last 10 snapshots.
+- **Sale calendar heatmap** — new dashboard section showing a 12-month grid colored by how often you've observed ≥1 price drop in each month, across your whole tracked library. Identifies the "hot months" GOG drops prices.
+- **Shared tag packs** — export the currently-visible games as a `gog-plus-pack-…json` (includes tags, notes, purchase dates, tag colors), and import packs others share with you. Merge mode — never overwrites existing notes / purchase dates / colors.
+- **Advanced dashboard search** — operators in the search box: `tag:rpg`, `lowest:<10`, `lowest:>5`, `snapshots:>3`, `since:2026`. Combine freely with plain-text substring search.
+
+### v2.2.0 — Hover quick-look, year selector, dashboard polish
 
 **New features**
 - **Hover quick-look on game cards** — hover any game card in a listing and a rich tooltip shows current price, all-time low, your tags, and last visit date. Reuses the existing `data-gog-plus-tip` tooltip system; only stamped on cards that have data.

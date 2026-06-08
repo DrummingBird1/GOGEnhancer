@@ -44,6 +44,8 @@ function flashSaved() {
 
 async function load() {
   const s = await window.GOGPlusStorage.get(DEFAULTS);
+  window.GOGPlusI18n?.apply(s.uiLanguage || "en");
+  if ($("uiLanguage")) $("uiLanguage").value = s.uiLanguage || "en";
 
   // Rate inputs
   ["ILS", "EUR", "GBP", "PLN", "RUB"].forEach((c) => {
@@ -215,6 +217,15 @@ function bind() {
     });
     flashSaved();
   });
+
+  if ($("uiLanguage")) {
+    $("uiLanguage").addEventListener("change", async () => {
+      const lang = $("uiLanguage").value;
+      await window.GOGPlusStorage.set({ uiLanguage: lang });
+      window.GOGPlusI18n?.apply(lang);
+      flashSaved();
+    });
+  }
 
   $("historyMaxEntries").addEventListener("change", async () => {
     let v = parseInt($("historyMaxEntries").value, 10);

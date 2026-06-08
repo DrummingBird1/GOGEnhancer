@@ -91,9 +91,50 @@
     return null;
   };
 
+  // Sample the dominant color from a cover image (downscaled for speed).
+  // Returns null on CORS rejection or load failure — caller should fall back
+  // to the theme accent. Pulls the AVERAGE of opaque pixels which works well
+  // for game covers with unified palettes.
+  function sampleDominantColor(url) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        try {
+          const W = 40, H = 40;
+          const canvas = document.createElement("canvas");
+          canvas.width = W;
+          canvas.height = H;
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(img, 0, 0, W, H);
+          const data = ctx.getImageData(0, 0, W, H).data;
+          let r = 0, g = 0, b = 0, count = 0;
+          for (let i = 0; i < data.length; i += 4) {
+            if (data[i + 3] < 128) continue;
+            r += data[i];
+            g += data[i + 1];
+            b += data[i + 2];
+            count++;
+          }
+          if (!count) return resolve(null);
+          resolve({
+            r: Math.round(r / count),
+            g: Math.round(g / count),
+            b: Math.round(b / count),
+          });
+        } catch (_) {
+          // Tainted canvas (CORS blocked) — bail silently.
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+
   // Build the quick-look HTML stamped on each game card as data-gog-plus-tip.
-  // Shows price-history stats + user's tags. Returns "" for cards with no data
-  // so we don't clutter every fresh card with an empty tooltip.
+  // Shows price-history stats + a mini sparkline + the user's tags. Returns "" for
+  // cards with no data so we don't clutter every fresh card with an empty tooltip.
   function buildQuickLookHtml(slug) {
     const ph = settings.priceHistory?.[slug];
     const tags = settings.tags?.[slug] || [];
@@ -111,12 +152,30 @@
       body += `<span class="gog-plus-ql-row"><em>All-time low:</em> ${sym}${minP.toFixed(2)} <span class="gog-plus-ql-dim">(${ph[minIdx].d})</span></span>`;
       body += `<span class="gog-plus-ql-row"><em>Snapshots:</em> ${ph.length}</span>`;
       body += `<span class="gog-plus-ql-row"><em>Last visit:</em> ${latest.d}</span>`;
+      if (ph.length >= 2) body += buildMiniSparkline(ph);
     }
     if (tags.length) {
       const chips = tags.map((t) => `<span class="gog-plus-ql-tag">${escapeHtml(t)}</span>`).join("");
       body += `<div class="gog-plus-ql-tags">${chips}</div>`;
     }
     return body;
+  }
+
+  // Inline SVG sparkline for the quick-look tooltip — last 10 snapshots,
+  // single-line stroke, currentColor so theme picks the hue.
+  function buildMiniSparkline(history) {
+    const points = history.slice(-10);
+    const prices = points.map((e) => e.p);
+    const minP = Math.min(...prices);
+    const maxP = Math.max(...prices);
+    const range = maxP - minP || 1;
+    const W = 120, H = 22, PAD = 2;
+    const pts = points.map((e, i) => {
+      const x = PAD + (i / (points.length - 1)) * (W - PAD * 2);
+      const y = PAD + (H - PAD * 2) - ((e.p - minP) / range) * (H - PAD * 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+    return `<svg class="gog-plus-ql-mini-spark" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"><path d="M${pts.join(" L")}" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
   }
 
   // Pulls the last price token from `txt` (assumed to be in pageCurrency),
@@ -720,6 +779,17 @@
     if (heroUrl && /^https?:\/\//.test(heroUrl)) {
       panel.style.setProperty("--gp-hero-url", `url("${heroUrl.replace(/"/g, "")}")`);
       panel.classList.add("gog-plus-gamepanel--has-hero");
+      // Spotify-style accent: sample the dominant color from the cover and
+      // use it to tint the panel border + header pill. Async, best-effort —
+      // CORS-blocked images quietly fail and we just keep the theme accent.
+      sampleDominantColor(heroUrl).then((color) => {
+        if (!color) return;
+        panel.style.setProperty(
+          "--gp-hero-accent",
+          `rgb(${color.r}, ${color.g}, ${color.b})`
+        );
+        panel.classList.add("gog-plus-gamepanel--has-hero-accent");
+      });
     }
     panel.innerHTML = `
       <header class="gog-plus-gp-header">
@@ -738,6 +808,7 @@
     if (settings.refundTimer) {
       body.appendChild(await renderRefundSection(slug));
     }
+    body.appendChild(await renderPriceAlertSection(slug));
     if (settings.itadCompare) {
       body.appendChild(renderItadSection(slug));
     }
@@ -973,6 +1044,76 @@
       clearBtn.addEventListener("click", () => {
         input.value = "";
         save("");
+      });
+    }, 0);
+
+    return wrap;
+  }
+
+  async function renderPriceAlertSection(slug) {
+    const { priceAlerts = {} } = await window.GOGPlusStorage.get({ priceAlerts: {} });
+    const alert = priceAlerts[slug];
+    const alertCur =
+      settings.targetCurrency && settings.targetCurrency !== "none"
+        ? settings.targetCurrency
+        : pageCurrency.code || "USD";
+    const sym = symbolFor(alertCur);
+
+    const wrap = document.createElement("section");
+    wrap.className = "gog-plus-gp-section";
+    wrap.innerHTML = `
+      <h3>Price alert <span aria-hidden="true">🔔</span></h3>
+      <p class="gog-plus-gp-muted">
+        Notify me when this game's recorded price drops below my threshold.
+        Checked once a day; requires "Desktop notifications" enabled in Advanced Options.
+      </p>
+      <div class="gog-plus-alert-row">
+        <span class="gog-plus-alert-sym">${sym}</span>
+        <input type="number" id="gog-plus-alert-threshold" step="0.01" min="0"
+          value="${alert ? alert.threshold : ""}" placeholder="9.99" />
+        <button id="gog-plus-alert-save" type="button">Save</button>
+        ${alert ? `<button id="gog-plus-alert-clear" type="button" class="gog-plus-alert-clear" title="Remove alert">×</button>` : ""}
+      </div>
+      <div class="gog-plus-alert-status${alert ? " is-active" : ""}">
+        ${alert
+          ? `Alert active: notify when price &lt; ${symbolFor(alert.currency)}${alert.threshold.toFixed(2)} ${alert.currency}`
+          : "No alert set."}
+      </div>
+    `;
+
+    setTimeout(() => {
+      const input = wrap.querySelector("#gog-plus-alert-threshold");
+      const saveBtn = wrap.querySelector("#gog-plus-alert-save");
+      const clearBtn = wrap.querySelector("#gog-plus-alert-clear");
+
+      const refresh = () => {
+        const panel = document.getElementById("gog-plus-gamepanel");
+        panel?.remove();
+        ensureGamePagePanel(slug);
+      };
+
+      saveBtn.addEventListener("click", async () => {
+        const v = parseFloat(input.value);
+        if (!Number.isFinite(v) || v <= 0) {
+          input.focus();
+          return;
+        }
+        const { priceAlerts: cur = {} } = await window.GOGPlusStorage.get({ priceAlerts: {} });
+        cur[slug] = { threshold: v, currency: alertCur, createdAt: Date.now() };
+        await window.GOGPlusStorage.set({ priceAlerts: cur });
+        refresh();
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          saveBtn.click();
+        }
+      });
+      clearBtn?.addEventListener("click", async () => {
+        const { priceAlerts: cur = {} } = await window.GOGPlusStorage.get({ priceAlerts: {} });
+        delete cur[slug];
+        await window.GOGPlusStorage.set({ priceAlerts: cur });
+        refresh();
       });
     }, 0);
 

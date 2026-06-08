@@ -38,7 +38,9 @@ async function init() {
     tagColors: {},
     tagOrder: [],
     tagDashboardDensity: "comfortable",
+    uiLanguage: "en",
   });
+  window.GOGPlusI18n?.apply(data.uiLanguage || "en");
   allTags = data.tags || {};
   allNotes = data.notes || {};
   allHistory = data.priceHistory || {};
@@ -49,9 +51,63 @@ async function init() {
   applyDensityClass();
   renderStats();
   renderYearReview();
+  renderSaleHeatmap();
   renderTagList();
   renderGames();
   bind();
+}
+
+function renderSaleHeatmap() {
+  const panel = document.getElementById("saleHeatmap");
+  if (!panel) return;
+
+  // Count price-drop events per calendar month across all tracked games.
+  // A "drop" = price strictly lower than the previous entry for the same slug.
+  const monthCounts = new Array(12).fill(0);
+  let totalDrops = 0;
+  for (const arr of Object.values(allHistory)) {
+    if (!arr || arr.length < 2) continue;
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i].p >= arr[i - 1].p) continue;
+      const m = parseInt((arr[i].d || "").slice(5, 7), 10);
+      if (m >= 1 && m <= 12) {
+        monthCounts[m - 1]++;
+        totalDrops++;
+      }
+    }
+  }
+
+  if (!totalDrops) {
+    panel.innerHTML = "";
+    return;
+  }
+
+  const max = Math.max(...monthCounts) || 1;
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const peakIdx = monthCounts.indexOf(max);
+  const peakName = monthNames[peakIdx];
+
+  const cells = monthCounts
+    .map((c, i) => {
+      const intensity = c / max;
+      return `<div class="heatmap-cell" style="--intensity:${intensity.toFixed(3)}" title="${monthNames[i]}: ${c} price drop${c === 1 ? "" : "s"}">
+        <span class="heatmap-month">${monthNames[i]}</span>
+        <span class="heatmap-count">${c || ""}</span>
+      </div>`;
+    })
+    .join("");
+
+  panel.innerHTML = `
+    <header class="heatmap-header">
+      <span class="heatmap-eyebrow">Sale calendar</span>
+      <h2>When does GOG drop prices?</h2>
+      <p class="heatmap-sub">
+        Across <strong>${totalDrops}</strong> price drop${totalDrops === 1 ? "" : "s"} we've observed —
+        ${peakName} leads with <strong>${max}</strong>. Plan your shopping around the hot months.
+      </p>
+    </header>
+    <div class="heatmap-grid">${cells}</div>
+  `;
 }
 
 function applyDensityClass() {
@@ -408,18 +464,86 @@ function renderTagList() {
 
 let sortBy = "name"; // "name" | "lastVisit" | "tagCount" | "snapshots"
 
+// Parse the search box for advanced `key:value` filters. Recognised:
+//   tag:rpg           exact tag match (case-insensitive)
+//   lowest:<10        all-time-low price less than N (in entry's currency)
+//   lowest:>5         all-time-low greater than N
+//   snapshots:>3      more than N price snapshots recorded
+//   snapshots:<10     fewer than N snapshots
+//   since:2026        at least one snapshot dated in YYYY
+// Everything else is concatenated and matched as a substring against
+// (slug + tags + note) the same way the old search worked.
+function parseSearchQuery(input) {
+  const f = {
+    tag: null,
+    lowestLt: null,
+    lowestGt: null,
+    snapshotsLt: null,
+    snapshotsGt: null,
+    since: null,
+    plain: "",
+  };
+  if (!input) return f;
+  const plain = [];
+  for (const tok of input.split(/\s+/)) {
+    const m = tok.match(/^(tag|lowest|snapshots|since):(.+)$/i);
+    if (!m) {
+      plain.push(tok);
+      continue;
+    }
+    const key = m[1].toLowerCase();
+    const val = m[2];
+    if (key === "tag") f.tag = val.toLowerCase();
+    else if (key === "since" && /^\d{4}$/.test(val)) f.since = val;
+    else if (key === "lowest" || key === "snapshots") {
+      const cmp = val[0];
+      const num = parseFloat(val.slice(1));
+      if (!Number.isFinite(num)) continue;
+      if (cmp === "<") f[key === "lowest" ? "lowestLt" : "snapshotsLt"] = num;
+      else if (cmp === ">") f[key === "lowest" ? "lowestGt" : "snapshotsGt"] = num;
+    }
+  }
+  f.plain = plain.join(" ").toLowerCase();
+  return f;
+}
+
 function matchingSlugs() {
-  const slugs = new Set([...Object.keys(allTags), ...Object.keys(allNotes)]);
+  const f = parseSearchQuery(searchTerm);
+  // Union of every known slug — tags, notes, AND history (so users can find
+  // tracked-but-untagged games via advanced filters like lowest:<10).
+  const slugs = new Set([
+    ...Object.keys(allTags),
+    ...Object.keys(allNotes),
+    ...Object.keys(allHistory),
+  ]);
   const out = [];
   for (const slug of slugs) {
     const tags = allTags[slug] || [];
     const note = allNotes[slug] || "";
+    const hist = allHistory[slug] || [];
+
     if (activeTag && !tags.includes(activeTag)) continue;
-    if (searchTerm) {
-      const hay = (slug + " " + tags.join(" ") + " " + note).toLowerCase();
-      if (!hay.includes(searchTerm)) continue;
+
+    // Advanced filters
+    if (f.tag && !tags.map((t) => t.toLowerCase()).includes(f.tag)) continue;
+    if (f.since && !hist.some((e) => (e.d || "").startsWith(f.since))) continue;
+    if (f.lowestLt !== null || f.lowestGt !== null) {
+      if (!hist.length) continue;
+      const minP = Math.min(...hist.map((e) => e.p));
+      if (f.lowestLt !== null && minP >= f.lowestLt) continue;
+      if (f.lowestGt !== null && minP <= f.lowestGt) continue;
     }
-    if (!tags.length && !note) continue;
+    if (f.snapshotsLt !== null && hist.length >= f.snapshotsLt) continue;
+    if (f.snapshotsGt !== null && hist.length <= f.snapshotsGt) continue;
+
+    if (f.plain) {
+      const hay = (slug + " " + tags.join(" ") + " " + note).toLowerCase();
+      if (!hay.includes(f.plain)) continue;
+    }
+
+    // Even with no plain term, require SOMETHING — tags or note or history.
+    // (Otherwise the "show every slug we've ever seen" set is overwhelming.)
+    if (!tags.length && !note && !hist.length) continue;
     out.push(slug);
   }
   return applySort(out);
@@ -490,6 +614,139 @@ function renderGames() {
       exportSingleGame(slug);
     });
     list.appendChild(card);
+  }
+}
+
+// Exports the games currently visible (respecting active filter + search)
+// as a "tag pack" — a shareable JSON blob. Excludes the heavy priceHistory
+// blob to keep packs small and shareable.
+function exportPack() {
+  const slugs = matchingSlugs();
+  if (!slugs.length) {
+    alert("No games match the current filter — nothing to export.");
+    return;
+  }
+  const packName =
+    prompt(
+      `Name this pack (e.g. "RPG backlog 2026").\n\n` +
+        `Will include ${slugs.length} game${slugs.length === 1 ? "" : "s"}.`,
+      activeTag ? `${activeTag} pack` : `My GOG pack`
+    );
+  if (packName === null) return; // user cancelled
+  const usedTagSet = new Set();
+  const games = slugs.map((slug) => {
+    const tags = allTags[slug] || [];
+    tags.forEach((t) => usedTagSet.add(t));
+    return {
+      slug,
+      tags,
+      note: allNotes[slug] || "",
+      purchaseDate: allPurchases[slug] || null,
+    };
+  });
+  const usedColors = {};
+  for (const t of usedTagSet) {
+    if (tagColors[t]) usedColors[t] = tagColors[t];
+  }
+  const pack = {
+    format: "gog-enhancer-tag-pack",
+    formatVersion: 1,
+    name: packName.trim() || "Untitled pack",
+    exportedAt: new Date().toISOString(),
+    gameCount: games.length,
+    games,
+    tagColors: usedColors,
+  };
+  const blob = new Blob([JSON.stringify(pack, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const safeName = pack.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  a.download = `gog-plus-pack-${safeName || "untitled"}-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function importPackFromFile(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const pack = JSON.parse(text);
+    if (pack?.format !== "gog-enhancer-tag-pack") {
+      throw new Error("Not a recognised tag pack (wrong format field).");
+    }
+    if (!Array.isArray(pack.games)) {
+      throw new Error("Pack has no games array.");
+    }
+    const summary =
+      `Import "${pack.name || "untitled"}"?\n\n` +
+      `Pack contains ${pack.games.length} game${pack.games.length === 1 ? "" : "s"}.\n` +
+      `Exported at ${pack.exportedAt || "unknown date"}.\n\n` +
+      `Merge mode:\n` +
+      `• Tags are added to your existing tags (no duplicates)\n` +
+      `• Notes are only set if you don't already have one\n` +
+      `• Purchase dates are only set if you don't already have one\n` +
+      `• Tag colors are only set if you don't already have one\n\n` +
+      `Nothing is overwritten.`;
+    if (!confirm(summary)) return;
+
+    let tagsAdded = 0;
+    let notesAdded = 0;
+    let purchasesAdded = 0;
+    let colorsAdded = 0;
+    for (const g of pack.games) {
+      if (!g?.slug) continue;
+      if (Array.isArray(g.tags) && g.tags.length) {
+        const existing = new Set(allTags[g.slug] || []);
+        const before = existing.size;
+        for (const t of g.tags) existing.add(t);
+        if (existing.size > before) {
+          allTags[g.slug] = [...existing];
+          tagsAdded += existing.size - before;
+        }
+      }
+      if (g.note && !allNotes[g.slug]) {
+        allNotes[g.slug] = g.note;
+        notesAdded++;
+      }
+      if (g.purchaseDate && !allPurchases[g.slug]) {
+        allPurchases[g.slug] = g.purchaseDate;
+        purchasesAdded++;
+      }
+    }
+    if (pack.tagColors && typeof pack.tagColors === "object") {
+      for (const [t, c] of Object.entries(pack.tagColors)) {
+        if (!tagColors[t] && typeof c === "string" && /^#[0-9a-f]{3,8}$/i.test(c)) {
+          tagColors[t] = c;
+          colorsAdded++;
+        }
+      }
+    }
+    await window.GOGPlusStorage.set({
+      tags: allTags,
+      notes: allNotes,
+      purchaseLog: allPurchases,
+      tagColors,
+    });
+    renderStats();
+    renderYearReview();
+    renderSaleHeatmap();
+    renderTagList();
+    renderGames();
+    alert(
+      `Pack "${pack.name}" imported:\n` +
+        `• ${tagsAdded} tag${tagsAdded === 1 ? "" : "s"} added\n` +
+        `• ${notesAdded} note${notesAdded === 1 ? "" : "s"} added\n` +
+        `• ${purchasesAdded} purchase date${purchasesAdded === 1 ? "" : "s"} added\n` +
+        `• ${colorsAdded} tag color${colorsAdded === 1 ? "" : "s"} added`
+    );
+  } catch (err) {
+    alert("Pack import failed: " + err.message);
+  } finally {
+    e.target.value = "";
   }
 }
 
@@ -586,6 +843,9 @@ function bind() {
     sortBy = e.target.value;
     renderGames();
   });
+  $("exportPack").addEventListener("click", exportPack);
+  $("importPack").addEventListener("click", () => $("importPackFile").click());
+  $("importPackFile").addEventListener("change", importPackFromFile);
   document.addEventListener("click", (e) => {
     const picker = document.getElementById("tagColorPicker");
     if (picker && !picker.contains(e.target) && !e.target.closest(".tag-pill-swatch")) {

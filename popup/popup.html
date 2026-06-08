@@ -10,7 +10,7 @@
   <header class="header">
     <div class="brand">
       <span class="brand-pill">GOG Enhancer</span>
-      <h1 class="brand-title">Enhanced</h1>
+      <h1 class="brand-title" data-i18n="popup.subtitle">Enhanced</h1>
     </div>
     <label class="master-toggle" aria-label="Enable GOG Enhancer">
       <input type="checkbox" id="masterEnabled" />
@@ -24,11 +24,11 @@
     <section class="section">
       <h2 class="section-title">
         <span class="section-num">01</span>
-        Currency &amp; pricing
+        <span data-i18n="popup.section.currency">Currency &amp; pricing</span>
       </h2>
 
       <div class="row">
-        <label class="row-label" for="targetCurrency">Display alongside USD</label>
+        <label class="row-label" for="targetCurrency" data-i18n="popup.row.targetCurrency">Display alongside USD</label>
         <select id="targetCurrency" class="select">
           <option value="none">Off (USD only)</option>
           <option value="ILS">₪ ILS — Israeli Shekel</option>
@@ -41,8 +41,8 @@
 
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Estimate VAT / sales tax</div>
-          <div class="toggle-sub">Adds tax-inclusive price next to USD.</div>
+          <div class="toggle-title" data-i18n="popup.row.vatToggle">Estimate VAT / sales tax</div>
+          <div class="toggle-sub" data-i18n="popup.row.vatToggle.sub">Adds tax-inclusive price next to USD.</div>
         </div>
         <label class="toggle" aria-label="VAT estimator">
           <input type="checkbox" id="taxEstimator" />
@@ -51,62 +51,62 @@
       </div>
 
       <div class="row inline-row">
-        <label class="inline-label" for="vatPercent">VAT %</label>
+        <label class="inline-label" for="vatPercent" data-i18n="popup.row.vatPercent">VAT %</label>
         <input type="number" id="vatPercent" class="input small" min="0" max="40" step="0.5" />
-        <button id="refreshRates" class="ghost-btn-mini" title="Refresh exchange rates now">↻ rates</button>
+        <button id="refreshRates" class="ghost-btn-mini" title="Refresh exchange rates now" data-i18n="popup.row.refresh">↻ rates</button>
       </div>
     </section>
 
     <section class="section">
       <h2 class="section-title">
         <span class="section-num">02</span>
-        On-page enhancements
+        <span data-i18n="popup.section.onpage">On-page enhancements</span>
       </h2>
 
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">"30-day refund" badge</div>
-          <div class="toggle-sub">Reminder on every game card.</div>
+          <div class="toggle-title" data-i18n="popup.row.refundBadge">"30-day refund" badge</div>
+          <div class="toggle-sub" data-i18n="popup.row.refundBadge.sub">Reminder on every game card.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="refundBadge" /><span class="track"><span class="thumb"></span></span></label>
       </div>
 
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">DRM-free top banner</div>
-          <div class="toggle-sub">Surfaces GOG's core promise.</div>
+          <div class="toggle-title" data-i18n="popup.row.drmBanner">DRM-free top banner</div>
+          <div class="toggle-sub" data-i18n="popup.row.drmBanner.sub">Surfaces GOG's core promise.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="drmFreeBanner" /><span class="track"><span class="thumb"></span></span></label>
       </div>
 
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Mod indicator on cards</div>
-          <div class="toggle-sub">★ MOD badge for moddable titles.</div>
+          <div class="toggle-title" data-i18n="popup.row.modIndicator">Mod indicator on cards</div>
+          <div class="toggle-sub" data-i18n="popup.row.modIndicator.sub">★ MOD badge for moddable titles.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="modIndicator" /><span class="track"><span class="thumb"></span></span></label>
       </div>
 
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Hide expired sales</div>
-          <div class="toggle-sub">Greys out promos with stale year stamps.</div>
+          <div class="toggle-title" data-i18n="popup.row.hideExpired">Hide expired sales</div>
+          <div class="toggle-sub" data-i18n="popup.row.hideExpired.sub">Greys out promos with stale year stamps.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="hideExpiredSales" /><span class="track"><span class="thumb"></span></span></label>
       </div>
 
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Cleaner homepage layout</div>
-          <div class="toggle-sub">Collapses duplicate sale strips.</div>
+          <div class="toggle-title" data-i18n="popup.row.cleanLayout">Cleaner homepage layout</div>
+          <div class="toggle-sub" data-i18n="popup.row.cleanLayout.sub">Collapses duplicate sale strips.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="cleanLayout" /><span class="track"><span class="thumb"></span></span></label>
       </div>
 
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Skeleton loaders</div>
-          <div class="toggle-sub">Replace bare placeholders with shimmer.</div>
+          <div class="toggle-title" data-i18n="popup.row.skeleton">Skeleton loaders</div>
+          <div class="toggle-sub" data-i18n="popup.row.skeleton.sub">Replace bare placeholders with shimmer.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="skeletonLoaders" /><span class="track"><span class="thumb"></span></span></label>
       </div>
@@ -115,19 +115,19 @@
     <section class="section">
       <h2 class="section-title">
         <span class="section-num">03</span>
-        Visual upgrade
+        <span data-i18n="popup.section.visual">Visual upgrade</span>
       </h2>
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Design injection</div>
-          <div class="toggle-sub">Mono prices, era-aware cards, depth, golden "Good Old Game" pill.</div>
+          <div class="toggle-title" data-i18n="popup.row.design">Design injection</div>
+          <div class="toggle-sub" data-i18n="popup.row.design.sub">Mono prices, era-aware cards, depth, golden "Good Old Game" pill.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="designInjection" /><span class="track"><span class="thumb"></span></span></label>
       </div>
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Rich tooltips</div>
-          <div class="toggle-sub">Custom-styled hover tips with details.</div>
+          <div class="toggle-title" data-i18n="popup.row.richTooltips">Rich tooltips</div>
+          <div class="toggle-sub" data-i18n="popup.row.richTooltips.sub">Custom-styled hover tips with details.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="richTooltips" /><span class="track"><span class="thumb"></span></span></label>
       </div>
@@ -136,47 +136,47 @@
     <section class="section">
       <h2 class="section-title">
         <span class="section-num">04</span>
-        Library &amp; account
+        <span data-i18n="popup.section.library">Library &amp; account</span>
       </h2>
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Custom tags &amp; notes</div>
-          <div class="toggle-sub">Plus autocomplete &amp; dashboard.</div>
+          <div class="toggle-title" data-i18n="popup.row.tags">Custom tags &amp; notes</div>
+          <div class="toggle-sub" data-i18n="popup.row.tags.sub">Plus autocomplete &amp; dashboard.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="customTags" /><span class="track"><span class="thumb"></span></span></label>
       </div>
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Wishlist quick filters</div>
-          <div class="toggle-sub">By sale, price, rating.</div>
+          <div class="toggle-title" data-i18n="popup.row.wlFilters">Wishlist quick filters</div>
+          <div class="toggle-sub" data-i18n="popup.row.wlFilters.sub">By sale, price, rating.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="wishlistFilters" /><span class="track"><span class="thumb"></span></span></label>
       </div>
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Wishlist sale alerts</div>
-          <div class="toggle-sub">Toolbar badge counts wishlist deals.</div>
+          <div class="toggle-title" data-i18n="popup.row.wlAlerts">Wishlist sale alerts</div>
+          <div class="toggle-sub" data-i18n="popup.row.wlAlerts.sub">Toolbar badge counts wishlist deals.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="wishlistAlerts" /><span class="track"><span class="thumb"></span></span></label>
       </div>
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Price history tracking</div>
-          <div class="toggle-sub">Records prices on every visit.</div>
+          <div class="toggle-title" data-i18n="popup.row.priceHistory">Price history tracking</div>
+          <div class="toggle-sub" data-i18n="popup.row.priceHistory.sub">Records prices on every visit.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="priceHistoryTracking" /><span class="track"><span class="thumb"></span></span></label>
       </div>
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Refund window timer</div>
-          <div class="toggle-sub">Manual purchase-date countdown on game pages.</div>
+          <div class="toggle-title" data-i18n="popup.row.refundTimer">Refund window timer</div>
+          <div class="toggle-sub" data-i18n="popup.row.refundTimer.sub">Manual purchase-date countdown on game pages.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="refundTimer" /><span class="track"><span class="thumb"></span></span></label>
       </div>
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Compare on IsThereAnyDeal</div>
-          <div class="toggle-sub">One-click cross-store price check.</div>
+          <div class="toggle-title" data-i18n="popup.row.itad">Compare on IsThereAnyDeal</div>
+          <div class="toggle-sub" data-i18n="popup.row.itad.sub">One-click cross-store price check.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="itadCompare" /><span class="track"><span class="thumb"></span></span></label>
       </div>
@@ -185,19 +185,19 @@
     <section class="section">
       <h2 class="section-title">
         <span class="section-num">05</span>
-        Localization
+        <span data-i18n="popup.section.localization">Localization</span>
       </h2>
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">Hebrew translation overlay</div>
-          <div class="toggle-sub">Translates stable nav &amp; UI strings.</div>
+          <div class="toggle-title" data-i18n="popup.row.hebrew">Hebrew translation overlay</div>
+          <div class="toggle-sub" data-i18n="popup.row.hebrew.sub">Translates stable nav &amp; UI strings.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="hebrewTranslations" /><span class="track"><span class="thumb"></span></span></label>
       </div>
       <div class="row toggle-row">
         <div>
-          <div class="toggle-title">RTL layout</div>
-          <div class="toggle-sub">Mirrors layout for right-to-left.</div>
+          <div class="toggle-title" data-i18n="popup.row.rtl">RTL layout</div>
+          <div class="toggle-sub" data-i18n="popup.row.rtl.sub">Mirrors layout for right-to-left.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="rtlLayout" /><span class="track"><span class="thumb"></span></span></label>
       </div>
@@ -205,18 +205,19 @@
   </main>
 
   <footer class="footer">
-    <button id="openTags" class="ghost-btn">Tag dashboard</button>
-    <button id="openOptions" class="ghost-btn">Advanced</button>
-    <button id="reload" class="primary-btn">Reload tab</button>
+    <button id="openTags" class="ghost-btn" data-i18n="popup.btn.tags">Tag dashboard</button>
+    <button id="openOptions" class="ghost-btn" data-i18n="popup.btn.advanced">Advanced</button>
+    <button id="reload" class="primary-btn" data-i18n="popup.btn.reload">Reload tab</button>
   </footer>
 
   <p class="hint">
-    Shortcuts:
-    <kbd>Alt</kbd>+<kbd>G</kbd> open ·
-    <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd> toggle
+    <span data-i18n="popup.shortcuts">Shortcuts:</span>
+    <kbd>Alt</kbd>+<kbd>G</kbd> <span data-i18n="popup.shortcuts.open">open</span> ·
+    <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd> <span data-i18n="popup.shortcuts.toggle">toggle</span>
   </p>
 
   <script src="../lib/defaults.js"></script>
+  <script src="../lib/i18n.js"></script>
   <script src="../lib/storage.js"></script>
   <script src="popup.js"></script>
 </body>

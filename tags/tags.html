@@ -19,7 +19,7 @@
         left to filter, or search by name.
       </p>
       <div class="toolbar">
-        <input type="search" id="search" placeholder="Search by game slug or note text…" autocomplete="off" />
+        <input type="search" id="search" placeholder="Search… or use tag:X, lowest:<10, since:2026, snapshots:>5" autocomplete="off" title="Advanced filters: tag:rpg lowest:<10 lowest:>5 snapshots:>3 since:2026 — combine freely with plain text" />
         <select id="sortBy" class="toolbar-select" title="Sort games by…">
           <option value="name">Name</option>
           <option value="lastVisit">Last visit</option>
@@ -28,13 +28,17 @@
         </select>
         <span class="counts" id="counts"></span>
         <button id="densityToggle" class="ghost" type="button" title="Toggle compact / comfortable density">⇅ Density</button>
-        <button id="exportCsv" class="ghost">↓ Export CSV</button>
+        <button id="exportCsv" class="ghost">↓ CSV</button>
+        <button id="exportPack" class="ghost" type="button" title="Export the currently-visible games as a shareable JSON pack">📦 Pack ↓</button>
+        <button id="importPack" class="ghost" type="button" title="Import a pack JSON from another user">📦 Pack ↑</button>
+        <input type="file" id="importPackFile" accept="application/json,.json" hidden />
       </div>
     </div>
   </header>
 
   <section class="stats-panel" id="statsPanel" aria-label="Library statistics"></section>
   <section class="year-review" id="yearReview" aria-label="Year in review"></section>
+  <section class="sale-heatmap" id="saleHeatmap" aria-label="Sale calendar heatmap"></section>
 
   <main class="layout">
     <aside class="sidebar">
@@ -52,6 +56,7 @@
   </main>
 
   <script src="../lib/defaults.js"></script>
+  <script src="../lib/i18n.js"></script>
   <script src="../lib/storage.js"></script>
   <script src="tags.js"></script>
 </body>

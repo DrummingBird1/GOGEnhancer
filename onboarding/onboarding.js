@@ -143,6 +143,9 @@ document.querySelectorAll('[data-action="back"]').forEach((btn) => {
 });
 
 // Init
+window.GOGPlusStorage.get({ uiLanguage: "en" }).then((s) => {
+  window.GOGPlusI18n?.apply(s.uiLanguage || "en");
+});
 showStep(1);
 
 document.getElementById("closeBtn")?.addEventListener("click", () => {
