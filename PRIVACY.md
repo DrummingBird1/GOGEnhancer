@@ -1,7 +1,7 @@
 # Privacy Policy — GOG Enhancer
 
 **Last updated:** May 18, 2026
-**Extension version:** 2.3.0+
+**Extension version:** 2.3.1+
 **Contact:** https://github.com/DrummingBird1/GOGEnhancer/issues
 
 GOG Enhancer is an unofficial third-party browser extension that enhances the

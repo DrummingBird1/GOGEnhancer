@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GOG Enhancer",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "תוסף third-party (לא רשמי) ל-GOG.com: המרת מטבע חיה, מעקב היסטוריית מחירים, תגיות, עברית + RTL.",
 
   "permissions": ["storage", "activeTab", "alarms", "notifications"],

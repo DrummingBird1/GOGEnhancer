@@ -202,6 +202,25 @@ const DAILY_ALARM = "gog-plus-daily";
 const DAILY_INTERVAL_MIN = 24 * 60;
 const REFUND_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 const NOTIF_ICON = "icons/icon128.png";
+const NOTIFLOG_TTL_MS = 90 * 24 * 60 * 60 * 1000; // drop dedup entries older than 90d
+
+// notifLog accumulates one timestamped key per fired notification
+// (refund:slug:days, priceAlert:slug:threshold) plus the __wishlistJump
+// throttle. Without pruning it grows forever. Drop entries whose timestamp
+// is older than the TTL — re-arming an old alert is harmless. Returns the
+// pruned object and whether anything changed.
+function pruneNotifLog(notifLog) {
+  const cutoff = Date.now() - NOTIFLOG_TTL_MS;
+  let changed = false;
+  for (const [key, ts] of Object.entries(notifLog)) {
+    if (key === "__wishlistJump") continue; // single rolling throttle, keep
+    if (typeof ts === "number" && ts < cutoff) {
+      delete notifLog[key];
+      changed = true;
+    }
+  }
+  return changed;
+}
 
 async function fireNotification(id, title, message, contextMessage) {
   try {
@@ -376,10 +395,19 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === MODS_ALARM) refreshModsList();
   if (alarm.name === WL_ALARM) refreshWishlistBadge();
   if (alarm.name === DAILY_ALARM) {
-    checkRefundWindowExpirations();
-    checkPriceAlerts();
+    runDailyJobs();
   }
 });
+
+async function runDailyJobs() {
+  await checkRefundWindowExpirations();
+  await checkPriceAlerts();
+  // Housekeeping: keep notifLog from growing without bound.
+  const { notifLog = {} } = await self.GOGPlusStorage.get({ notifLog: {} });
+  if (pruneNotifLog(notifLog)) {
+    await self.GOGPlusStorage.set({ notifLog });
+  }
+}
 
 /* ---------------- commands ---------------- */
 

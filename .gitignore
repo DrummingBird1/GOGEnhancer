@@ -9,3 +9,7 @@ dist/
 .claude/
 .vscode/
 .idea/
+
+# AGENTS.md is a per-machine Codex mirror of CLAUDE.md (contains a
+# machine-specific working-dir path). Kept local, not shared.
+AGENTS.md

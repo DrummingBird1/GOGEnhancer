@@ -1,6 +1,6 @@
 # GOG Enhancer
 
-**Version 2.3.0** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
+**Version 2.3.1** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
 
 תוסף third-party (לא רשמי) ל-GOG.com — מטבע חי, היסטוריית מחירים, השוואת מחירים בין חנויות, תגיות אישיות, שדרוג עיצובי מלא, עברית ו-RTL, והכל ללא Google Fonts וללא analytics.
 
@@ -146,7 +146,26 @@ gog-plus/
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.3.0 (current) — i18n, price alerts, sale heatmap, tag packs
+### v2.3.1 (current) — Security audit hardening
+
+A full security/privacy review found the codebase solid (no XSS, no privacy
+leaks, minimal permissions). These are the hardening fixes it produced:
+
+- **`notifLog` no longer grows unbounded.** The background dedup log (one
+  timestamped key per fired notification) is now pruned of entries older than
+  90 days on each daily run. Refund + price-alert + wishlist-jump checks were
+  consolidated into a single `runDailyJobs()` that prunes afterwards.
+- **Defense-in-depth on tag colors.** The one spot that interpolated a tag
+  color into an HTML `style` attribute (dashboard game cards) now passes it
+  through a render-time `#hex` validator (`safeHexColor`), so it can't become a
+  CSS-injection vector even if a future write-path forgets to validate. All
+  other color usages already went through CSSOM `setProperty` (injection-proof).
+- **`AGENTS.md` gitignored.** A per-machine Codex mirror of CLAUDE.md (with a
+  machine-specific path) is no longer flagged as untracked repo noise.
+
+No functional behavior changes. All 34 tests pass; ESLint clean.
+
+### v2.3.0 — i18n, price alerts, sale heatmap, tag packs
 
 **New features**
 - **Hebrew UI** — full Hebrew translation of the popup, plus interface-language selector in Advanced Options → Look & feel. Framework lives in `lib/i18n.js` (dictionary-based, supports `[data-i18n]` and `[data-i18n-attr]` markup). Sets `<html lang>` + `dir="rtl"` automatically.

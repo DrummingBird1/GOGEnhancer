@@ -598,7 +598,7 @@ function renderGames() {
       <div class="game-card-tags">
         ${tags
           .map((t) => {
-            const c = tagColors[t];
+            const c = safeHexColor(tagColors[t]);
             const style = c ? ` style="--tag-accent:${c}"` : "";
             return `<span class="game-card-chip ${t === activeTag ? "highlight" : ""}"${style}>${escapeHtml(t)}</span>`;
           })
@@ -787,6 +787,13 @@ function escapeHtml(s) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+// Returns the value only if it's a valid #hex color, else "". Render-time
+// guard so a tag color interpolated into an HTML style attribute can never
+// be a CSS-injection vector, independent of write-time validation.
+function safeHexColor(c) {
+  return typeof c === "string" && /^#[0-9a-f]{3,8}$/i.test(c) ? c : "";
 }
 
 // Minimal markdown renderer for notes. Operates on already-escaped text, so
