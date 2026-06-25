@@ -1,6 +1,6 @@
 # GOG Enhancer
 
-**Version 2.3.1** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
+**Version 2.3.2** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
 
 תוסף third-party (לא רשמי) ל-GOG.com — מטבע חי, היסטוריית מחירים, השוואת מחירים בין חנויות, תגיות אישיות, שדרוג עיצובי מלא, עברית ו-RTL, והכל ללא Google Fonts וללא analytics.
 
@@ -146,7 +146,23 @@ gog-plus/
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.3.1 (current) — Security audit hardening
+### v2.3.2 (current) — Privacy cleanup of repo metadata
+
+Housekeeping pass that removed personal identifiers from the public repo's
+tracked files (commit history was already clean — all commits use the GitHub
+noreply email):
+
+- Removed a personal email address that appeared in a `CLAUDE.md` workflow note.
+- Replaced the machine-specific local path in `CLAUDE.md` with a generic
+  `<repo-root>` placeholder.
+- Changed the copyright holder and "built for" lines (`LICENSE`, `README.md`,
+  options footer) from a personal name + city to the `DrummingBird1` handle /
+  neutral wording.
+- Fixed stale `v2.1` version pills in the onboarding and options headers.
+
+No code or behavior changes.
+
+### v2.3.1 — Security audit hardening
 
 A full security/privacy review found the codebase solid (no XSS, no privacy
 leaks, minimal permissions). These are the hardening fixes it produced:
@@ -296,6 +312,6 @@ No functional behavior changes. All 34 tests pass; ESLint clean.
 
 ---
 
-## 🧑‍💻 Built for Idan, Ramat Gan
+## 🧑‍💻 Built for the Israeli market first
 מותאם בתחילה למשתמש ישראלי (ILS, מע"מ 18%, עברית) — אבל עובד מצוין גם
 ל-EU/UK/US/PL. כל שדה ניתן לעריכה.
