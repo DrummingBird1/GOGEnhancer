@@ -1,6 +1,6 @@
 # GOG Enhancer
 
-**Version 2.3.2** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
+**Version 2.4.0** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
 
 תוסף third-party (לא רשמי) ל-GOG.com — מטבע חי, היסטוריית מחירים, השוואת מחירים בין חנויות, תגיות אישיות, שדרוג עיצובי מלא, עברית ו-RTL, והכל ללא Google Fonts וללא analytics.
 
@@ -146,7 +146,18 @@ gog-plus/
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.3.2 (current) — Privacy cleanup of repo metadata
+### v2.4.0 (current) — Support links
+
+- **Patreon support links** added in four unobtrusive spots: a "☕ Support this
+  project" button in the popup footer (translated EN/HE), a "Support development"
+  card in Advanced Options, an optional line on the onboarding wizard's final
+  step, and a Support section in the README. All are plain external links — no
+  new permissions, no fetches, no tracking. Every feature stays free.
+- **Store-listing screenshot guidance** updated to warn against shipping the
+  current screenshots (captured from a real session) and to reshoot with a
+  signed-out/demo profile so no personal account data is exposed.
+
+### v2.3.2 — Privacy cleanup of repo metadata
 
 Housekeeping pass that removed personal identifiers from the public repo's
 tracked files (commit history was already clean — all commits use the GitHub
@@ -315,3 +326,15 @@ No functional behavior changes. All 34 tests pass; ESLint clean.
 ## 🧑‍💻 Built for the Israeli market first
 מותאם בתחילה למשתמש ישראלי (ILS, מע"מ 18%, עברית) — אבל עובד מצוין גם
 ל-EU/UK/US/PL. כל שדה ניתן לעריכה.
+
+---
+
+## ☕ Support / תמיכה
+
+GOG Enhancer is free, open-source, ad-free, and collects no data. If it saves
+you money or time and you'd like to support continued development, you can
+become a supporter:
+
+**→ [patreon.com/cw/MrIdan](https://www.patreon.com/cw/MrIdan)**
+
+Entirely optional — every feature stays free for everyone regardless.

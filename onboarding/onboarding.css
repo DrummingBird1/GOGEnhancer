@@ -411,6 +411,19 @@ a:hover { text-decoration: underline; }
   text-align: center;
   padding: 60px 0;
 }
+.support-note {
+  margin: 28px auto 0;
+  max-width: 440px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.support-note a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.support-note a:hover { color: var(--accent-magenta); }
 .done-icon {
   width: 80px;
   height: 80px;

@@ -228,6 +228,15 @@ extension:
 Required: at least **one** screenshot at 1280×800 or 640×400. Recommended: 4–5.
 Capture them all in a clean Chrome window with no other extensions visible.
 
+> **⚠️ Use demo data, not your real account.** The screenshots currently in
+> `screenshots/` were captured from a real browsing session and may show a
+> personal GOG account name, real wishlist, or owned library. Before publishing,
+> reshoot them while **signed out** (or with a throwaway account) so nothing
+> personal is exposed. Pick well-known games (Witcher 3, Cyberpunk 2077,
+> Hollow Knight, Disco Elysium) so the demo reads clearly without revealing your
+> own taste/purchases. Add a few generic tags ("co-op", "backlog", "RPG night")
+> and visit 3–4 game pages first so price-history and the dashboard look real.
+
 1. **`01-currency-banner.png` (1280×800)** — Open the GOG.com homepage with the extension active. Frame the DRM-free banner at the top + the first row of game cards with the green "30-DAY REFUND" badges visible. This is your hero shot.
 
 2. **`02-game-page-panel.png` (1280×800)** — Open any game page (e.g. Cyberpunk 2077 or Heroes of Might and Magic 3). Frame the GOG Enhancer "insights" panel that shows current/all-time-low/average + the sparkline + ITAD compare button.

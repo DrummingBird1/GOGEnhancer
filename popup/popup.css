@@ -341,6 +341,28 @@ body::-webkit-scrollbar-thumb:hover {
   font-size: 10px;
 }
 
+.support-link {
+  display: block;
+  margin: 0 18px 16px;
+  padding: 9px 12px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text-secondary);
+  background: linear-gradient(135deg,
+    rgba(198, 79, 255, 0.10),
+    rgba(0, 240, 255, 0.06));
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.support-link:hover {
+  border-color: var(--accent-magenta, #c64fff);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
 body.disabled .content,
 body.disabled .rate-strip { opacity: 0.4; pointer-events: none; }
 

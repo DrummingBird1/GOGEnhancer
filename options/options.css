@@ -559,3 +559,24 @@ button.danger:hover {
   flex: 1;
   min-width: 200px;
 }
+
+/* Support card */
+.support-card {
+  background: linear-gradient(135deg,
+    rgba(198, 79, 255, 0.10),
+    rgba(0, 240, 255, 0.05));
+  border-color: var(--border-strong);
+}
+.support-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 11px 20px;
+  background: linear-gradient(135deg, var(--accent-magenta), var(--accent-cyan));
+  color: var(--bg-base);
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+.support-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
