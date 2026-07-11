@@ -4,9 +4,10 @@
     Build a Chrome Web Store-ready zip from the extension source.
 
 .DESCRIPTION
-    Produces dist/gog-enhancer-webstore.zip with only the extension files
-    (code, manifest, icons). README/PRIVACY/STORE_LISTING/LICENSE, the
-    screenshots/ folder, tests, and tooling all stay out of the package.
+    Produces dist/gog-enhancer-webstore.zip from the extension/ folder —
+    only the extension files (code, manifest, icons). README/PRIVACY/LICENSE,
+    the store/ folder (STORE_LISTING + screenshots), tests, and tooling all
+    stay out of the package.
 
 .EXAMPLE
     .\build.ps1
@@ -21,7 +22,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$source = $PSScriptRoot
+$source = Join-Path $PSScriptRoot "extension"
+if (-not (Test-Path $source)) {
+    throw "Extension folder not found: $source"
+}
 
 $resolvedOut = if ([System.IO.Path]::IsPathRooted($OutPath)) {
     $OutPath

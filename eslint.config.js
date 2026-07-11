@@ -46,7 +46,7 @@ export default [
   },
   {
     // Background service worker is an ES module per manifest.
-    files: ["background/**/*.js"],
+    files: ["extension/background/**/*.js"],
     languageOptions: {
       sourceType: "module",
       globals: {

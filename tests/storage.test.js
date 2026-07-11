@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 // Import-for-side-effects: each file is an IIFE that attaches singletons to window.
 // Vitest caches modules between tests, so the globals stay defined.
-await import("../lib/defaults.js");
-await import("../lib/storage.js");
+await import("../extension/lib/defaults.js");
+await import("../extension/lib/storage.js");
 
 const Storage = window.GOGPlusStorage;
 

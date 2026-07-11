@@ -18,7 +18,7 @@ jobs:
       - name: Verify tag matches manifest.json version
         shell: pwsh
         run: |
-          $manifestVersion = (Get-Content manifest.json -Raw | ConvertFrom-Json).version
+          $manifestVersion = (Get-Content extension/manifest.json -Raw | ConvertFrom-Json).version
           $tagVersion = "${{ github.ref_name }}".TrimStart("v")
           if ($manifestVersion -ne $tagVersion) {
             Write-Error "Tag $tagVersion does not match manifest.json version $manifestVersion."

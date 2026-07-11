@@ -8,27 +8,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository layout
 
-The extension lives directly at the repo root — `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `icons/`, and `manifest.json`. User-facing docs (`README.md`, `PRIVACY.md`, `LICENSE`) also sit at the root.
+The shippable extension lives entirely under **`extension/`** — `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `icons/`, and `manifest.json`. This is the folder you "Load unpacked" in Chrome and the only thing `build.ps1` zips. Paths inside `manifest.json` and the HTML files are relative to `extension/`, so the whole folder moves as a unit.
 
-Auxiliary folders keep the rest tidy:
-- `docs/` — internal dev docs (`STORE_LISTING.md` for Web Store submission text).
-- `screenshots/` — the 5 listing PNGs (uploaded separately to the Web Store, not bundled in the zip).
-- `dist/` — build outputs (gitignored). `build.ps1` writes `dist/gog-enhancer-webstore.zip`; you can also unzip there for Chrome's "Load unpacked".
-- `tests/` — Vitest specs for the pure utilities (`lib/storage.js`, `content/currency-detection.js`).
+**`store/`** holds Web-Store material that is *not* part of the extension: `STORE_LISTING.md` (submission text) and `screenshots/` (the 5 listing PNGs, uploaded separately to the dashboard). Nothing here ships in the zip.
+
+Everything else stays at the repo root because it's neither the extension nor store-facing:
+- User-facing docs: `README.md`, `PRIVACY.md`, `LICENSE`, `CLAUDE.md`.
+- Build + test tooling: `build.ps1`, `package.json`, `package-lock.json`, `vitest.config.js`, `eslint.config.js`, `tests/`, `node_modules/`.
 - `.github/workflows/` — CI (`test.yml`) and release automation (`release.yml`).
+- `dist/` — build outputs (gitignored). `build.ps1` writes `dist/gog-enhancer-webstore.zip`; you can also unzip there for Chrome's "Load unpacked".
 
-`build.ps1` produces `dist/gog-enhancer-webstore.zip` for Chrome Web Store submission — code + manifest + icons only. Its `$include` list is the explicit allow-list of what ships. `package.json` + `vitest.config.js` + `package-lock.json` + `eslint.config.js` + `node_modules/` exist solely for the test/lint harness — none of that ships with the extension.
+`build.ps1` zips **`extension/`** into `dist/gog-enhancer-webstore.zip` — its `$include` list (relative to `extension/`) is the explicit allow-list of what ships. The test/lint harness never ships.
 
 ## Running and debugging
 
 The extension itself is plain vanilla JS — no bundler, no framework. A Vitest + ESLint harness lives alongside for pure-utility testing and linting (`npm install` once, see Run tests / Lint below).
 
-- **Load unpacked**: `chrome://extensions/` → enable Developer mode → "Load unpacked" → pick the repo root. On install, the onboarding wizard opens in a new tab automatically.
+- **Load unpacked**: `chrome://extensions/` → enable Developer mode → "Load unpacked" → pick the **`extension/`** folder (not the repo root). On install, the onboarding wizard opens in a new tab automatically.
 - **Reload after edits**: click the reload icon for the extension on `chrome://extensions/`, then refresh the gog.com tab. The popup has a "Reload tab" button that does the latter for the active tab.
 - **Content-script debug logging**: flip "Verbose console logging" in Advanced Options, or set `window.GOG_PLUS_DEBUG = true` in the gog.com DevTools console for one-off use. The content script logs prefixed `[GOG+]`.
 - **Inspect the service worker**: `chrome://extensions/` → "service worker" link under the extension card. Use its console to inspect alarms, FX fetches, and `runtime.onMessage` traffic.
 - **Force background jobs** (no need to wait for alarms): in the SW console, send `chrome.runtime.sendMessage({type: "force-fx-refresh"})` / `"force-mods-refresh"` / `"force-wishlist-refresh"`. Or use the buttons on the options page.
-- **Repack for Web Store**: `.\build.ps1` → writes `gog-enhancer-webstore.zip` at the repo root.
+- **Repack for Web Store**: `.\build.ps1` → zips `extension/` into `dist/gog-enhancer-webstore.zip`.
 - **Run tests**: `npm install` (one-time) → `npm test` (one-shot) or `npm run test:watch`. Specs live under `tests/`; environment is happy-dom with a chrome.* shim in `tests/setup.js`.
 - **Lint**: `npm run lint` (runs ESLint flat config in `eslint.config.js`). CI also runs this on every push and PR via `.github/workflows/test.yml`.
 

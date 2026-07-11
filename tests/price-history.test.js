@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
 // Loads the storage stack first so price-history can use GOGPlusStorage.
-await import("../lib/defaults.js");
-await import("../lib/storage.js");
-await import("../content/price-history.js");
+await import("../extension/lib/defaults.js");
+await import("../extension/lib/storage.js");
+await import("../extension/content/price-history.js");
 
 const History = window.GOGPlusPriceHistory;
 
