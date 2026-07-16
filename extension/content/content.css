@@ -11,6 +11,7 @@ html.gog-plus-disabled #gog-plus-gamepanel,
 html.gog-plus-disabled #gog-plus-wlfilters,
 html.gog-plus-disabled .gog-plus-badges,
 html.gog-plus-disabled .gog-plus-conv-note,
+html.gog-plus-disabled .gog-plus-tag-dot,
 html.gog-plus-disabled .gog-plus-tooltip,
 html.gog-plus-disabled .gog-plus-toasts {
   display: none !important;
@@ -28,6 +29,8 @@ html.gog-plus-disabled .gog-plus-toasts {
   --gp-text-muted: rgba(244, 234, 255, 0.40);
   --gp-border: rgba(244, 234, 255, 0.12);
   --gp-border-strong: rgba(244, 234, 255, 0.25);
+  --gp-gold: #ffd36b;
+  --gp-amber: #ffbf47;
 
   --gp-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "SF Mono",
     Menlo, Consolas, monospace;
@@ -123,6 +126,16 @@ html.gog-plus-disabled .gog-plus-toasts {
   margin-inline-start: 2px;
   opacity: 0.7;
 }
+/* Stale FX: shift the note from cyan to amber and prefix a warning glyph so a
+   frozen/failed rate is visible at a glance, not just in the tooltip (#01). */
+.gog-plus-conv-note--stale {
+  background: rgba(255, 191, 71, 0.14);
+  color: var(--gp-amber);
+}
+.gog-plus-conv-note--stale::before {
+  content: "⚠ ";
+  opacity: 0.85;
+}
 
 /* ===== Card badges =====
    Badges are scoped to the cover image wrapper, NEVER the card root.
@@ -166,6 +179,41 @@ html.gog-plus-disabled .gog-plus-toasts {
   background: rgba(198, 79, 255, 0.92);
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.4);
+}
+/* Historical-low badge (#06) — gold to read as "great deal", distinct from the
+   green refund and magenta mod badges. */
+.gog-plus-badge-low {
+  background: rgba(15, 8, 30, 0.85);
+  color: var(--gp-gold);
+  border: 1px solid rgba(255, 211, 107, 0.45);
+  text-shadow: 0 0 8px rgba(255, 211, 107, 0.35);
+}
+
+/* Rich-tooltip inner lines for conversion provenance (#02). */
+.gog-plus-tip-rate {
+  opacity: 0.7;
+  font-size: 0.92em;
+}
+.gog-plus-tip-warn {
+  color: var(--gp-amber);
+  font-weight: 700;
+}
+
+/* Tag-colour dot (#04) — small corner marker on cards you've tagged. Sits in
+   the top-inline-end corner so it never collides with the badge strip, which
+   lives in the top-inline-start corner. Host is already position:relative. */
+.gog-plus-cover-host--has-tagdot .gog-plus-tag-dot {
+  position: absolute;
+  top: 6px;
+  inset-inline-end: 6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  z-index: 5;
+  background: var(--gog-plus-tag-dot, var(--gp-magenta));
+  border: 1.5px solid rgba(10, 6, 18, 0.85);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25), 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: help;
 }
 
 /* ===== DRM-free top banner ===== */

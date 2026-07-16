@@ -19,6 +19,7 @@ const ALL_BOOLEAN_KEYS = [
   "wishlistFilters",
   "wishlistAlerts",
   "priceHistoryTracking",
+  "lowestPriceBadge",
   "refundTimer",
   "itadCompare",
   "hebrewTranslations",

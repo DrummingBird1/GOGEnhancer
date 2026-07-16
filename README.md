@@ -144,7 +144,29 @@ gog-plus/
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.4.1 (current) — Repo restructure: `extension/` + `store/`
+### v2.5.0 (current) — Smart prices & historical lows
+
+Adds price-trust signals while browsing, plus reliability plumbing:
+
+- **💎 Lowest-price badge** — cards for games sitting at their tracked all-time
+  low now carry a gold "Low" badge, so you spot a genuine deal without opening
+  the game page. Reuses the price-history you already collect; toggle it in the
+  popup ("Lowest-price badge").
+- **Stale-rate warning** — a converted price whose FX rate is over 48h old, was
+  never fetched, or last failed to refresh now shows in amber with a ⚠, instead
+  of quietly using a frozen rate.
+- **Rate provenance in tooltips** — the conversion tooltip now shows the exact
+  rate used and its age ("1 USD = 3.65 ILS · updated 4h ago").
+- **Tag-colour dot on cards** — a small corner dot, tinted by your first tag,
+  marks games you've tagged while browsing the store.
+- **Storage-routing CI guard** — a new test asserts every key in `defaults.js`
+  is routed in `storage.js`, catching the "falls through to local" trap at PR
+  time. Refreshed dev dependencies to clear Dependabot advisories.
+
+Internally: the archive step in `build.ps1` (added in this cycle) automatically
+tucks the previous webstore zip into `dist/archive/` on every version bump.
+
+### v2.4.1 — Repo restructure: `extension/` + `store/`
 
 Housekeeping only — no code or behavior changes. The repo root now cleanly
 separates what ships from what doesn't:

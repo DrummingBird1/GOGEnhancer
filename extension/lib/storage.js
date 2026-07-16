@@ -33,6 +33,7 @@
     "cleanLayout",
     "designInjection",
     "priceHistoryTracking",
+    "lowestPriceBadge",
     "itadCompare",
     "richTooltips",
     "skeletonLoaders",

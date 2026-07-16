@@ -267,6 +267,13 @@
     let n;
     while ((n = walker.nextNode())) targets.push(n);
 
+    // FX freshness — computed once per pass. Drives the "stale rate" tint (#01)
+    // and the rate-provenance line in the tooltip (#02). Rates older than 48h,
+    // never-fetched (bundled), or whose last refresh errored are flagged stale.
+    const info = fxFreshness();
+    const tgtCur = settings.targetCurrency;
+    const tgtRate = tgtCur === "USD" ? 1 : settings.rates[tgtCur];
+
     for (const node of targets) {
       const price = window.GOGPlusCurrency.parsePrice(node.nodeValue, pageCurrency.code);
       if (!price) continue;
@@ -279,24 +286,52 @@
       if (settings.taxEstimator && settings.vatPercent > 0) {
         note.classList.add("gog-plus-with-tax");
       }
+      if (info.stale) note.classList.add("gog-plus-conv-note--stale");
       if (settings.richTooltips) {
         const taxLine =
           settings.taxEstimator && settings.vatPercent > 0
             ? `<br>+${settings.vatPercent}% VAT included`
             : "";
+        const rateLine = tgtRate
+          ? `<br><span class="gog-plus-tip-rate">Rate: 1 USD = ${tgtRate} ${tgtCur} · updated ${info.label}</span>`
+          : "";
+        const staleLine = info.stale
+          ? `<br><span class="gog-plus-tip-warn">⚠ ${
+              settings.lastFxError
+                ? "Last rate update failed — value may be off."
+                : "Rate may be out of date."
+            }</span>`
+          : "";
         note.dataset.gogPlusTip = `
           <strong>Conversion details</strong><br>
           ${formatPrice(price, pageCurrency.code)} ${pageCurrency.code} → ${formatPrice(
             value,
             settings.targetCurrency
-          )}${taxLine}
+          )}${taxLine}${rateLine}${staleLine}
         `;
       } else {
-        note.title = `${formatPrice(price, pageCurrency.code)} → ${formatPrice(value, settings.targetCurrency)}`;
+        note.title = `${formatPrice(price, pageCurrency.code)} → ${formatPrice(
+          value,
+          settings.targetCurrency
+        )} (rate ${info.label}${info.stale ? ", may be stale" : ""})`;
       }
       node.parentElement.classList.add("gog-plus-converted");
       node.parentElement.appendChild(note);
     }
+  }
+
+  // Summarise how fresh the FX rates are: { stale, label }. `label` is a short
+  // human age ("4h ago", "2d ago", or "bundled rates" when never fetched).
+  function fxFreshness() {
+    const FX_STALE_MS = 48 * 60 * 60 * 1000;
+    const age = settings.ratesUpdatedAt ? Date.now() - settings.ratesUpdatedAt : null;
+    const stale = !!settings.lastFxError || age === null || age > FX_STALE_MS;
+    let label;
+    if (age === null) label = "bundled rates";
+    else if (age < 3600e3) label = `${Math.max(1, Math.round(age / 60e3))} min ago`;
+    else if (age < 86400e3) label = `${Math.round(age / 3600e3)}h ago`;
+    else label = `${Math.round(age / 86400e3)}d ago`;
+    return { stale, label };
   }
 
   /* ============== card badges (refund / mod / era) ============== */
@@ -412,9 +447,60 @@
         strip.appendChild(m);
       }
 
+      // Historical-low badge (#06). Uses the preloaded price-history cache — no
+      // async read in the hot path. Mirrors the "at low" logic already used by
+      // the hover quick-look: the game is flagged when its latest recorded
+      // snapshot equals the lowest we've ever recorded, over >=2 snapshots.
+      if (settings.lowestPriceBadge && settings.priceHistory) {
+        const ph = settings.priceHistory[slug];
+        if (Array.isArray(ph) && ph.length >= 2) {
+          const prices = ph.map((e) => e.p);
+          const minP = Math.min(...prices);
+          const latest = ph[ph.length - 1];
+          if (latest.p === minP) {
+            const lo = document.createElement("span");
+            lo.className = "gog-plus-badge gog-plus-badge-low";
+            lo.textContent = "💎 Low";
+            if (settings.richTooltips) {
+              lo.dataset.gogPlusTip = `<strong>💎 Tracked all-time low</strong><br>This is the lowest price recorded here (${symbolFor(
+                latest.c || "USD"
+              )}${minP.toFixed(2)}), across ${ph.length} snapshots.`;
+            } else {
+              lo.title = "At its tracked all-time low";
+            }
+            strip.appendChild(lo);
+          }
+        }
+      }
+
       if (strip.childNodes.length) {
         host.appendChild(strip);
         host.classList.add("gog-plus-cover-host--has-badges");
+      }
+
+      // Tag-colour dot (#04). A small corner marker on cards you've tagged,
+      // tinted with the first tag that has a colour. Removed + re-added on the
+      // storage-change path (see the onChange cleanup), so it can't duplicate.
+      if (settings.customTags && settings.tags) {
+        const slugTags = settings.tags[slug];
+        if (Array.isArray(slugTags) && slugTags.length) {
+          const dot = document.createElement("span");
+          dot.className = "gog-plus-tag-dot";
+          const colored = slugTags.find(
+            (t) =>
+              settings.tagColors?.[t] &&
+              /^#[0-9a-f]{3,8}$/i.test(settings.tagColors[t])
+          );
+          if (colored) dot.style.setProperty("--gog-plus-tag-dot", settings.tagColors[colored]);
+          const names = slugTags.join(", ");
+          if (settings.richTooltips) {
+            dot.dataset.gogPlusTip = `<strong>Your tags</strong><br>${escapeHtml(names)}`;
+          } else {
+            dot.title = `Tags: ${names}`;
+          }
+          host.appendChild(dot);
+          host.classList.add("gog-plus-cover-host--has-tagdot");
+        }
       }
     });
   }
@@ -1340,9 +1426,9 @@
           "gog-plus-translated"
         );
       });
-    document.querySelectorAll(".gog-plus-conv-note, .gog-plus-badges").forEach((el) =>
-      el.remove()
-    );
+    document
+      .querySelectorAll(".gog-plus-conv-note, .gog-plus-badges, .gog-plus-tag-dot")
+      .forEach((el) => el.remove());
     // Strip era-aware cover classes so toggling designInjection off doesn't
     // leave classic-CRT or neon-glow effects stuck on existing cards.
     document

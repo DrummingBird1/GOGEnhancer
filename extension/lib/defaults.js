@@ -37,6 +37,7 @@
     cleanLayout: true,
     designInjection: true,
     priceHistoryTracking: true,
+    lowestPriceBadge: true,
     itadCompare: true,
     richTooltips: true,
     skeletonLoaders: true,
