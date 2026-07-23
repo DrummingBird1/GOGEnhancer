@@ -49,7 +49,44 @@ async function load() {
     if (el) el.checked = !!s[k];
   });
 
+  renderWhatsNew(s);
   renderRateStrip(s);
+}
+
+// Shows changelog bullets for every version since the user last dismissed one
+// (see lib/changelog.js#versionsSince). Stays hidden once storage.lastSeenVersion
+// catches up to the installed manifest version.
+function renderWhatsNew(s) {
+  const panel = $("whatsNew");
+  if (!panel || !window.GOGPlusChangelog) return;
+
+  const currentVersion = chrome.runtime.getManifest().version;
+  const versions = window.GOGPlusChangelog.versionsSince(
+    s.lastSeenVersion,
+    currentVersion
+  );
+  if (!versions.length) {
+    panel.hidden = true;
+    return;
+  }
+
+  const list = $("whatsNewList");
+  list.innerHTML = "";
+  versions.forEach((v) => {
+    if (versions.length > 1) {
+      const head = document.createElement("li");
+      head.className = "whatsnew-version-head";
+      head.textContent = `v${v}`;
+      list.appendChild(head);
+    }
+    (window.GOGPlusChangelog.CHANGELOG[v] || []).forEach((text) => {
+      const li = document.createElement("li");
+      li.textContent = text;
+      list.appendChild(li);
+    });
+  });
+  $("whatsNewVersion").textContent = `v${currentVersion}`;
+  panel.hidden = false;
 }
 
 function renderRateStrip(s) {
@@ -115,6 +152,12 @@ function bind() {
     if (v > 40) v = 40;
     $("vatPercent").value = v;
     window.GOGPlusStorage.set({ vatPercent: v });
+  });
+
+  $("whatsNewDismiss").addEventListener("click", async () => {
+    const currentVersion = chrome.runtime.getManifest().version;
+    await window.GOGPlusStorage.set({ lastSeenVersion: currentVersion });
+    $("whatsNew").hidden = true;
   });
 
   $("refreshRates").addEventListener("click", (e) => {

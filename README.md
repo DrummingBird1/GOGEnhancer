@@ -144,7 +144,16 @@ gog-plus/
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.5.0 (current) — Smart prices & historical lows
+### v2.5.1 (current) — What's new panel
+
+- **Popup changelog** — after an update, opening the popup now shows a short
+  "What's new" panel with that release's highlights, dismissible with a "Got
+  it" button. Tracks a new `lastSeenVersion` key (local, per-device) so it
+  only surfaces versions you haven't acknowledged yet — including any you
+  skipped if the browser was closed across several releases. Source of truth
+  is `lib/changelog.js`; add an entry there on every user-facing version bump.
+
+### v2.5.0 — Smart prices & historical lows
 
 Adds price-trust signals while browsing, plus reliability plumbing:
 

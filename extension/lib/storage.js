@@ -68,6 +68,7 @@
     "notifLog",
     "priceAlerts",
     "tagDashboardDensity",
+    "lastSeenVersion",
   ]);
 
   function pickArea(key) {

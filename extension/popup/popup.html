@@ -18,6 +18,16 @@
     </label>
   </header>
 
+  <div class="whatsnew" id="whatsNew" hidden>
+    <div class="whatsnew-head">
+      <span class="whatsnew-icon" aria-hidden="true">✨</span>
+      <span class="whatsnew-title" data-i18n="popup.whatsnew.title">What's new</span>
+      <span class="whatsnew-version" id="whatsNewVersion"></span>
+    </div>
+    <ul class="whatsnew-list" id="whatsNewList"></ul>
+    <button id="whatsNewDismiss" class="whatsnew-dismiss" type="button" data-i18n="popup.whatsnew.dismiss">Got it</button>
+  </div>
+
   <div class="rate-strip" id="rateStrip" role="status" aria-live="polite"></div>
 
   <main class="content">
@@ -228,6 +238,7 @@
   <script src="../lib/defaults.js"></script>
   <script src="../lib/i18n.js"></script>
   <script src="../lib/storage.js"></script>
+  <script src="../lib/changelog.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -72,6 +72,7 @@
     notifLog: {},
     priceAlerts: {},
     tagDashboardDensity: "comfortable",
+    lastSeenVersion: "",
   };
 
   if (typeof window !== "undefined") {
