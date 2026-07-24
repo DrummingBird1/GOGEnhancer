@@ -22,6 +22,9 @@
     "2.5.1": [
       "✨ This panel — a short changelog now shows here after every update",
     ],
+    "2.6.0": [
+      "Genre-aware card styling now reads the real genre off each game's own page (Horror, Role-playing, Strategy) instead of only a hand-picked franchise list — covers far more titles the more you visit",
+    ],
   };
 
   // Dotted-numeric version compare (2.9.0 < 2.10.0, unlike string sort).

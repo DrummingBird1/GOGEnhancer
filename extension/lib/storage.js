@@ -69,6 +69,7 @@
     "priceAlerts",
     "tagDashboardDensity",
     "lastSeenVersion",
+    "gameGenres",
   ]);
 
   function pickArea(key) {

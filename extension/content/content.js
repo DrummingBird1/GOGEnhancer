@@ -222,6 +222,75 @@
     },
   ];
 
+  // GOG's own "Genre:" field on a game page (confirmed values include
+  // "Action", "Horror", "Survival", "Simulation", "Role-playing",
+  // "Managerial") only reliably covers a subset of our five card-theming
+  // buckets — sci-fi and indie appear to live in GOG's much larger, looser
+  // "Tags:" cloud instead (which is also lazily truncated behind a "show N
+  // more" toggle in the DOM), so we deliberately don't scan Tags here: it
+  // would trade a confirmed-safe signal for a noisy, unverified one. Genres
+  // not in this table keep using the franchise/keyword regex above.
+  const GENRE_LABEL_TO_BUCKET = {
+    horror: "horror",
+    "role-playing": "rpg",
+    "role playing": "rpg",
+    rpg: "rpg",
+    strategy: "strategy",
+    "turn-based strategy": "strategy",
+    "real-time strategy": "strategy",
+  };
+
+  // Reads the real genre(s) for the CURRENT game page's "Genre:" row and maps
+  // the first recognized one to a card-theming bucket. Class-name agnostic on
+  // purpose: GOG is an Angular SPA and its markup shifts between releases, so
+  // instead of a specific selector we hunt for the literal "Genre:" text
+  // label and read the anchors in its row. Returns null if no label or no
+  // mappable genre is found — callers should fall back to GENRE_PATTERNS.
+  function detectGameGenreBucket() {
+    const root = document.querySelector("main") || document.body;
+    if (!root) return null;
+    const labelRe = /^genres?:?$/i;
+    const candidates = root.querySelectorAll("dt, dd, span, div, td, th, strong, b, p, li");
+    let labelEl = null;
+    for (const el of candidates) {
+      if (el.children.length > 0) continue; // leaf nodes only — the label itself has no nested links
+      if (labelRe.test((el.textContent || "").trim())) {
+        labelEl = el;
+        break;
+      }
+    }
+    if (!labelEl) return null;
+
+    // Walk up a few levels to the row containing the label, then read every
+    // anchor's TEXT in that row (not its href — GOG's genre-link URL scheme
+    // isn't consistent enough across pages to match on reliably). Stop at
+    // the first ancestor that has any links, so we don't spill into an
+    // unrelated section further up the tree.
+    let row = labelEl.parentElement;
+    for (let hops = 0; row && hops < 3; hops++, row = row.parentElement) {
+      const links = row.querySelectorAll("a");
+      if (!links.length) continue;
+      for (const a of links) {
+        const key = (a.textContent || "").trim().toLowerCase();
+        if (GENRE_LABEL_TO_BUCKET[key]) return GENRE_LABEL_TO_BUCKET[key];
+      }
+      break;
+    }
+    return null;
+  }
+
+  // Caches the detected genre bucket for `slug` the first time we see it —
+  // cheap no-op on subsequent processAll() passes for the same game (the
+  // DOM scan only runs once per slug, not once per mutation tick).
+  async function maybeRecordGameGenre(slug) {
+    if (settings.gameGenres && settings.gameGenres[slug]) return;
+    const bucket = detectGameGenreBucket();
+    if (!bucket) return;
+    const cur = { ...(settings.gameGenres || {}), [slug]: bucket };
+    settings.gameGenres = cur;
+    await window.GOGPlusStorage.set({ gameGenres: cur });
+  }
+
   /* ============== currency conversion ============== */
 
   // Convert from any source currency to settings.targetCurrency via the USD
@@ -401,10 +470,18 @@
         host.classList.add("gog-plus-cover--neon");
       }
       if (settings.designInjection) {
-        for (const { genre, re } of GENRE_PATTERNS) {
-          if (re.test(slug)) {
-            host.classList.add(`gog-plus-cover--genre-${genre}`);
-            break;
+        // Prefer the real genre read off the game's own page (cached on
+        // visit — see maybeRecordGameGenre) over the franchise/keyword
+        // regex, which only recognizes titles hand-listed in GENRE_PATTERNS.
+        const cachedGenre = settings.gameGenres && settings.gameGenres[slug];
+        if (cachedGenre) {
+          host.classList.add(`gog-plus-cover--genre-${cachedGenre}`);
+        } else {
+          for (const { genre, re } of GENRE_PATTERNS) {
+            if (re.test(slug)) {
+              host.classList.add(`gog-plus-cover--genre-${genre}`);
+              break;
+            }
           }
         }
       }
@@ -806,7 +883,10 @@
       else if (mode === "under10") show = usdEq !== null && usdEq < 10;
       else if (mode === "under25") show = usdEq !== null && usdEq < 25;
       else if (mode === "rated45") show = rating !== null && rating >= 4.5;
-      else if (genrePattern) show = !!slug && genrePattern.test(slug);
+      else if (genreMatch) {
+        const cachedGenre = slug && settings.gameGenres && settings.gameGenres[slug];
+        show = cachedGenre ? cachedGenre === genreMatch : !!slug && !!genrePattern && genrePattern.test(slug);
+      }
 
       c.classList.toggle("gog-plus-filtered-out", !show);
     });
@@ -821,6 +901,7 @@
 
     await Promise.all([
       maybeRecordPriceHistory(slug),
+      maybeRecordGameGenre(slug),
       ensureGamePagePanel(slug),
     ]);
   }

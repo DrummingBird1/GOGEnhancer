@@ -137,14 +137,30 @@ gog-plus/
 - **Mods list scraping** — תלוי בכך ש-`gog.com/en/mods` שומר על מבנה דומה. אם תהיה רגרסיה, force-refresh דרך Advanced settings.
 - **Wishlist badge counter** — מבוסס על ספירת DOM חיה כשהמשתמש מבקר ב-`/account/wishlist` (TTL של 24 שעות). אם לא ביקרת לאחרונה — ה-badge יהיה ריק עד הביקור הבא. ה-tooltip של אייקון ההרחבה ימליץ לבקר.
 - **Refund timer מבוסס על תאריך ידני** — GOG לא חושף תאריך רכישה דרך DOM פומבי, אז ה-countdown של 30 הימים נשען על תאריך שאתה מקליד ב-panel. אם לא הקלדת תאריך — אין countdown.
-- **Genre detection הוא slug-pattern matching** — ה-card classes (RPG/Horror/Strategy/Sci-fi/Indie) מבוססים על regex ידני של שמות משחקים מוכרים. משחקים חדשים או פחות-מפורסמים לא יזוהו אוטומטית.
+- **Genre detection — חלקית אוטומטית מ-v2.6.0** — Horror/Role-playing/Strategy נקראים כעת מה"Genre:" האמיתי בעמוד המשחק ונשמרים ב-cache לפי slug (`gameGenres`) בביקור ראשון. Sci-fi ו-Indie עדיין מבוססים על regex ידני של שמות משחקים מוכרים — ב-GOG הם נראים משויכים ל-"Tags" הרחב יותר ולא ל-"Genre:", ומבנה זה לא אומת במלואו. עד שמשחק מסוים לא בוקר, כל חמשת הז'אנרים נופלים חזרה ל-regex הישן.
 - **Cross-currency conversion דרך USD** — ההמרה מבוצעת תמיד דרך USD כ-pivot. אם השער של אחד הזוגות חסר ב-`rates`, ההמרה לא תתבצע. כל ה-rates נשלפים אוטומטית כל 12 שעות מ-frankfurter.app.
 
 ---
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.5.1 (current) — What's new panel
+### v2.6.0 (current) — Genre detection from the game page
+
+- **Real genre detection** — visiting a game page now reads its actual
+  "Genre:" field (confirmed values: Horror, Role-playing, Strategy) and
+  caches the result per slug (`gameGenres`, local/per-device). Card styling
+  and the wishlist genre filters use this cache when available, falling back
+  to the old franchise/keyword regex (`GENRE_PATTERNS`) for anything not yet
+  visited or outside those three genres (sci-fi, indie — GOG appears to
+  classify those under its separate, unverified "Tags" cloud, not "Genre:",
+  so they're left on the regex for now). Detection is text-label based
+  rather than tied to a specific CSS class, since GOG's Angular markup shifts
+  between releases; it silently no-ops if the label isn't found, so the
+  worst case is identical to pre-2.6.0 behavior.
+- Addresses part of the "Genre detection is slug-pattern matching" known
+  limitation — narrower than a full fix (3 of 5 buckets), see above for why.
+
+### v2.5.1 — What's new panel
 
 - **Popup changelog** — after an update, opening the popup now shows a short
   "What's new" panel with that release's highlights, dismissible with a "Got

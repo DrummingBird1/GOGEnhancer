@@ -73,6 +73,7 @@
     priceAlerts: {},
     tagDashboardDensity: "comfortable",
     lastSeenVersion: "",
+    gameGenres: {},
   };
 
   if (typeof window !== "undefined") {
