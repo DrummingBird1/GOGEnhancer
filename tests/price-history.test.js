@@ -6,6 +6,7 @@ await import("../extension/lib/storage.js");
 await import("../extension/content/price-history.js");
 
 const History = window.GOGPlusPriceHistory;
+const { evictLeastRecentlyUpdated, TOTAL_BUDGET_BYTES } = History._internals;
 
 beforeEach(() => globalThis.__resetChromeStores());
 
@@ -92,5 +93,72 @@ describe("GOGPlusPriceHistory.stats", () => {
     expect(s.first.p).toBe(20);
     expect(s.latest.p).toBe(30);
     expect(s.currency).toBe("USD");
+  });
+});
+
+// STOR-2: historyMaxEntries caps entries PER game, but nothing capped the
+// number of GAMES tracked. A long-time user visiting hundreds of titles had
+// no eviction path before storage.local's ~5MB ceiling.
+describe("price-history total-size eviction (evictLeastRecentlyUpdated)", () => {
+  it("leaves a small history untouched", () => {
+    const history = { a: [{ d: "2024-01-01", p: 10, c: "USD" }] };
+    const before = JSON.stringify(history);
+    evictLeastRecentlyUpdated(history);
+    expect(JSON.stringify(history)).toBe(before);
+  });
+
+  // ~19KB per fully-populated (500-entry) game, so ~111 games clears the
+  // 2MB budget — 140 gives headroom without the test getting too slow.
+  const GAMES_TO_EXCEED_BUDGET = 140;
+  const bigEntries = (lastDate) =>
+    Array.from({ length: 500 }, (_, i) => ({
+      d: i === 499 ? lastDate : "2020-01-01",
+      p: 9.99,
+      c: "USD",
+    }));
+
+  it("evicts the least-recently-updated games first when over budget, keeping the newest", () => {
+    const history = {};
+    for (let g = 0; g < GAMES_TO_EXCEED_BUDGET; g++) {
+      // Ascending dates: game_0 is the stalest, the last one is the newest.
+      const year = 1990 + g;
+      history[`game_${g}`] = bigEntries(`${year}-01-01`);
+    }
+    expect(JSON.stringify(history).length).toBeGreaterThan(TOTAL_BUDGET_BYTES);
+
+    evictLeastRecentlyUpdated(history);
+
+    expect(history.game_0).toBeUndefined();
+    expect(history[`game_${GAMES_TO_EXCEED_BUDGET - 1}`]).toBeDefined();
+    expect(JSON.stringify(history).length).toBeLessThanOrEqual(TOTAL_BUDGET_BYTES);
+  });
+
+  it("never evicts every game if evicting fewer already fits the budget", () => {
+    const history = {
+      oldest: bigEntries("2021-01-01"),
+      newest: bigEntries("2024-12-31"),
+    };
+    evictLeastRecentlyUpdated(history);
+    // Well under budget already — nothing should be evicted.
+    expect(history.oldest).toBeDefined();
+    expect(history.newest).toBeDefined();
+  });
+
+  it("is wired into record(): recording for a fresh slug can evict stale games once over budget", async () => {
+    // Seed storage directly with an over-budget history, bypassing record()'s
+    // own per-call trimming, then confirm a real record() call triggers
+    // eviction as a side effect.
+    const seeded = {};
+    for (let g = 0; g < GAMES_TO_EXCEED_BUDGET; g++) {
+      seeded[`stale_game_${g}`] = bigEntries("2019-01-01");
+    }
+    expect(JSON.stringify(seeded).length).toBeGreaterThan(TOTAL_BUDGET_BYTES);
+    await window.GOGPlusStorage.set({ priceHistory: seeded });
+
+    await History.record("brand_new_game", 19.99, "USD");
+
+    const after = await window.GOGPlusStorage.get({ priceHistory: {} });
+    expect(after.priceHistory.brand_new_game).toBeDefined();
+    expect(JSON.stringify(after.priceHistory).length).toBeLessThanOrEqual(TOTAL_BUDGET_BYTES);
   });
 });

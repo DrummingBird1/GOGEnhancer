@@ -10,10 +10,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Full history (not the default shallow clone) so the version-bump
+          # check below can diff against the PR's actual base branch.
+          fetch-depth: 0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "20"
           cache: "npm"
@@ -21,8 +25,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
+      - name: Audit dependencies (fail on high/critical)
+        run: npm audit --audit-level=high
+
+      - name: Run tests with coverage
+        run: npm run coverage
 
       - name: Lint
         run: npm run lint --if-present
+
+      - name: Typecheck lib/ (JSDoc + @ts-check)
+        run: npm run typecheck
+
+      - name: Verify the extension actually builds
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: Warn if extension/ changed without a version bump
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          BASE="origin/${{ github.base_ref }}"
+          if git diff --name-only "$BASE...HEAD" | grep -q '^extension/'; then
+            if git diff "$BASE...HEAD" -- extension/manifest.json | grep -q '"version"'; then
+              echo "extension/ changed and manifest.json's version was bumped — looks like a release."
+            else
+              echo "::warning::extension/ files changed in this PR but manifest.json's version wasn't touched. If this is meant to ship, bump the version before merging."
+            fi
+          else
+            echo "No extension/ changes in this PR — nothing to check."
+          fi

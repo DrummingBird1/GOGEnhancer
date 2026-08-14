@@ -7,6 +7,8 @@
  */
 
 const $ = (id) => document.getElementById(id);
+const { escapeHtml } = window.GOGPlusDomSafety;
+const { formatPrice } = window.GOGPlusCurrencyFormat;
 
 let allTags = {}; // { slug: [tag, ...] }
 let allNotes = {}; // { slug: text }
@@ -49,7 +51,7 @@ async function init() {
   tagOrder = Array.isArray(data.tagOrder) ? data.tagOrder : [];
   density = data.tagDashboardDensity === "compact" ? "compact" : "comfortable";
   applyDensityClass();
-  renderStats();
+  await renderStats();
   renderYearReview();
   renderSaleHeatmap();
   renderTagList();
@@ -225,12 +227,12 @@ function renderYearReview() {
 
   const savingsParts = Object.entries(savingsByCur)
     .filter(([, v]) => v > 0)
-    .map(([cur, v]) => `${currencySymbol(cur)}${v.toFixed(2)}`)
+    .map(([cur, v]) => formatPrice(v, cur))
     .join(" + ");
 
   const dropLine = biggestDrop
     ? `<strong>-${biggestDrop.pct}%</strong> on <em>${escapeHtml(slugToTitle(biggestDrop.slug))}</em> on ${biggestDrop.when}
-       <span class="yr-detail">${currencySymbol(biggestDrop.currency)}${biggestDrop.from.toFixed(2)} → ${currencySymbol(biggestDrop.currency)}${biggestDrop.to.toFixed(2)}</span>`
+       <span class="yr-detail">${formatPrice(biggestDrop.from, biggestDrop.currency)} → ${formatPrice(biggestDrop.to, biggestDrop.currency)}</span>`
     : `<span class="yr-empty">No significant drops captured yet</span>`;
 
   const mostLine = mostTracked
@@ -289,7 +291,7 @@ function renderYearReview() {
   }
 }
 
-function renderStats() {
+async function renderStats() {
   const panel = $("statsPanel");
   if (!panel) return;
 
@@ -322,7 +324,7 @@ function renderStats() {
   }
   const savingsParts = Object.entries(savingsByCur)
     .filter(([, v]) => v > 0)
-    .map(([cur, v]) => `${currencySymbol(cur)}${v.toFixed(2)}`)
+    .map(([cur, v]) => formatPrice(v, cur))
     .join(" + ");
 
   // Active refund timers
@@ -333,16 +335,22 @@ function renderStats() {
     return ms >= 0 && ms <= 30 * 24 * 60 * 60 * 1000;
   }).length;
 
-  // Storage usage estimate — sum stringified sizes of the local-side blobs.
-  // chrome.storage.local quota is 5 MB so we render usage / quota.
-  const localBytes = JSON.stringify({
-    tags: allTags,
-    tagColors,
-    tagOrder,
-    notes: allNotes,
-    priceHistory: allHistory,
-    purchaseLog: allPurchases,
-  }).length;
+  // Real storage usage via the native API — covers every key actually in
+  // storage.local (not a hand-picked subset that drifts as keys get added;
+  // this used to be a JSON.stringify-of-six-keys estimate that had already
+  // fallen behind modsList/wishlistCache/notifLog/priceAlerts/gameGenres/
+  // lastSeenVersion). chrome.storage.local quota is 5 MB so we render usage
+  // as a percentage of that.
+  const localBytes = await new Promise((resolve) => {
+    chrome.storage.local.getBytesInUse(null, (bytes) => {
+      if (chrome.runtime.lastError) {
+        console.error("[GOG+] getBytesInUse failed:", chrome.runtime.lastError.message);
+        resolve(0);
+      } else {
+        resolve(bytes);
+      }
+    });
+  });
   const localKb = (localBytes / 1024).toFixed(1);
   const quotaPct = Math.min(100, (localBytes / (5 * 1024 * 1024)) * 100);
   const storageSub = `${quotaPct < 1 ? "<1" : quotaPct.toFixed(1)}% of 5 MB local quota`;
@@ -368,9 +376,6 @@ function renderStats() {
     .join("");
 }
 
-function currencySymbol(c) {
-  return ({ USD: "$", EUR: "€", GBP: "£", ILS: "₪", RUB: "₽", PLN: "zł" })[c] || `${c} `;
-}
 
 function daysSince(dateStr) {
   const ms = Date.now() - new Date(dateStr + "T00:00:00").getTime();
@@ -731,7 +736,7 @@ async function importPackFromFile(e) {
       purchaseLog: allPurchases,
       tagColors,
     });
-    renderStats();
+    await renderStats();
     renderYearReview();
     renderSaleHeatmap();
     renderTagList();
@@ -778,15 +783,6 @@ function slugToTitle(slug) {
     .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
-}
-
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 // Returns the value only if it's a valid #hex color, else "". Render-time
@@ -909,7 +905,7 @@ async function renameTag(oldName) {
   await window.GOGPlusStorage.set({ tags: allTags, tagColors });
   renderTagList();
   renderGames();
-  renderStats();
+  await renderStats();
 }
 
 async function mergeTag(fromName) {
@@ -939,7 +935,7 @@ async function mergeTag(fromName) {
   await window.GOGPlusStorage.set({ tags: allTags, tagColors });
   renderTagList();
   renderGames();
-  renderStats();
+  await renderStats();
 }
 
 async function deleteTag(name) {
@@ -953,7 +949,7 @@ async function deleteTag(name) {
   await window.GOGPlusStorage.set({ tags: allTags, tagColors });
   renderTagList();
   renderGames();
-  renderStats();
+  await renderStats();
 }
 
 function openColorPicker(tag, anchor) {
@@ -1019,6 +1015,14 @@ function exportCsv() {
   a.download = `gog-plus-tags-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Test-only surface — see tests/tags-internals.test.js. tags.js is a plain
+// top-level script (not an IIFE), but function declarations aren't
+// guaranteed to land on `window` the way a real <script> tag load would once
+// bundled/imported as an ES module, so this is explicit rather than assumed.
+if (typeof window !== "undefined") {
+  window.GOGPlusTagsInternals = { parseSearchQuery, slugToTitle, safeHexColor, renderMarkdown };
 }
 
 document.addEventListener("DOMContentLoaded", init);

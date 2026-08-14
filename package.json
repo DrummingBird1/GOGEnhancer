@@ -6,12 +6,17 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint ."
+    "coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/chrome": "^0.2.6",
+    "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9.18.0",
     "globals": "^15.14.0",
     "happy-dom": "^20.10.6",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   }
 }

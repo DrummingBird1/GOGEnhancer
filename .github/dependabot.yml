@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Dev-only tooling (eslint, vitest, happy-dom) — nothing here ships in the
+  # extension zip, but keeping it current is what turns "manual npm audit
+  # fix after GitHub nags" into a routine PR review instead.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # Keeps the SHA-pinned actions in .github/workflows/*.yml current — pinning
+  # to a commit SHA (see the "# vX.Y.Z" comment on each `uses:` line) trades
+  # away Dependabot's usual free ride on floating tags, so it needs to be the
+  # one bumping the pin instead.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

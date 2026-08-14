@@ -32,6 +32,7 @@ The extension itself is plain vanilla JS — no bundler, no framework. A Vitest 
 - **Repack for Web Store**: `.\build.ps1` → zips `extension/` into `dist/gog-enhancer-webstore.zip`.
 - **Run tests**: `npm install` (one-time) → `npm test` (one-shot) or `npm run test:watch`. Specs live under `tests/`; environment is happy-dom with a chrome.* shim in `tests/setup.js`.
 - **Lint**: `npm run lint` (runs ESLint flat config in `eslint.config.js`). CI also runs this on every push and PR via `.github/workflows/test.yml`.
+- **Typecheck**: `npm run typecheck` (`tsc --noEmit` against `tsconfig.json`). Scoped to `extension/lib/**/*.js` only — every module there carries `// @ts-check` + JSDoc annotations. Ambient globals (`window.GOGPlusStorage` etc.) are declared in `types/globals.d.ts` at the repo root, kept out of `extension/` so `build.ps1`'s wholesale `lib` folder copy never ships it. `content/` and `tags/tags.js` aren't covered — see the "known limitations" note if extending this.
 
 ## GitHub workflow
 
@@ -50,11 +51,11 @@ Storage is split across two `chrome.storage` areas, keyed by a hardcoded set:
 - **`storage.sync`** (~100 KB, syncs across devices) — **preferences only**: feature toggles, target currency, FX rates, VAT, region preset, onboarding flag.
 - **`storage.local`** (~5 MB, per-device) — **user data**: tags, notes, price history, mods list cache, wishlist cache, library, purchase log.
 
-`window.GOGPlusStorage` (also `self.GOGPlusStorage` for the service worker) exposes `get`/`set`/`remove`/`onChange` with promise APIs. **Always go through this wrapper** — it auto-routes keys to the correct area via the `SYNC_KEYS`/`LOCAL_KEYS` sets. If you add a new persisted key, add it to one of those sets in `lib/storage.js`, otherwise it falls through to `local` (safer-by-default but not what you usually want for a preference). Direct `chrome.storage.sync`/`chrome.storage.local` access exists in only three places — the migration in `background.js`, the export/import/clear flows in `options.js`, and inside `lib/storage.js` itself — and is intentional in all three.
+`window.GOGPlusStorage` (also `self.GOGPlusStorage` for the service worker) exposes `get`/`set`/`remove`/`onChange` with promise APIs. **Always go through this wrapper** — it auto-routes keys to the correct area via the `SYNC_KEYS`/`LOCAL_KEYS` sets. If you add a new persisted key, add it to one of those sets in `lib/storage.js`, otherwise it falls through to `local` (safer-by-default but not what you usually want for a preference). Direct `chrome.storage.sync`/`chrome.storage.local` access exists in only three places — `lib/migrations.js`, the export/import/clear flows in `options.js`, and inside `lib/storage.js` itself — and is intentional in all three.
 
 Default values live in **`lib/storage.js`**'s sibling **`lib/defaults.js`** as `window.GOG_PLUS_DEFAULTS` (and `self.GOG_PLUS_DEFAULTS` for the SW). It's the single source of truth — adding a new persisted key means three coordinated edits: pick its area in `lib/storage.js` (`SYNC_KEYS`/`LOCAL_KEYS`), add its default value in `lib/defaults.js`, and register the script if a new HTML host needs it.
 
-If a key's storage shape changes, bump `SETTINGS_VERSION` in `lib/defaults.js` and add a branch to `runMigrations()` in `background.js`. The v1→v2 migration already moves `tags`/`notes` from sync to local — model new migrations after it.
+If a key's storage shape changes, bump `SETTINGS_VERSION` in `lib/defaults.js` and add a branch to `GOGPlusMigrations.run()` in `lib/migrations.js`. The v1→v2 migration already moves `tags`/`notes` from sync to local — model new migrations after it. This module is shared: `background.js` runs it on every `onInstalled`, and the Advanced Options import flow runs it after writing imported data into storage, so an old export gets the same shape-fixing pass a normal upgrade would.
 
 ### Content-script load order
 
@@ -63,6 +64,9 @@ If a key's storage shape changes, bump `SETTINGS_VERSION` in `lib/defaults.js` a
 ```
 lib/defaults.js         → window.GOG_PLUS_DEFAULTS, GOG_PLUS_SETTINGS_VERSION
 lib/storage.js          → window.GOGPlusStorage
+lib/dom-safety.js       → window.GOGPlusDomSafety (escapeHtml)
+lib/currency-format.js  → window.GOGPlusCurrencyFormat (symbolFor, formatPrice)
+lib/genres.js           → window.GOGPlusGenres (GENRE_PATTERNS, matchGenrePattern, mapGenreLabel)
 content/translations.js → window.GOG_PLUS_TRANSLATIONS
 content/currency-detection.js → window.GOGPlusCurrency
 content/price-history.js → window.GOGPlusPriceHistory
@@ -101,7 +105,7 @@ ES module service worker. Three responsibilities:
    - `gog-plus-mods` (every 24 h) — `fetch('https://www.gog.com/en/mods')`, regex-extract game slugs, store as `modsList`.
    - `gog-plus-wishlist` (every 6 h) — update toolbar badge from cached count (see below).
    - `gog-plus-daily` (every 24 h) — local-only. Scans `purchaseLog`, fires `chrome.notifications` for refund windows with 1–2 days left. Only runs if the user enabled `desktopNotifications`; dedupes via `notifLog`.
-2. **Lifecycle**: on `onInstalled`, run `runMigrations()` → `ensureDefaults()` → create alarms → open onboarding tab if `reason === "install"`.
+2. **Lifecycle**: on `onInstalled`, run `GOGPlusMigrations.run()` → `ensureDefaults()` → create alarms → open onboarding tab if `reason === "install"`.
 3. **Message handler** for `force-fx-refresh`, `force-mods-refresh`, `force-wishlist-refresh`, `wishlist-report`, `open-tag-dashboard`.
 
 ### The wishlist badge dance

@@ -13,7 +13,7 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Verify tag matches manifest.json version
         shell: pwsh
@@ -25,6 +25,32 @@ jobs:
             exit 1
           }
           Write-Output "Tag v$tagVersion matches manifest.json — proceeding."
+
+      - name: Verify a changelog entry exists for this version
+        shell: pwsh
+        run: |
+          # Two independent changelog sources of truth exist: README.md's
+          # "### vX.Y.Z" sections (used below for the GitHub Release body) and
+          # extension/lib/changelog.js's CHANGELOG object (read by the
+          # popup's What's New panel at runtime). Nothing else keeps them in
+          # sync — this is that check, run once per release so a forgotten
+          # entry fails the release instead of shipping a silent gap.
+          $tagVersion = "${{ github.ref_name }}".TrimStart("v")
+
+          $changelogJs = Get-Content extension/lib/changelog.js -Raw
+          $needle = '"' + $tagVersion + '":'
+          if (-not $changelogJs.Contains($needle)) {
+            Write-Error "No CHANGELOG entry for $tagVersion in extension/lib/changelog.js (expected to find `"$tagVersion`":) — the popup's What's New panel would show nothing for this release. Add an entry before tagging."
+            exit 1
+          }
+
+          $readme = Get-Content README.md -Raw
+          if (-not $readme.Contains("### v$tagVersion")) {
+            Write-Error "No '### v$tagVersion' section found in README.md — add a changelog entry before tagging."
+            exit 1
+          }
+
+          Write-Output "Found changelog entries for v$tagVersion in both lib/changelog.js and README.md — proceeding."
 
       - name: Build extension zip
         shell: pwsh
@@ -52,7 +78,7 @@ jobs:
           fi
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           name: ${{ github.ref_name }}
           body_path: release-notes.md

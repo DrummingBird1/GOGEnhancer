@@ -45,37 +45,14 @@
     if (settings.debugLogging || window.GOG_PLUS_DEBUG) console.log("[GOG+]", ...a);
   };
 
-  const symbolFor = (cur) =>
-    ({
-      ILS: "₪",
-      EUR: "€",
-      GBP: "£",
-      RUB: "₽",
-      PLN: "zł",
-      USD: "$",
-    }[cur] || cur);
-
-  const formatPrice = (value, cur) => {
-    if (cur === "RUB" || cur === "ILS") {
-      return `${symbolFor(cur)}${Math.round(value)}`;
-    }
-    return `${symbolFor(cur)}${value.toFixed(2)}`;
-  };
+  const { symbolFor, formatPrice } = window.GOGPlusCurrencyFormat;
 
   const slugFromHref = (href) => {
     const m = (href || "").match(/\/game\/([a-z0-9_]+)/);
     return m ? m[1] : null;
   };
 
-  const escapeHtml = (s) => {
-    if (s == null) return "";
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  };
+  const { escapeHtml } = window.GOGPlusDomSafety;
 
   const slugFromLocation = () =>
     slugFromHref(location.pathname);
@@ -130,6 +107,18 @@
       img.onerror = () => resolve(null);
       img.src = url;
     });
+  }
+
+  // Session-scoped memoization keyed by cover URL (effectively per-slug,
+  // since a game's og:image is stable) — avoids re-decoding + re-sampling
+  // the same cover into a canvas every time its game panel is rebuilt (e.g.
+  // navigating away and back to a game already visited this session).
+  const dominantColorCache = new Map(); // url -> Promise<{r,g,b} | null>
+  function sampleDominantColorCached(url) {
+    if (!dominantColorCache.has(url)) {
+      dominantColorCache.set(url, sampleDominantColor(url));
+    }
+    return dominantColorCache.get(url);
   }
 
   // Build the quick-look HTML stamped on each game card as data-gog-plus-tip.
@@ -197,55 +186,18 @@
     return rate ? native / rate : null;
   }
 
-  // Genre-aware card detection. Cyberpunk + Witcher have their own neon
-  // class so they're intentionally excluded here. First match wins per slug.
-  const GENRE_PATTERNS = [
-    {
-      genre: "horror",
-      re: /silent_hill|resident_evil|amnesia|outlast|alien_isolation|dead_space|the_evil_within|dying_light|layers_of_fear|^soma$|scorn|callisto/i,
-    },
-    {
-      genre: "strategy",
-      re: /civilization|stellaris|crusader_kings|hearts_of_iron|europa_universalis|total_war|age_of_empires|starcraft|^anno|tropico|company_of_heroes|frostpunk/i,
-    },
-    {
-      genre: "scifi",
-      re: /mass_effect|deus_ex|system_shock|^prey|subnautica|no_mans_sky|star_wars|halo|^doom|outer_wilds|outer_worlds|^stray$|disco_elysium/i,
-    },
-    {
-      genre: "rpg",
-      re: /baldurs_gate|divinity|pillars_of_eternity|pathfinder|neverwinter|planescape|dragon_age|kingdom_come|^gothic|^risen|dark_souls|elden_ring|skyrim|morrowind|oblivion|fallout|wasteland|tyranny/i,
-    },
-    {
-      genre: "indie",
-      re: /stardew|hollow_knight|cuphead|^hades|celeste|undertale|dead_cells|terraria|factorio|rimworld|^inside|^limbo|owlboy|tunic|cocoon/i,
-    },
-  ];
-
-  // GOG's own "Genre:" field on a game page (confirmed values include
-  // "Action", "Horror", "Survival", "Simulation", "Role-playing",
-  // "Managerial") only reliably covers a subset of our five card-theming
-  // buckets — sci-fi and indie appear to live in GOG's much larger, looser
-  // "Tags:" cloud instead (which is also lazily truncated behind a "show N
-  // more" toggle in the DOM), so we deliberately don't scan Tags here: it
-  // would trade a confirmed-safe signal for a noisy, unverified one. Genres
-  // not in this table keep using the franchise/keyword regex above.
-  const GENRE_LABEL_TO_BUCKET = {
-    horror: "horror",
-    "role-playing": "rpg",
-    "role playing": "rpg",
-    rpg: "rpg",
-    strategy: "strategy",
-    "turn-based strategy": "strategy",
-    "real-time strategy": "strategy",
-  };
+  // Genre-aware card detection — data tables + pure matchers live in
+  // lib/genres.js (shared, independently testable). GENRE_PATTERNS is kept
+  // as a local alias since applyWishlistFilter() does its own .find() on it.
+  const { GENRE_PATTERNS, matchGenrePattern, mapGenreLabel } = window.GOGPlusGenres;
 
   // Reads the real genre(s) for the CURRENT game page's "Genre:" row and maps
-  // the first recognized one to a card-theming bucket. Class-name agnostic on
-  // purpose: GOG is an Angular SPA and its markup shifts between releases, so
-  // instead of a specific selector we hunt for the literal "Genre:" text
-  // label and read the anchors in its row. Returns null if no label or no
-  // mappable genre is found — callers should fall back to GENRE_PATTERNS.
+  // the first recognized one to a card-theming bucket via mapGenreLabel().
+  // Class-name agnostic on purpose: GOG is an Angular SPA and its markup
+  // shifts between releases, so instead of a specific selector we hunt for
+  // the literal "Genre:" text label and read the anchors in its row. Returns
+  // null if no label or no mappable genre is found — callers should fall
+  // back to GENRE_PATTERNS (matchGenrePattern()).
   function detectGameGenreBucket() {
     const root = document.querySelector("main") || document.body;
     if (!root) return null;
@@ -271,8 +223,8 @@
       const links = row.querySelectorAll("a");
       if (!links.length) continue;
       for (const a of links) {
-        const key = (a.textContent || "").trim().toLowerCase();
-        if (GENRE_LABEL_TO_BUCKET[key]) return GENRE_LABEL_TO_BUCKET[key];
+        const bucket = mapGenreLabel(a.textContent);
+        if (bucket) return bucket;
       }
       break;
     }
@@ -296,16 +248,19 @@
   // Convert from any source currency to settings.targetCurrency via the USD
   // rate matrix. `rates` is { CUR: <units per USD> } so `amount / srcRate`
   // gives USD, then `* tgtRate` gives the target currency.
-  function convertedFromCurrency(amount, srcCur) {
-    const targetCur = settings.targetCurrency;
+  // `s` defaults to the closure's live settings — every real call site omits
+  // it. The explicit param exists so this can be unit tested without
+  // bootstrapping the whole content script (see GOGPlusContentInternals).
+  function convertedFromCurrency(amount, srcCur, s = settings) {
+    const targetCur = s.targetCurrency;
     if (!targetCur || targetCur === "none") return null;
     if (srcCur === targetCur) return null;
-    const srcRate = srcCur === "USD" ? 1 : settings.rates[srcCur];
-    const tgtRate = targetCur === "USD" ? 1 : settings.rates[targetCur];
+    const srcRate = srcCur === "USD" ? 1 : s.rates[srcCur];
+    const tgtRate = targetCur === "USD" ? 1 : s.rates[targetCur];
     if (!srcRate || !tgtRate) return null;
     let v = (amount / srcRate) * tgtRate;
-    if (settings.taxEstimator && settings.vatPercent > 0) {
-      v *= 1 + settings.vatPercent / 100;
+    if (s.taxEstimator && s.vatPercent > 0) {
+      v *= 1 + s.vatPercent / 100;
     }
     return v;
   }
@@ -391,16 +346,40 @@
 
   // Summarise how fresh the FX rates are: { stale, label }. `label` is a short
   // human age ("4h ago", "2d ago", or "bundled rates" when never fetched).
-  function fxFreshness() {
+  // `s` and `now` default to the live settings/clock — tests pass both explicitly.
+  function fxFreshness(s = settings, now = Date.now()) {
     const FX_STALE_MS = 48 * 60 * 60 * 1000;
-    const age = settings.ratesUpdatedAt ? Date.now() - settings.ratesUpdatedAt : null;
-    const stale = !!settings.lastFxError || age === null || age > FX_STALE_MS;
+    const age = s.ratesUpdatedAt ? now - s.ratesUpdatedAt : null;
+    const stale = !!s.lastFxError || age === null || age > FX_STALE_MS;
     let label;
     if (age === null) label = "bundled rates";
     else if (age < 3600e3) label = `${Math.max(1, Math.round(age / 60e3))} min ago`;
     else if (age < 86400e3) label = `${Math.round(age / 3600e3)}h ago`;
     else label = `${Math.round(age / 86400e3)}d ago`;
     return { stale, label };
+  }
+
+  // Test-only surface. content.js is otherwise a closed IIFE with no exports
+  // — most of its functions close over the module-level `settings`/DOM state
+  // and can't be unit tested without bootstrapping the whole content script.
+  // These four either take their dependencies as explicit params already, or
+  // are fully pure, so they're safe to expose directly. See
+  // tests/content-internals.test.js.
+  if (typeof window !== "undefined") {
+    window.GOGPlusContentInternals = {
+      slugFromHref,
+      buildMiniSparkline,
+      convertedFromCurrency,
+      fxFreshness,
+      applyCardBadges,
+      // applyCardBadges reads the module-level `settings` directly (it's the
+      // documented CLAUDE.md "hot zone" — deliberately not touching its
+      // internals to thread a settings param through). This lets a test seed
+      // it without a real GOGPlusStorage round-trip.
+      __setSettingsForTest: (s) => {
+        settings = { ...DEFAULTS, ...s };
+      },
+    };
   }
 
   /* ============== card badges (refund / mod / era) ============== */
@@ -472,17 +451,11 @@
       if (settings.designInjection) {
         // Prefer the real genre read off the game's own page (cached on
         // visit — see maybeRecordGameGenre) over the franchise/keyword
-        // regex, which only recognizes titles hand-listed in GENRE_PATTERNS.
-        const cachedGenre = settings.gameGenres && settings.gameGenres[slug];
-        if (cachedGenre) {
-          host.classList.add(`gog-plus-cover--genre-${cachedGenre}`);
-        } else {
-          for (const { genre, re } of GENRE_PATTERNS) {
-            if (re.test(slug)) {
-              host.classList.add(`gog-plus-cover--genre-${genre}`);
-              break;
-            }
-          }
+        // regex fallback (matchGenrePattern), which only recognizes titles
+        // hand-listed in GENRE_PATTERNS.
+        const genre = (settings.gameGenres && settings.gameGenres[slug]) || matchGenrePattern(slug);
+        if (genre) {
+          host.classList.add(`gog-plus-cover--genre-${genre}`);
         }
       }
 
@@ -773,12 +746,8 @@
       if (usdEq !== null && usdEq < 25) counts.under25++;
       const ratingMatch = txt.match(/(\d\.\d)\s*\d+\s*reviews/);
       if (ratingMatch && parseFloat(ratingMatch[1]) >= 4.5) counts.rated45++;
-      for (const { genre, re } of GENRE_PATTERNS) {
-        if (re.test(slug)) {
-          genreCounts[genre] = (genreCounts[genre] || 0) + 1;
-          break;
-        }
-      }
+      const genre = matchGenrePattern(slug);
+      if (genre) genreCounts[genre] = (genreCounts[genre] || 0) + 1;
     }
     bar.querySelectorAll("button[data-f]").forEach((btn) => {
       const f = btn.dataset.f;
@@ -949,7 +918,7 @@
       // Spotify-style accent: sample the dominant color from the cover and
       // use it to tint the panel border + header pill. Async, best-effort —
       // CORS-blocked images quietly fail and we just keep the theme accent.
-      sampleDominantColor(heroUrl).then((color) => {
+      sampleDominantColorCached(heroUrl).then((color) => {
         if (!color) return;
         panel.style.setProperty(
           "--gp-hero-accent",

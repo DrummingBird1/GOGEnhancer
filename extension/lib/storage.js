@@ -13,6 +13,7 @@
  *
  * Exposed as window.GOGPlusStorage with promise-based API.
  */
+// @ts-check
 
 (() => {
   "use strict";
@@ -72,6 +73,10 @@
     "gameGenres",
   ]);
 
+  /**
+   * @param {string} key
+   * @returns {chrome.storage.StorageArea}
+   */
   function pickArea(key) {
     if (SYNC_KEYS.has(key)) return chrome.storage.sync;
     if (LOCAL_KEYS.has(key)) return chrome.storage.local;
@@ -79,8 +84,38 @@
     return chrome.storage.local;
   }
 
+  // chrome.storage's callback API never throws on failure (quota exceeded,
+  // context invalidated, etc.) — it silently leaves chrome.runtime.lastError
+  // set instead. Every area.get/set/remove call below is wrapped through this
+  // so a failure is at least LOUD (console.error, always — not gated behind
+  // debugLogging, since this is a real failure, not diagnostic chatter)
+  // instead of the Promise resolving as if nothing went wrong. We deliberately
+  // still resolve rather than reject: the whole codebase calls
+  // GOGPlusStorage.set(...) fire-and-forget with `await` and no .catch(), so
+  // rejecting here would turn every one of those into an unhandled rejection
+  // instead of fixing the actual problem (visibility).
+  /**
+   * @param {string} op
+   * @param {(...args: any[]) => void} [cb]
+   * @returns {(...args: any[]) => void}
+   */
+  function withErrorLog(op, cb) {
+    return (...args) => {
+      if (chrome.runtime.lastError) {
+        console.error(`[GOGPlusStorage] ${op} failed:`, chrome.runtime.lastError.message);
+      }
+      if (cb) cb(...args);
+    };
+  }
+
+  /**
+   * @param {string[]} keys
+   * @returns {{ sync: string[], local: string[] }}
+   */
   function partition(keys) {
+    /** @type {string[]} */
     const sync = [];
+    /** @type {string[]} */
     const local = [];
     for (const k of keys) {
       if (SYNC_KEYS.has(k)) sync.push(k);
@@ -94,6 +129,8 @@
      * get(keysOrDefaults) → object. Accepts string | string[] | {key: default}.
      * String and array forms fall back to GOG_PLUS_DEFAULTS values (if loaded)
      * when a key is missing from storage — same semantics as the object form.
+     * @param {string | string[] | Record<string, any>} [keysOrDefaults]
+     * @returns {Promise<Record<string, any>>}
      */
     get(keysOrDefaults) {
       const builtins =
@@ -103,7 +140,7 @@
           const k = keysOrDefaults;
           const def = builtins[k];
           const query = def !== undefined ? { [k]: def } : [k];
-          pickArea(k).get(query, resolve);
+          pickArea(k).get(query, withErrorLog("get", resolve));
           return;
         }
         if (Array.isArray(keysOrDefaults)) {
@@ -124,10 +161,10 @@
             const { withDefs, withoutDefs } = objOrArray(arr);
             return Promise.all([
               Object.keys(withDefs).length
-                ? new Promise((r) => area.get(withDefs, r))
+                ? new Promise((r) => area.get(withDefs, withErrorLog("get", r)))
                 : Promise.resolve({}),
               withoutDefs.length
-                ? new Promise((r) => area.get(withoutDefs, r))
+                ? new Promise((r) => area.get(withoutDefs, withErrorLog("get", r)))
                 : Promise.resolve({}),
             ]).then(([a, b]) => ({ ...a, ...b }));
           };
@@ -147,19 +184,23 @@
         Promise.all([
           new Promise((r) =>
             Object.keys(syncDefaults).length
-              ? chrome.storage.sync.get(syncDefaults, r)
+              ? chrome.storage.sync.get(syncDefaults, withErrorLog("get", r))
               : r({})
           ),
           new Promise((r) =>
             Object.keys(localDefaults).length
-              ? chrome.storage.local.get(localDefaults, r)
+              ? chrome.storage.local.get(localDefaults, withErrorLog("get", r))
               : r({})
           ),
         ]).then(([s, l]) => resolve({ ...s, ...l }));
       });
     },
 
-    /** set({key: value, ...}) — auto-routes by key */
+    /**
+     * set({key: value, ...}) — auto-routes by key
+     * @param {Record<string, any>} items
+     * @returns {Promise<void>}
+     */
     set(items) {
       return new Promise((resolve) => {
         const syncItems = {};
@@ -169,30 +210,50 @@
           else localItems[k] = v;
         }
         Promise.all([
-          new Promise((r) =>
-            Object.keys(syncItems).length
-              ? chrome.storage.sync.set(syncItems, r)
-              : r()
+          /** @type {Promise<void>} */ (
+            new Promise((r) =>
+              Object.keys(syncItems).length
+                ? chrome.storage.sync.set(syncItems, withErrorLog("set", r))
+                : r()
+            )
           ),
-          new Promise((r) =>
-            Object.keys(localItems).length
-              ? chrome.storage.local.set(localItems, r)
-              : r()
+          /** @type {Promise<void>} */ (
+            new Promise((r) =>
+              Object.keys(localItems).length
+                ? chrome.storage.local.set(localItems, withErrorLog("set", r))
+                : r()
+            )
           ),
-        ]).then(resolve);
+        ]).then(() => resolve());
       });
     },
 
+    /**
+     * @param {string | string[]} keys
+     * @returns {Promise<any>}
+     */
     remove(keys) {
       const arr = Array.isArray(keys) ? keys : [keys];
       const { sync, local } = partition(arr);
       return Promise.all([
-        new Promise((r) => (sync.length ? chrome.storage.sync.remove(sync, r) : r())),
-        new Promise((r) => (local.length ? chrome.storage.local.remove(local, r) : r())),
+        /** @type {Promise<void>} */ (
+          new Promise((r) =>
+            sync.length ? chrome.storage.sync.remove(sync, withErrorLog("remove", r)) : r()
+          )
+        ),
+        /** @type {Promise<void>} */ (
+          new Promise((r) =>
+            local.length ? chrome.storage.local.remove(local, withErrorLog("remove", r)) : r()
+          )
+        ),
       ]);
     },
 
-    /** Subscribe to storage changes across both areas. callback({key, area, oldValue, newValue}) */
+    /**
+     * Subscribe to storage changes across both areas. callback({key, area, oldValue, newValue})
+     * @param {(change: { key: string, area: string, oldValue: any, newValue: any }) => void} callback
+     * @returns {() => void} unsubscribe
+     */
     onChange(callback) {
       const handler = (changes, area) => {
         for (const [k, c] of Object.entries(changes)) {

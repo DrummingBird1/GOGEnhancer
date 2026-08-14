@@ -6,6 +6,7 @@ export default [
       "node_modules/**",
       ".vitest-cache/**",
       "dist/**",
+      "coverage/**",
     ],
   },
   {
@@ -19,6 +20,10 @@ export default [
         // Extension-specific globals attached to window / self by IIFE modules.
         GOGPlusStorage: "readonly",
         GOGPlusStorageKeys: "readonly",
+        GOGPlusMigrations: "readonly",
+        GOGPlusDomSafety: "readonly",
+        GOGPlusCurrencyFormat: "readonly",
+        GOGPlusGenres: "readonly",
         GOG_PLUS_DEFAULTS: "readonly",
         GOG_PLUS_SETTINGS_VERSION: "readonly",
         GOG_PLUS_TRANSLATIONS: "readonly",

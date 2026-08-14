@@ -144,7 +144,101 @@ gog-plus/
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.6.0 (current) — Genre detection from the game page
+### v2.7.0 (current) — Infrastructure audit: security, testing, CI/CD, architecture
+
+A grounded pass over the codebase's technical foundations — not a features
+release. Six areas, each addressing findings from a self-audit against the
+codebase as it stood at v2.6.0:
+
+**Security & data safety**
+- `lib/storage.js`'s `get`/`set`/`remove` now check `chrome.runtime.lastError`
+  after every callback and log loudly (`console.error`, unconditional) instead
+  of silently resolving as if a write succeeded — quota-exceeded and similar
+  failures were previously invisible.
+- Settings import (Advanced Options) now runs through the same migration pass
+  an upgrade would (new shared `lib/migrations.js`, used by both
+  `background.js`'s `onInstalled` and the import handler) — importing an old
+  export (e.g. pre-v1→v2, tags/notes still in `sync`) no longer silently
+  loads the outdated shape. The direct `chrome.storage` calls in the
+  import/export/reset flows also gained `lastError` checks.
+- GitHub Actions in both workflows are now pinned to commit SHAs (with a
+  `# vX.Y.Z` comment) instead of floating major-version tags — `release.yml`
+  runs with `contents: write` and publishes the zip end users install, so a
+  compromised upstream tag was a real supply-chain exposure. Dependabot (new
+  `.github/dependabot.yml`) keeps the pins current.
+- `escapeHtml` and the currency-symbol/price-formatting helpers were each
+  independently implemented twice (content.js vs tags.js) — consolidated into
+  new shared `lib/dom-safety.js` and `lib/currency-format.js`. Every
+  `dataset.gogPlusTip` assignment across the codebase was audited for
+  consistent escaping (all were already correct — this closes the "two
+  copies to keep in sync by hand" risk, not a found vulnerability).
+- CI now runs `npm audit --audit-level=high` on every push/PR (caught and
+  fixed 3 new high-severity transitive dev-dependency vulnerabilities the
+  moment this was added).
+
+**Testing** — 44 → 118 tests, 5 new files
+- `content.js`'s `applyCardBadges` — the codebase's own documented
+  "hot zone" (card-badge placement, `position:relative` rules, de-dup by
+  slug) — had zero coverage despite being the most regression-sensitive
+  function in the extension. New `tests/apply-card-badges.test.js` covers it
+  directly against DOM fixtures.
+- New `tests/content-internals.test.js`, `tests/tags-internals.test.js`,
+  `tests/lib-modules.test.js`, `tests/migrations.test.js`, `tests/i18n.test.js`
+  cover previously-untested pure functions (currency conversion, FX
+  freshness, markdown rendering, search-query parsing, the v1→v2 migration,
+  i18n) via small test-only export surfaces
+  (`window.GOGPlusContentInternals`, `window.GOGPlusTagsInternals`).
+- New `npm run coverage` (`@vitest/coverage-v8`) with an enforced threshold
+  (80% statements/functions/lines, 75% branches) scoped to `extension/lib/**`
+  — the layer that's now genuinely well-tested. `content.js`/`tags.js` don't
+  have a threshold yet; raising it gradually as more gets covered is the
+  plan, not a one-shot unrealistic bar.
+
+**CI/CD**
+- `release.yml` now verifies a changelog entry exists in *both*
+  `lib/changelog.js` and `README.md` before publishing — v2.5.1 introduced a
+  second changelog source of truth (the popup's What's New panel) with
+  nothing keeping it in sync with this file; a release now fails loudly
+  instead of shipping the gap.
+- `test.yml` now also runs `build.ps1` (so a build-breaking change fails at
+  PR time, not at tag time) and warns (non-blocking) on PRs that touch
+  `extension/` without bumping `manifest.json`'s version.
+
+**Architecture**
+- New `lib/genres.js` consolidates `GENRE_PATTERNS` (franchise/keyword regex)
+  and `GENRE_LABEL_TO_BUCKET` (v2.6.0's real-genre mapping) — previously two
+  related taxonomies living side by side in content.js.
+- `extension/lib/*.js` now carry `// @ts-check` + JSDoc (`Settings` typedef
+  in `defaults.js`, etc.), checked via `npm run typecheck` (new `tsconfig.json`
+  + `types/globals.d.ts` at the repo root — kept out of `extension/` so
+  `build.ps1` never ships it). Scoped to `lib/`; `content.js`/`tags.js` are
+  larger, riskier refactors intentionally deferred rather than rushed into
+  this same batch.
+
+**Performance**
+- `sampleDominantColor` (game-panel hero-color sampling) is now memoized per
+  cover URL for the session — revisiting an already-seen game's panel no
+  longer re-decodes and re-samples the same image into a canvas.
+
+**Storage**
+- The tag dashboard's "Storage used" stat now calls the real
+  `chrome.storage.local.getBytesInUse()` API instead of a
+  `JSON.stringify`-based estimate that had already drifted out of sync
+  (missing `modsList`, `wishlistCache`, `notifLog`, `priceAlerts`,
+  `gameGenres`, `lastSeenVersion`).
+- `priceHistory` previously capped entries *per game* (`historyMaxEntries`)
+  but not the *number* of games tracked. `price-history.js` now also
+  enforces a 2 MB total-size budget across the whole object, evicting the
+  least-recently-updated game(s) — never the one just recorded — once
+  exceeded.
+
+**Deliberately not done in this batch** (see the reasoning inline at each):
+splitting `content.js`/`tags.js` into smaller modules (real value, but the
+single riskiest change here — deserves its own careful pass, not bundled
+with everything else) and a confirmed DOM-walk performance fix (no live
+gog.com access to profile against; nothing to fix without evidence).
+
+### v2.6.0 — Genre detection from the game page
 
 - **Real genre detection** — visiting a game page now reads its actual
   "Genre:" field (confirmed values: Horror, Role-playing, Strategy) and

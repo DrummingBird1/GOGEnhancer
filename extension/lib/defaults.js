@@ -11,12 +11,67 @@
  * SYNC_KEYS / LOCAL_KEYS partition in lib/storage.js so reads/writes
  * route to the right storage area.
  */
+// @ts-check
 
 (() => {
   "use strict";
 
   const SETTINGS_VERSION = 2;
 
+  /**
+   * @typedef {Object} Settings
+   * @property {number} settingsVersion
+   * @property {boolean} onboardingComplete
+   * @property {boolean} enabled
+   * @property {boolean} currencyConverter
+   * @property {boolean} taxEstimator
+   * @property {boolean} refundBadge
+   * @property {boolean} drmFreeBanner
+   * @property {boolean} hideExpiredSales
+   * @property {boolean} hebrewTranslations
+   * @property {boolean} rtlLayout
+   * @property {boolean} customTags
+   * @property {boolean} wishlistFilters
+   * @property {boolean} modIndicator
+   * @property {boolean} cleanLayout
+   * @property {boolean} designInjection
+   * @property {boolean} priceHistoryTracking
+   * @property {boolean} lowestPriceBadge
+   * @property {boolean} itadCompare
+   * @property {boolean} richTooltips
+   * @property {boolean} skeletonLoaders
+   * @property {boolean} wishlistAlerts
+   * @property {boolean} refundTimer
+   * @property {boolean} desktopNotifications
+   * @property {boolean} debugLogging
+   * @property {number} historyMaxEntries
+   * @property {string} targetCurrency
+   * @property {Record<string, number>} rates units-per-USD, e.g. { ILS: 3.65 }
+   * @property {number} ratesUpdatedAt epoch ms, 0 = never fetched
+   * @property {string | null} lastFxError
+   * @property {number} vatPercent
+   * @property {string} vatLabel
+   * @property {string} regionPreset
+   * @property {string} theme
+   * @property {string} uiLanguage
+   * @property {string[]} modsList
+   * @property {number} modsUpdatedAt
+   * @property {{ discountedCount: number, total: number }} wishlistCache
+   * @property {number} wishlistCacheUpdatedAt
+   * @property {Record<string, string[]>} tags slug -> tag names
+   * @property {Record<string, string>} tagColors tag name -> #hex
+   * @property {string[]} tagOrder
+   * @property {Record<string, string>} notes slug -> free text
+   * @property {Record<string, Array<{d: string, p: number, c: string}>>} priceHistory slug -> snapshots
+   * @property {Record<string, string>} purchaseLog slug -> "YYYY-MM-DD"
+   * @property {Record<string, number>} notifLog dedupe keys -> epoch ms
+   * @property {Record<string, {threshold: number, currency: string, createdAt: number}>} priceAlerts
+   * @property {"comfortable" | "compact"} tagDashboardDensity
+   * @property {string} lastSeenVersion last changelog version acknowledged in the popup
+   * @property {Record<string, string>} gameGenres slug -> genre bucket, cached on visit
+   */
+
+  /** @type {Settings} */
   const DEFAULTS = {
     // version + onboarding
     settingsVersion: SETTINGS_VERSION,

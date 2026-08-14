@@ -9,10 +9,12 @@
  * Not a content-script module — loaded only where it's shown (popup.html),
  * same pattern as lib/i18n.js.
  */
+// @ts-check
 
 (() => {
   "use strict";
 
+  /** @type {Record<string, string[]>} */
   const CHANGELOG = {
     "2.5.0": [
       "💎 Lowest-price badge on cards at their tracked all-time low",
@@ -25,10 +27,20 @@
     "2.6.0": [
       "Genre-aware card styling now reads the real genre off each game's own page (Horror, Role-playing, Strategy) instead of only a hand-picked franchise list — covers far more titles the more you visit",
     ],
+    "2.7.0": [
+      "Importing a settings backup is now safer — it runs the same upgrade check a normal update would, so an old export can't silently load outdated data",
+      "Storage-used % in the tag dashboard is now exact (was an estimate that had drifted out of sync)",
+      "A big pass of under-the-hood reliability, security, and testing work — nothing to click, just a sturdier foundation",
+    ],
   };
 
   // Dotted-numeric version compare (2.9.0 < 2.10.0, unlike string sort).
   // Returns -1 / 0 / 1 like a standard sort comparator.
+  /**
+   * @param {string} a
+   * @param {string} b
+   * @returns {-1 | 0 | 1}
+   */
   function compareVersions(a, b) {
     const pa = String(a || "0").split(".").map(Number);
     const pb = String(b || "0").split(".").map(Number);
@@ -46,6 +58,12 @@
   // anything before" (fresh install or pre-feature user) — in that case we
   // only surface `current`, not the whole history, so the popup doesn't dump
   // every past release on someone who just hasn't dismissed one yet.
+  /**
+   * @param {string} lastSeen
+   * @param {string} current
+   * @param {Record<string, string[]>} [changelog]
+   * @returns {string[]}
+   */
   function versionsSince(lastSeen, current, changelog = CHANGELOG) {
     const known = Object.keys(changelog).sort(compareVersions);
     if (!lastSeen) {

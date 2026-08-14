@@ -11,56 +11,12 @@
 
 import "../lib/defaults.js";
 import "../lib/storage.js";
+import "../lib/migrations.js";
 
-const CURRENT_SETTINGS_VERSION = self.GOG_PLUS_SETTINGS_VERSION;
 const DEFAULTS = self.GOG_PLUS_DEFAULTS;
 
-/* ---------------- migration ---------------- */
-
-async function runMigrations() {
-  const { settingsVersion } = await self.GOGPlusStorage.get({ settingsVersion: 1 });
-
-  if (settingsVersion < 2) {
-    const syncAll = await new Promise((r) => chrome.storage.sync.get(null, r));
-    const toLocal = {};
-    if (syncAll.tags) toLocal.tags = syncAll.tags;
-    if (syncAll.notes) toLocal.notes = syncAll.notes;
-
-    if (Object.keys(toLocal).length) {
-      // Step 1: write to local. If this fails, abort migration entirely —
-      // settingsVersion stays at 1 so the next run retries.
-      try {
-        await new Promise((resolve, reject) => {
-          chrome.storage.local.set(toLocal, () => {
-            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-            else resolve();
-          });
-        });
-      } catch (err) {
-        console.error("[GOG+ bg] migration v1→v2 local.set failed, aborting:", err);
-        return;
-      }
-
-      // Step 2: remove the now-duplicate sync keys. If this fails, the data
-      // is still safely in local — we just leave stale sync entries behind
-      // and continue. They'll be wiped if the user ever runs Reset Everything.
-      try {
-        await new Promise((resolve, reject) => {
-          chrome.storage.sync.remove(["tags", "notes"], () => {
-            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-            else resolve();
-          });
-        });
-      } catch (err) {
-        console.warn(
-          "[GOG+ bg] migration v1→v2 sync cleanup failed (data preserved in local, sync may have stale tags/notes):",
-          err
-        );
-      }
-    }
-  }
-  await self.GOGPlusStorage.set({ settingsVersion: CURRENT_SETTINGS_VERSION });
-}
+/* ---------------- migration ----------------
+ * Shared with the Advanced Options import flow — see lib/migrations.js. */
 
 async function ensureDefaults() {
   const existing = await self.GOGPlusStorage.get(Object.keys(DEFAULTS));
@@ -359,7 +315,7 @@ async function maybeNotifyWishlistJump(prevCount, newCount) {
 /* ---------------- lifecycle ---------------- */
 
 chrome.runtime.onInstalled.addListener(async (details) => {
-  await runMigrations();
+  await self.GOGPlusMigrations.run();
   await ensureDefaults();
 
   chrome.alarms.create(FX_ALARM, {

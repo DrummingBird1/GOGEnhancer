@@ -2,6 +2,9 @@ node_modules/
 *.log
 .vitest-cache/
 
+# vitest coverage report output (npm run coverage) — regenerated on demand
+coverage/
+
 # Build artifacts and manual extractions (all under dist/)
 dist/
 

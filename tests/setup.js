@@ -45,6 +45,18 @@ const createArea = (name) => ({
     stores[name] = {};
     if (cb) cb();
   },
+  getBytesInUse(keys, cb) {
+    const store = stores[name];
+    const subset =
+      keys == null
+        ? store
+        : Object.fromEntries(
+            (Array.isArray(keys) ? keys : [keys])
+              .filter((k) => k in store)
+              .map((k) => [k, store[k]])
+          );
+    cb(JSON.stringify(subset).length);
+  },
 });
 
 globalThis.chrome = {

@@ -288,8 +288,19 @@ function bind() {
       const data = JSON.parse(text);
       if (!data || (!data.sync && !data.local)) throw new Error("invalid format");
       if (!confirm("Import will OVERWRITE current settings. Continue?")) return;
-      if (data.sync) await new Promise((r) => chrome.storage.sync.set(data.sync, r));
-      if (data.local) await new Promise((r) => chrome.storage.local.set(data.local, r));
+      const setArea = (area, items) =>
+        new Promise((resolve, reject) => {
+          area.set(items, () => {
+            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+            else resolve();
+          });
+        });
+      if (data.sync) await setArea(chrome.storage.sync, data.sync);
+      if (data.local) await setArea(chrome.storage.local, data.local);
+      // The import may come from an older version of the extension (e.g. a
+      // pre-v2 export where tags/notes still lived in sync) — run the same
+      // migration pass an upgrade would, instead of loading the old shape as-is.
+      await window.GOGPlusMigrations.run();
       flashSaved();
       load();
       alert("Imported successfully.");
@@ -416,7 +427,9 @@ function bind() {
       return;
     }
     await new Promise((r) => chrome.storage.sync.clear(r));
+    if (chrome.runtime.lastError) console.error("[GOG+] reset sync.clear failed:", chrome.runtime.lastError.message);
     await new Promise((r) => chrome.storage.local.clear(r));
+    if (chrome.runtime.lastError) console.error("[GOG+] reset local.clear failed:", chrome.runtime.lastError.message);
     flashSaved();
     setTimeout(() => location.reload(), 500);
   });

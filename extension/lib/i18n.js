@@ -14,15 +14,18 @@
  * Adding a language: copy the `en` block, translate the values, and add
  * the new entry to `LANGUAGES`. No code changes elsewhere.
  */
+// @ts-check
 
 (() => {
   "use strict";
 
+  /** @type {Record<string, string>} */
   const LANGUAGES = {
     en: "English",
     he: "עברית",
   };
 
+  /** @type {Record<string, Record<string, string>>} */
   const STRINGS = {
     en: {
       // popup
@@ -162,7 +165,12 @@
 
   const Api = {
     LANGUAGES,
-    /** Translate a key in the given language (or current document language). */
+    /**
+     * Translate a key in the given language (or current document language).
+     * @param {string} key
+     * @param {string} [lang]
+     * @returns {string}
+     */
     t(key, lang) {
       const dict = STRINGS[lang] || STRINGS[document.documentElement.getAttribute("lang") || "en"] || STRINGS.en;
       return dict[key] ?? STRINGS.en[key] ?? key;
@@ -170,6 +178,8 @@
     /**
      * Walk the document and replace text in [data-i18n] elements, and attributes
      * in [data-i18n-attr="attribute:key"] elements. Sets <html lang> + dir.
+     * @param {string} lang
+     * @returns {void}
      */
     apply(lang) {
       if (!STRINGS[lang]) lang = "en";
