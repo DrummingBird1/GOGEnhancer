@@ -176,6 +176,9 @@ a:hover { border-bottom-color: var(--accent-cyan); }
   font-size: 13px;
   color: var(--text-tertiary);
 }
+.settings-search-empty[hidden] {
+  display: none;
+}
 
 /* Page */
 .page { max-width: 880px; margin: 0 auto; padding: 36px 32px 64px; }
