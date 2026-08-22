@@ -171,6 +171,11 @@
             type: "wishlist-report",
             discountedCount: discounted,
             total,
+            // The slug list itself — background.js has no other way to know
+            // which games are wishlisted (it can't scrape the Angular SPA
+            // route directly; see CLAUDE.md's "wishlist badge dance").
+            // Enables wishlist-wide price alerts (checkWishlistWideAlerts).
+            slugs: [...seen],
           });
         } catch (_) {
           /* no-op: background may be asleep */

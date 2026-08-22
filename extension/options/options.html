@@ -11,12 +11,21 @@
     <div class="hero-inner">
       <div class="hero-brand">
         <span class="hero-pill">GOG Enhancer</span>
-        <span class="hero-version">v2.4</span>
+        <span class="hero-version" id="heroVersion"></span>
       </div>
       <h1 class="hero-title">Advanced settings</h1>
       <p class="hero-sub">
         Fine-tune behavior, manage your data, and tweak what GOG Enhancer injects.
       </p>
+      <div class="settings-search-row">
+        <svg class="settings-search-icon" viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+          <circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <line x1="13" y1="13" x2="18" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+        <input type="search" id="settingsSearch" class="settings-search-input"
+          placeholder="Search settings…" aria-label="Search settings" />
+        <span class="settings-search-empty" id="settingsSearchEmpty" hidden>No settings match "<span id="settingsSearchEmptyTerm"></span>".</span>
+      </div>
     </div>
   </header>
 
@@ -150,6 +159,11 @@
           <span class="theme-swatch-name">Light</span>
           <span class="theme-swatch-sub">inverted palette</span>
         </button>
+        <button class="theme-swatch" data-theme="auto" type="button" aria-label="Auto theme (matches system)">
+          <span class="theme-swatch-preview theme-swatch--auto" aria-hidden="true"></span>
+          <span class="theme-swatch-name">Auto</span>
+          <span class="theme-swatch-sub">matches your system</span>
+        </button>
       </div>
 
       <div class="ui-lang-row">
@@ -239,6 +253,32 @@
           </span>
         </span>
       </label>
+
+      <label class="dev-toggle">
+        <input type="checkbox" id="wishlistPriceAlerts" />
+        <span class="dev-toggle-text">
+          <span class="dev-toggle-title">Wishlist-wide price alerts</span>
+          <span class="dev-toggle-sub">
+            Notify for <em>any</em> wishlisted game that's dropped off its own tracked peak
+            price — no need to set a threshold on each game's page individually.
+            Only covers wishlist items you've visited at least once (that's what builds
+            the price history to compare against). Requires desktop notifications above.
+          </span>
+        </span>
+      </label>
+
+      <div class="dev-row">
+        <div class="dev-toggle-text">
+          <span class="dev-toggle-title">Wishlist alert threshold</span>
+          <span class="dev-toggle-sub">
+            Minimum drop from a game's tracked peak price to trigger a wishlist-wide alert.
+          </span>
+        </div>
+        <div class="dev-num-suffixed">
+          <input type="number" id="wishlistAlertPercent" min="1" max="90" step="1" class="dev-num" />
+          <span class="dev-num-suffix">%</span>
+        </div>
+      </div>
 
       <div class="dev-row">
         <div class="dev-toggle-text">

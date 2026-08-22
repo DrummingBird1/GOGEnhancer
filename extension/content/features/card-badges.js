@@ -56,12 +56,21 @@
     const maxP = Math.max(...prices);
     const range = maxP - minP || 1;
     const W = 120, H = 22, PAD = 2;
-    const pts = points.map((e, i) => {
-      const x = PAD + (i / (points.length - 1)) * (W - PAD * 2);
-      const y = PAD + (H - PAD * 2) - ((e.p - minP) / range) * (H - PAD * 2);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-    return `<svg class="gog-plus-ql-mini-spark" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true"><path d="M${pts.join(" L")}" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+    const coords = points.map((e, i) => ({
+      x: PAD + (i / (points.length - 1)) * (W - PAD * 2),
+      y: PAD + (H - PAD * 2) - ((e.p - minP) / range) * (H - PAD * 2),
+    }));
+    const pts = coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`);
+    const last = coords[coords.length - 1];
+    // Soft area fill under the line + an emphasized endpoint dot, so the
+    // "where are we now" read is immediate even at this small size — same
+    // treatment as the full renderSparkline() in the game panel.
+    const areaPath = `M${pts.join(" L")} L${last.x.toFixed(1)},${(H - PAD).toFixed(1)} L${PAD},${(H - PAD).toFixed(1)} Z`;
+    return `<svg class="gog-plus-ql-mini-spark" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">
+      <path d="${areaPath}" fill="currentColor" fill-opacity="0.12" stroke="none"/>
+      <path d="M${pts.join(" L")}" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="1.6" fill="currentColor"/>
+    </svg>`;
   }
 
   function applyCardBadges(root = document) {

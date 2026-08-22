@@ -78,6 +78,18 @@ interface GogPlusI18nApi {
   t(key: string, lang?: string): string;
 }
 
+interface GogPlusGameStatusEntry {
+  id: string;
+  label: string;
+  icon: string;
+  color: string;
+}
+
+interface GogPlusGameStatusApi {
+  STATUSES: GogPlusGameStatusEntry[];
+  statusById(id: string | null | undefined): GogPlusGameStatusEntry | null;
+}
+
 declare global {
   interface Window {
     GOG_PLUS_DEFAULTS?: GogPlusSettings;
@@ -90,6 +102,7 @@ declare global {
     GOGPlusGenres?: GogPlusGenresApi;
     GOGPlusChangelog?: GogPlusChangelogApi;
     GOGPlusI18n?: GogPlusI18nApi;
+    GOGPlusGameStatus?: GogPlusGameStatusApi;
   }
   // eslint-disable-next-line no-var
   var GOG_PLUS_DEFAULTS: GogPlusSettings | undefined;

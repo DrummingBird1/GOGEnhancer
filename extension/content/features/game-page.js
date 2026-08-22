@@ -535,13 +535,16 @@
   }
 
   async function renderTagsSection(slug) {
-    const { tags = {}, notes = {}, tagColors = {} } = await window.GOGPlusStorage.get({
+    const { tags = {}, notes = {}, tagColors = {}, gameStatus = {} } = await window.GOGPlusStorage.get({
       tags: {},
       notes: {},
       tagColors: {},
+      gameStatus: {},
     });
     const existing = tags[slug] || [];
     const note = notes[slug] || "";
+    const { STATUSES } = window.GOGPlusGameStatus;
+    const currentStatus = gameStatus[slug] || null;
 
     // Build autocomplete candidate list from all existing tags
     const allTags = new Set();
@@ -551,8 +554,16 @@
 
     const wrap = document.createElement("section");
     wrap.className = "gog-plus-gp-section";
+    const statusButtons = STATUSES.map((s) => {
+      const active = s.id === currentStatus;
+      return `<button class="gog-plus-status-btn${active ? " active" : ""}" type="button"
+        data-status="${s.id}" style="${active ? `--status-accent:${s.color}` : ""}"
+        aria-pressed="${active}" aria-label="Mark as ${s.label}" title="${s.label}">${s.icon} ${s.label}</button>`;
+    }).join("");
+
     wrap.innerHTML = `
       <h3>Your tags & notes</h3>
+      <div class="gog-plus-status-row" role="group" aria-label="Play status">${statusButtons}</div>
       <div class="gog-plus-tag-input-row">
         <input type="text" id="gog-plus-tag-input" list="gog-plus-tag-suggestions"
                placeholder="Add tag (e.g. 'co-op weekend')…" autocomplete="off"/>
@@ -569,6 +580,20 @@
     `;
 
     setTimeout(() => {
+      wrap.querySelectorAll(".gog-plus-status-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.status;
+          const { gameStatus: cur = {} } = await window.GOGPlusStorage.get({ gameStatus: {} });
+          // Clicking the already-active status clears it back to "none".
+          if (cur[slug] === id) delete cur[slug];
+          else cur[slug] = id;
+          await window.GOGPlusStorage.set({ gameStatus: cur });
+          const panel = document.getElementById("gog-plus-gamepanel");
+          panel?.remove();
+          ensureGamePagePanel(slug);
+        });
+      });
+
       const renderTags = () => {
         const list = wrap.querySelector("#gog-plus-tag-list");
         list.innerHTML = "";

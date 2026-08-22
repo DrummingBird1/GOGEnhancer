@@ -89,7 +89,8 @@ html.gog-plus-theme--light {
 @media (prefers-reduced-motion: reduce) {
   .gog-plus-gamepanel, .gog-plus-tooltip, .gog-plus-banner,
   .gog-plus-wlfilters, .gog-plus-wlfilter, .gog-plus-badge,
-  .gog-plus-conv-note, .gog-plus-tag-chip {
+  .gog-plus-conv-note, .gog-plus-tag-chip,
+  .gog-plus-toast, .gog-plus-palette-overlay, .gog-plus-palette {
     transition: none;
   }
 }
@@ -638,6 +639,40 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   box-shadow: 0 0 16px rgba(0, 240, 255, 0.2);
 }
 
+/* Play status — Playing / Backlog / Finished, a fixed 3-state toggle group
+   distinct from free-form tags. Clicking the active one clears it (see
+   renderTagsSection). Shares its class-naming/behavior pattern with the tag
+   dashboard's own copy in tags.css — two pages, two stylesheets. */
+.gog-plus-status-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.gog-plus-status-btn {
+  --status-accent: var(--gp-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--gp-border);
+  border-radius: 5px;
+  padding: 5px 10px;
+  color: var(--gp-text-muted);
+  font-family: var(--gp-body);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.gog-plus-status-btn:hover {
+  border-color: var(--status-accent);
+  color: var(--gp-text-dim);
+}
+.gog-plus-status-btn.active {
+  border-color: var(--status-accent);
+  color: var(--status-accent);
+  background: color-mix(in srgb, var(--status-accent) 14%, transparent);
+}
+
 /* Tags */
 .gog-plus-tag-input-row {
   display: flex;
@@ -821,7 +856,10 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   pointer-events: none;
 }
 .gog-plus-toast {
-  padding: 11px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px 11px 18px;
   background:
     linear-gradient(135deg, rgba(198, 79, 255, 0.16), rgba(0, 240, 255, 0.16)),
     rgba(10, 6, 18, 0.96);
@@ -835,6 +873,7 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: auto;
 }
 .gog-plus-toast--in { opacity: 1; transform: translateY(0); }
 .gog-plus-toast--out { opacity: 0; transform: translateY(-4px); }
@@ -843,6 +882,25 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   background:
     linear-gradient(135deg, rgba(244, 234, 255, 0.04), rgba(244, 234, 255, 0.02)),
     rgba(10, 6, 18, 0.96);
+}
+.gog-plus-toast-text { flex: 1; }
+.gog-plus-toast-action {
+  flex: none;
+  background: rgba(244, 234, 255, 0.10);
+  border: 1px solid var(--gp-border-strong);
+  color: var(--gp-cyan);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 5px 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.gog-plus-toast-action:hover {
+  background: rgba(0, 240, 255, 0.14);
+  border-color: var(--gp-cyan);
 }
 
 /* ============================================================
@@ -1025,4 +1083,81 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   color: var(--gp-green);
   background: rgba(92, 255, 157, 0.08);
   border: 1px solid rgba(92, 255, 157, 0.25);
+}
+
+/* ===== Command palette (Ctrl/Cmd+K) ===== */
+.gog-plus-palette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 14vh;
+  background: rgba(5, 3, 10, 0.55);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.gog-plus-palette-overlay--in { opacity: 1; }
+.gog-plus-palette {
+  width: min(520px, 92vw);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--gp-surface);
+  border: 1px solid rgba(198, 79, 255, 0.35);
+  border-radius: 10px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  transform: translateY(-6px);
+  transition: transform 0.15s ease;
+}
+.gog-plus-palette-overlay--in .gog-plus-palette { transform: translateY(0); }
+.gog-plus-palette-inputrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--gp-border);
+  color: var(--gp-text-muted);
+}
+.gog-plus-palette-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--gp-text);
+  font-family: var(--gp-body);
+  font-size: 15px;
+}
+.gog-plus-palette-input::placeholder { color: var(--gp-text-muted); }
+.gog-plus-palette-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+}
+.gog-plus-palette-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--gp-text-dim);
+  font-family: var(--gp-body);
+  font-size: 13.5px;
+}
+.gog-plus-palette-item.is-active {
+  background: linear-gradient(135deg, rgba(198, 79, 255, 0.16), rgba(0, 240, 255, 0.10));
+  color: var(--gp-text);
+}
+.gog-plus-palette-item-label { font-weight: 600; }
+.gog-plus-palette-item-hint {
+  font-family: var(--gp-mono);
+  font-size: 11px;
+  color: var(--gp-text-muted);
+  white-space: nowrap;
 }

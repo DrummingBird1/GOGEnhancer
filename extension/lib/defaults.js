@@ -41,6 +41,8 @@
    * @property {boolean} richTooltips
    * @property {boolean} skeletonLoaders
    * @property {boolean} wishlistAlerts
+   * @property {boolean} wishlistPriceAlerts arm a price-drop check across the whole wishlist, not just per-game
+   * @property {number} wishlistAlertPercent % drop from a tracked game's peak price that counts as a hit
    * @property {boolean} refundTimer
    * @property {boolean} desktopNotifications
    * @property {boolean} debugLogging
@@ -58,9 +60,11 @@
    * @property {number} modsUpdatedAt
    * @property {{ discountedCount: number, total: number }} wishlistCache
    * @property {number} wishlistCacheUpdatedAt
+   * @property {string[]} wishlistSlugs slugs on the wishlist, from the content-script round-trip
    * @property {Record<string, string[]>} tags slug -> tag names
    * @property {Record<string, string>} tagColors tag name -> #hex
    * @property {string[]} tagOrder
+   * @property {Record<string, "playing" | "backlog" | "finished">} gameStatus slug -> fixed-vocabulary play status, distinct from free-form tags
    * @property {Record<string, string>} notes slug -> free text
    * @property {Record<string, Array<{d: string, p: number, c: string}>>} priceHistory slug -> snapshots
    * @property {Record<string, string>} purchaseLog slug -> "YYYY-MM-DD"
@@ -97,6 +101,7 @@
     richTooltips: true,
     skeletonLoaders: true,
     wishlistAlerts: true,
+    wishlistPriceAlerts: false,
     refundTimer: true,
     desktopNotifications: false,
     debugLogging: false,
@@ -112,15 +117,18 @@
     regionPreset: "il",
     theme: "neon",
     uiLanguage: "en",
+    wishlistAlertPercent: 20,
 
     // local data (caches + user data)
     modsList: [],
     modsUpdatedAt: 0,
     wishlistCache: { discountedCount: 0, total: 0 },
     wishlistCacheUpdatedAt: 0,
+    wishlistSlugs: [],
     tags: {},
     tagColors: {},
     tagOrder: [],
+    gameStatus: {},
     notes: {},
     priceHistory: {},
     purchaseLog: {},

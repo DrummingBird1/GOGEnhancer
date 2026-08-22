@@ -49,10 +49,15 @@
 
     // Theme: strip prior theme- class then add the current one. "neon" is the
     // CSS default so applying it is a no-op but kept for explicitness.
+    // "auto" isn't a real CSS variant — it resolves to "light" or "neon"
+    // (the dark default) from the OS preference at apply time.
     [...document.documentElement.classList]
       .filter((c) => c.startsWith("gog-plus-theme--"))
       .forEach((c) => document.documentElement.classList.remove(c));
-    const theme = state.settings.theme || "neon";
+    let theme = state.settings.theme || "neon";
+    if (theme === "auto") {
+      theme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "neon";
+    }
     document.documentElement.classList.add(`gog-plus-theme--${theme}`);
 
     try {
@@ -175,6 +180,12 @@
       },
     };
   }
+
+  // Re-resolve the "auto" theme immediately when the OS preference flips —
+  // otherwise it would only update on the next unrelated re-process.
+  window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
+    if (state.settings.theme === "auto") processAll();
+  });
 
   /* ============== boot ============== */
 

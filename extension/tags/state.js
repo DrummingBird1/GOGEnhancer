@@ -22,6 +22,7 @@
     allNotes: {}, // { slug: text }
     allHistory: {}, // { slug: [{d, p, c}, ...] }
     allPurchases: {}, // { slug: "YYYY-MM-DD" }
+    allStatus: {}, // { slug: "playing" | "backlog" | "finished" }
     tagColors: {}, // { tagName: "#hex" }
     tagOrder: [], // explicit order of tags after drag-reorder; unordered = end
     density: "comfortable", // "comfortable" | "compact"

@@ -67,6 +67,7 @@ lib/storage.js          → window.GOGPlusStorage
 lib/dom-safety.js       → window.GOGPlusDomSafety (escapeHtml)
 lib/currency-format.js  → window.GOGPlusCurrencyFormat (symbolFor, formatPrice)
 lib/genres.js           → window.GOGPlusGenres (GENRE_PATTERNS, matchGenrePattern, mapGenreLabel)
+lib/game-status.js      → window.GOGPlusGameStatus (STATUSES, statusById) — shared with tags/ dashboard
 content/translations.js → window.GOG_PLUS_TRANSLATIONS
 content/currency-detection.js → window.GOGPlusCurrency
 content/price-history.js → window.GOGPlusPriceHistory
@@ -79,6 +80,7 @@ content/features/card-badges.js  → window.GOGPlusCardBadges
 content/features/misc.js         → window.GOGPlusMiscFeatures
 content/features/wishlist.js     → window.GOGPlusWishlistFeature
 content/features/game-page.js    → window.GOGPlusGamePage
+content/features/command-palette.js → window.GOGPlusCommandPalette (Ctrl/Cmd+K quick actions)
 content/content.js      → orchestrator (depends on all of the above)
 ```
 

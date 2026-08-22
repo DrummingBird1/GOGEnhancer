@@ -289,6 +289,67 @@ async function checkPriceAlerts() {
   if (touched) await self.GOGPlusStorage.set({ notifLog });
 }
 
+// Extends the per-game price-alert system (checkPriceAlerts, which needs a
+// manually-set threshold on each game's own page) to the whole wishlist at
+// once: any wishlisted game whose latest recorded price has dropped by at
+// least `wishlistAlertPercent` off its own tracked peak fires a
+// notification — no per-game setup required. Only covers wishlist items
+// that already have price history (i.e. the user visited that game's page
+// at least once — see priceHistory.js); there's no price data for slugs
+// never visited, wishlisted or not.
+async function checkWishlistWideAlerts() {
+  const {
+    desktopNotifications,
+    wishlistPriceAlerts,
+    wishlistAlertPercent,
+    wishlistSlugs = [],
+    priceHistory = {},
+    notifLog = {},
+  } = await self.GOGPlusStorage.get({
+    desktopNotifications: false,
+    wishlistPriceAlerts: false,
+    wishlistAlertPercent: 20,
+    wishlistSlugs: [],
+    priceHistory: {},
+    notifLog: {},
+  });
+  if (!desktopNotifications || !wishlistPriceAlerts) return;
+  if (!wishlistSlugs.length) return;
+
+  const pct = Math.min(90, Math.max(1, Number(wishlistAlertPercent) || 20));
+  let touched = false;
+
+  for (const slug of wishlistSlugs) {
+    const hist = priceHistory[slug];
+    if (!hist || hist.length < 2) continue; // nothing to compare a "drop" against
+
+    let peak = hist[0];
+    for (const e of hist) if (e.p > peak.p) peak = e;
+    const latest = hist[hist.length - 1];
+    if (peak.p <= 0 || latest.c !== peak.c) continue; // mixed-currency history — skip rather than misreport
+
+    const dropPct = ((peak.p - latest.p) / peak.p) * 100;
+    if (dropPct < pct) continue;
+
+    // Dedupe by slug + exact current price — re-arms automatically if the
+    // price moves again (up then back down, or drops further).
+    const key = `wishlistPriceAlert:${slug}:${latest.p}`;
+    if (notifLog[key]) continue;
+
+    const sym =
+      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽" })[latest.c] || latest.c;
+    await fireNotification(
+      key,
+      `Wishlist price drop — ${slugToTitle(slug)}`,
+      `Now ${sym}${latest.p.toFixed(2)} — ${Math.round(dropPct)}% below its tracked peak of ${sym}${peak.p.toFixed(2)}.`,
+      "Visit the GOG page to confirm and buy"
+    );
+    notifLog[key] = Date.now();
+    touched = true;
+  }
+  if (touched) await self.GOGPlusStorage.set({ notifLog });
+}
+
 async function maybeNotifyWishlistJump(prevCount, newCount) {
   if (newCount <= prevCount) return;
   const { desktopNotifications, notifLog = {} } = await self.GOGPlusStorage.get({
@@ -358,6 +419,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 async function runDailyJobs() {
   await checkRefundWindowExpirations();
   await checkPriceAlerts();
+  await checkWishlistWideAlerts();
   // Housekeeping: keep notifLog from growing without bound.
   const { notifLog = {} } = await self.GOGPlusStorage.get({ notifLog: {} });
   if (pruneNotifLog(notifLog)) {
@@ -405,6 +467,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       self.GOGPlusStorage.set({
         wishlistCache: { discountedCount: count, total: msg.total | 0 },
         wishlistCacheUpdatedAt: Date.now(),
+        // Powers checkWishlistWideAlerts() — background has no other way to
+        // know which slugs are wishlisted (can't scrape the SPA route).
+        wishlistSlugs: Array.isArray(msg.slugs) ? msg.slugs.slice(0, 500) : [],
       }).then(() => {
         maybeNotifyWishlistJump(prevCount, count);
         refreshWishlistBadge().then(() => sendResponse({ ok: true }));

@@ -138,6 +138,45 @@ a:hover { border-bottom-color: var(--accent-cyan); }
 }
 .hero-sub { color: var(--text-secondary); margin: 0; font-size: 16px; }
 
+/* Settings search — filters the cards below by free-text match. */
+.settings-search-row {
+  position: relative;
+  margin-top: 24px;
+  max-width: 420px;
+}
+.settings-search-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+.settings-search-input {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  padding: 11px 14px 11px 38px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.settings-search-input::placeholder { color: var(--text-tertiary); }
+.settings-search-input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.12);
+}
+.settings-search-input::-webkit-search-cancel-button { cursor: pointer; }
+.settings-search-empty {
+  display: block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
 /* Page */
 .page { max-width: 880px; margin: 0 auto; padding: 36px 32px 64px; }
 
@@ -463,6 +502,8 @@ button.danger:hover {
   color-scheme: dark;
 }
 .dev-num:focus { outline: none; border-color: var(--accent-cyan); }
+.dev-num-suffixed { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.dev-num-suffix { color: var(--text-tertiary); font-family: var(--mono); font-size: 13px; }
 
 /* FX error surface */
 .rate-status.has-error {
@@ -524,6 +565,23 @@ button.danger:hover {
 .theme-swatch--light {
   background: linear-gradient(135deg, #ffffff 0%, #f3eeff 60%, #7a1fc7 100%);
   border: 1px solid rgba(26, 10, 42, 0.20);
+}
+/* Auto — half-and-half split reads as "picks between dark/light for you"
+   at a glance, distinct from every other swatch's single gradient. */
+.theme-swatch--auto {
+  background: linear-gradient(
+    90deg,
+    #0a0612 0%, #0a0612 48%,
+    #ffffff 52%, #ffffff 100%
+  );
+  border: 1px solid rgba(26, 10, 42, 0.20);
+  position: relative;
+}
+.theme-swatch--auto::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #c64fff 0%, transparent 48%, transparent 52%, #7a1fc7 100%);
 }
 
 /* UI language selector — sits in the Look & feel card under the theme picker */

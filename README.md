@@ -139,12 +139,63 @@ gog-plus/
 - **Refund timer מבוסס על תאריך ידני** — GOG לא חושף תאריך רכישה דרך DOM פומבי, אז ה-countdown של 30 הימים נשען על תאריך שאתה מקליד ב-panel. אם לא הקלדת תאריך — אין countdown.
 - **Genre detection — חלקית אוטומטית מ-v2.6.0** — Horror/Role-playing/Strategy נקראים כעת מה"Genre:" האמיתי בעמוד המשחק ונשמרים ב-cache לפי slug (`gameGenres`) בביקור ראשון. Sci-fi ו-Indie עדיין מבוססים על regex ידני של שמות משחקים מוכרים — ב-GOG הם נראים משויכים ל-"Tags" הרחב יותר ולא ל-"Genre:", ומבנה זה לא אומת במלואו. עד שמשחק מסוים לא בוקר, כל חמשת הז'אנרים נופלים חזרה ל-regex הישן.
 - **Cross-currency conversion דרך USD** — ההמרה מבוצעת תמיד דרך USD כ-pivot. אם השער של אחד הזוגות חסר ב-`rates`, ההמרה לא תתבצע. כל ה-rates נשלפים אוטומטית כל 12 שעות מ-frankfurter.app.
+- **Wishlist-wide price alerts (v2.9.0) מכסים רק משחקים שביקרת בהם** — ההתראה משווה למחיר-שיא שנרשם ב-`priceHistory`, שנבנה רק מביקור בעמוד המשחק עצמו. משחק ברשימת המשאלות שמעולם לא ביקרת בו — אין לו נתון להשוואה, ולכן לא יקבל התראה גם אם המחיר צנח.
 
 ---
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.8.0 (current) — content.js / tags.js module split
+### v2.9.0 (current) — Command palette, wishlist-wide alerts, backlog status, and more
+
+Feature round built on the v2.8.0 module split. Six items from the standing
+feature backlog plus a design pass:
+
+- **Command palette (Ctrl/Cmd+K)** — new `content/features/command-palette.js`.
+  Searchable overlay for actions that already existed behind menus: open
+  Advanced Options, open the tag dashboard, toggle the master switch /
+  currency conversion / Hebrew translations, force-refresh FX rates or the
+  mods list, reload the tab. Arrow keys to navigate, Enter to run, Escape
+  to close.
+- **Wishlist-wide price alerts** — the existing per-game price-alert system
+  (`checkPriceAlerts` in background.js) required visiting each game's page
+  and setting a threshold manually. New `checkWishlistWideAlerts()` covers
+  the *whole* wishlist at once: any wishlisted game whose latest recorded
+  price has dropped a configurable % (default 20) off its own tracked peak
+  fires a notification, opt-in via a new toggle in Advanced Options. Only
+  covers wishlist items you've visited at least once — that visit is what
+  builds the price history to compare against. Required a real architecture
+  change: background.js previously only knew the wishlist's *counts*, not
+  *which* games were on it — `wishlist.js`'s existing slug-deduplication set
+  is now also sent in the `wishlist-report` message and cached as
+  `wishlistSlugs`.
+- **Game status: Playing / Backlog / Finished** — new fixed-vocabulary
+  `gameStatus` field per game (new shared `lib/game-status.js`), distinct
+  from free-form tags. Settable from a 3-button toggle group on the game's
+  own page (in the tags & notes section) or from each card in the tag
+  dashboard; filterable there via `status:playing` search syntax alongside
+  the existing `tag:`/`lowest:`/`snapshots:`/`since:` filters.
+- **Auto theme** — a 5th theme option (alongside the existing Neon, Classic,
+  CRT, Sunset, and — already built but previously undiscovered by this
+  project's own roadmap notes — Light) that resolves to Light or Neon from
+  `prefers-color-scheme` at apply time, and updates live if the OS
+  preference changes while a gog.com tab is open.
+- **Settings search** — Advanced Options has grown to 9 cards; a search box
+  in the header now filters them by free-text match. (Also fixed a
+  hardcoded stale "v2.4" version string next to it while in the area — it
+  now reads the real manifest version.)
+- **Undo toast for tag deletion** — replaces the old blocking
+  `confirm("...cannot be undone")` dialog. Deletion still commits
+  immediately (so it's never lost if the tab closes), but a 5-second toast
+  with an Undo button restores the exact prior state. Required extending
+  `toasts.js` to support an optional action button, and loading it into
+  `tags.html` for the first time (previously content-script only).
+- **Design polish** — the small tooltip sparkline (`buildMiniSparkline`) now
+  gets the same area-fill + emphasized-endpoint treatment the full game-panel
+  chart already had. Added `prefers-reduced-motion` guards to the popup's
+  entrance animations and the new toast/palette transitions, which didn't
+  have them.
+
+### v2.8.0 — content.js / tags.js module split
 
 Pure refactor, zero user-visible change. The two files v2.7.0 explicitly
 flagged as too risky to bundle with everything else — `content.js`

@@ -23,6 +23,7 @@ async function init() {
     purchaseLog: {},
     tagColors: {},
     tagOrder: [],
+    gameStatus: {},
     tagDashboardDensity: "comfortable",
     uiLanguage: "en",
   });
@@ -33,6 +34,7 @@ async function init() {
   state.allPurchases = data.purchaseLog || {};
   state.tagColors = data.tagColors || {};
   state.tagOrder = Array.isArray(data.tagOrder) ? data.tagOrder : [];
+  state.allStatus = data.gameStatus || {};
   state.density = data.tagDashboardDensity === "compact" ? "compact" : "comfortable";
   applyDensityClass();
   await renderStats();

@@ -8,6 +8,7 @@ await import("../extension/lib/defaults.js");
 await import("../extension/lib/storage.js");
 await import("../extension/lib/dom-safety.js");
 await import("../extension/lib/currency-format.js");
+await import("../extension/lib/game-status.js");
 await import("../extension/tags/state.js");
 await import("../extension/tags/features/tag-management.js");
 await import("../extension/tags/features/games-list.js");
@@ -68,6 +69,12 @@ describe("parseSearchQuery", () => {
   it("parses a since: filter only when it's a 4-digit year", () => {
     expect(parseSearchQuery("since:2023").since).toBe("2023");
     expect(parseSearchQuery("since:23").since).toBe(null);
+  });
+
+  it("parses a status: filter only when it's a known status id", () => {
+    expect(parseSearchQuery("status:playing").status).toBe("playing");
+    expect(parseSearchQuery("status:BACKLOG").status).toBe("backlog");
+    expect(parseSearchQuery("status:not-a-real-status").status).toBe(null);
   });
 
   it("ignores a malformed numeric comparison instead of throwing", () => {

@@ -24,6 +24,7 @@ export default [
         GOGPlusDomSafety: "readonly",
         GOGPlusCurrencyFormat: "readonly",
         GOGPlusGenres: "readonly",
+        GOGPlusGameStatus: "readonly",
         GOG_PLUS_DEFAULTS: "readonly",
         GOG_PLUS_SETTINGS_VERSION: "readonly",
         GOG_PLUS_TRANSLATIONS: "readonly",
@@ -41,6 +42,7 @@ export default [
         GOGPlusMiscFeatures: "readonly",
         GOGPlusWishlistFeature: "readonly",
         GOGPlusGamePage: "readonly",
+        GOGPlusCommandPalette: "readonly",
         // tags/state.js, tags/features/*.js — the v2.8.0 tags.js module split.
         GOGPlusTagsState: "readonly",
         GOGPlusTagsConstants: "readonly",

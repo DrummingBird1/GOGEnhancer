@@ -3,10 +3,12 @@ import { describe, it, expect } from "vitest";
 await import("../extension/lib/dom-safety.js");
 await import("../extension/lib/currency-format.js");
 await import("../extension/lib/genres.js");
+await import("../extension/lib/game-status.js");
 
 const { escapeHtml } = window.GOGPlusDomSafety;
 const { symbolFor, formatPrice } = window.GOGPlusCurrencyFormat;
 const { GENRE_PATTERNS, matchGenrePattern, mapGenreLabel } = window.GOGPlusGenres;
+const { STATUSES, statusById } = window.GOGPlusGameStatus;
 
 describe("escapeHtml", () => {
   it("escapes the five HTML-significant characters", () => {
@@ -85,5 +87,29 @@ describe("mapGenreLabel", () => {
   it("returns null for empty input without throwing", () => {
     expect(mapGenreLabel("")).toBe(null);
     expect(mapGenreLabel(null)).toBe(null);
+  });
+});
+
+describe("statusById", () => {
+  it("resolves each known status id to its entry", () => {
+    expect(statusById("playing")).toMatchObject({ id: "playing", label: "Playing" });
+    expect(statusById("backlog")).toMatchObject({ id: "backlog", label: "Backlog" });
+    expect(statusById("finished")).toMatchObject({ id: "finished", label: "Finished" });
+  });
+
+  it("returns null for an unknown or empty id", () => {
+    expect(statusById("not-a-real-status")).toBe(null);
+    expect(statusById(null)).toBe(null);
+    expect(statusById(undefined)).toBe(null);
+  });
+
+  it("every status has a unique id and a non-empty label/icon/color", () => {
+    const ids = STATUSES.map((s) => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const s of STATUSES) {
+      expect(s.label.length).toBeGreaterThan(0);
+      expect(s.icon.length).toBeGreaterThan(0);
+      expect(s.color).toMatch(/^#[0-9a-f]{3,8}$/i);
+    }
   });
 });

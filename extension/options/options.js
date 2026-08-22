@@ -22,11 +22,16 @@ function applyThemeClassToHtml(theme) {
   // Strip any prior gog-plus-theme--* class so themes don't compose,
   // then add the current one. "neon" is the CSS default so the class
   // is harmless; we still add it for consistency with content.js.
+  // "auto" isn't a real CSS variant — same resolution as content.js.
   const html = document.documentElement;
   [...html.classList]
     .filter((c) => c.startsWith("gog-plus-theme--"))
     .forEach((c) => html.classList.remove(c));
-  html.classList.add(`gog-plus-theme--${theme || "neon"}`);
+  let resolved = theme || "neon";
+  if (resolved === "auto") {
+    resolved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "neon";
+  }
+  html.classList.add(`gog-plus-theme--${resolved}`);
 }
 
 let saveStatusTimer = null;
@@ -83,6 +88,8 @@ async function load() {
   // Debug toggle
   if ($("debugLogging")) $("debugLogging").checked = !!s.debugLogging;
   if ($("desktopNotifications")) $("desktopNotifications").checked = !!s.desktopNotifications;
+  if ($("wishlistPriceAlerts")) $("wishlistPriceAlerts").checked = !!s.wishlistPriceAlerts;
+  if ($("wishlistAlertPercent")) $("wishlistAlertPercent").value = s.wishlistAlertPercent ?? 20;
   if ($("historyMaxEntries")) $("historyMaxEntries").value = s.historyMaxEntries ?? 100;
 
   // Active theme swatch + live preview on the options page itself
@@ -215,6 +222,22 @@ function bind() {
     await window.GOGPlusStorage.set({
       desktopNotifications: $("desktopNotifications").checked,
     });
+    flashSaved();
+  });
+
+  $("wishlistPriceAlerts").addEventListener("change", async () => {
+    await window.GOGPlusStorage.set({
+      wishlistPriceAlerts: $("wishlistPriceAlerts").checked,
+    });
+    flashSaved();
+  });
+
+  $("wishlistAlertPercent").addEventListener("change", async () => {
+    let v = parseInt($("wishlistAlertPercent").value, 10);
+    if (!Number.isFinite(v)) v = 20;
+    v = Math.min(90, Math.max(1, v));
+    $("wishlistAlertPercent").value = v;
+    await window.GOGPlusStorage.set({ wishlistAlertPercent: v });
     flashSaved();
   });
 
@@ -435,7 +458,37 @@ function bind() {
   });
 }
 
+// Filters the settings cards by free-text match against each card's
+// visible content (heading + row labels + descriptions) — the page has
+// grown to ~9 cards and keeps growing, so a quick way to jump to the right
+// one beats scrolling. Whole cards are shown/hidden rather than individual
+// rows: simpler, and every card here is already a coherent single topic.
+function bindSettingsSearch() {
+  const input = $("settingsSearch");
+  if (!input) return;
+  const cards = Array.from(document.querySelectorAll("main.page > .card"));
+  const emptyMsg = $("settingsSearchEmpty");
+  const emptyTerm = $("settingsSearchEmptyTerm");
+
+  input.addEventListener("input", () => {
+    const term = input.value.trim().toLowerCase();
+    let anyVisible = false;
+    cards.forEach((card) => {
+      const match = !term || (card.textContent || "").toLowerCase().includes(term);
+      card.hidden = !match;
+      if (match) anyVisible = true;
+    });
+    if (emptyMsg) {
+      emptyMsg.hidden = !term || anyVisible;
+      if (emptyTerm) emptyTerm.textContent = input.value.trim();
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   load();
   bind();
+  bindSettingsSearch();
+  const heroVersion = $("heroVersion");
+  if (heroVersion) heroVersion.textContent = `v${chrome.runtime.getManifest().version}`;
 });

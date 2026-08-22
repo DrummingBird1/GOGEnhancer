@@ -399,6 +399,38 @@ a:hover { text-decoration: underline; }
   color: var(--accent-cyan);
 }
 
+/* Play status — Playing / Backlog / Finished. A fixed 3-state toggle group,
+   distinct from the free-form tag chips below it. Clicking the active one
+   clears it back to "no status" (see games-list.js). */
+.game-card-status {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.game-card-status-btn {
+  --status-accent: var(--text-tertiary);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 8px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.game-card-status-btn:hover {
+  border-color: var(--status-accent);
+  color: var(--text-secondary);
+}
+.game-card-status-btn.active {
+  border-color: var(--status-accent);
+  color: var(--status-accent);
+  background: color-mix(in srgb, var(--status-accent) 14%, transparent);
+}
+
 /* Toolbar select (sort by) */
 .toolbar-select {
   background: var(--bg-elevated);
@@ -766,4 +798,70 @@ body.density-compact .game-card-title { font-size: 14px; margin-bottom: 4px; }
 body.density-compact .game-card-slug { font-size: 10px; margin-bottom: 6px; }
 body.density-compact .game-card-tags { gap: 3px; margin-bottom: 6px; }
 body.density-compact .game-card-note { font-size: 11px; max-height: 90px; padding: 6px 8px; }
+
+/* Toasts — window.GOGPlusToasts is shared with content.js's on-page copy,
+   but this dashboard is its own page with its own stylesheet, so the
+   visual styling is mirrored here rather than shared. Used e.g. for the
+   "Tag deleted · Undo" toast that replaced a blocking confirm() dialog. */
+.gog-plus-toasts {
+  position: fixed;
+  bottom: 24px;
+  inset-inline-end: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.gog-plus-toast {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px 11px 18px;
+  background:
+    linear-gradient(135deg, rgba(198, 79, 255, 0.16), rgba(0, 240, 255, 0.16)),
+    rgba(10, 6, 18, 0.96);
+  border: 1px solid rgba(198, 79, 255, 0.4);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: auto;
+}
+.gog-plus-toast--in { opacity: 1; transform: translateY(0); }
+.gog-plus-toast--out { opacity: 0; transform: translateY(-4px); }
+.gog-plus-toast--muted {
+  border-color: var(--border-strong);
+  background:
+    linear-gradient(135deg, rgba(244, 234, 255, 0.04), rgba(244, 234, 255, 0.02)),
+    rgba(10, 6, 18, 0.96);
+}
+.gog-plus-toast-text { flex: 1; }
+.gog-plus-toast-action {
+  flex: none;
+  background: rgba(244, 234, 255, 0.10);
+  border: 1px solid var(--border-strong);
+  color: var(--accent-cyan);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 5px 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.gog-plus-toast-action:hover {
+  background: rgba(0, 240, 255, 0.14);
+  border-color: var(--accent-cyan);
+}
 body.density-compact .game-list { gap: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gog-plus-toast { transition: none; }
+}

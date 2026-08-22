@@ -461,3 +461,6 @@ body.disabled .rate-strip { opacity: 0.4; pointer-events: none; }
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+@media (prefers-reduced-motion: reduce) {
+  .section, .whatsnew { animation: none; }
+}

@@ -204,18 +204,56 @@ async function mergeTag(fromName) {
   await window.GOGPlusTagsStats.renderStats();
 }
 
+// Deletes a tag from every game it's on. Replaces the old blocking
+// confirm() dialog with a reversible "Deleted · Undo" toast instead — the
+// snapshot below is a real restore (not a deferred commit), so the
+// deletion is already safely persisted even if the tab closes before the
+// undo window elapses.
 async function deleteTag(name) {
-  if (!confirm(`Delete "${name}" from every game? This cannot be undone.`)) return;
-  for (const slug of Object.keys(state.allTags)) {
-    state.allTags[slug] = (state.allTags[slug] || []).filter((t) => t !== name);
-    if (!state.allTags[slug].length) delete state.allTags[slug];
-  }
-  delete state.tagColors[name];
-  if (state.activeTag === name) state.activeTag = null;
-  await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors });
-  renderTagList();
-  window.GOGPlusTagsGamesList.renderGames();
-  await window.GOGPlusTagsStats.renderStats();
+  const affectedSlugs = Object.keys(state.allTags).filter((slug) =>
+    (state.allTags[slug] || []).includes(name)
+  );
+  const snapshot = {
+    tagsBySlug: Object.fromEntries(
+      affectedSlugs.map((slug) => [slug, [...state.allTags[slug]]])
+    ),
+    color: state.tagColors[name],
+    wasActive: state.activeTag === name,
+  };
+
+  const commitDeletion = async () => {
+    for (const slug of Object.keys(state.allTags)) {
+      state.allTags[slug] = (state.allTags[slug] || []).filter((t) => t !== name);
+      if (!state.allTags[slug].length) delete state.allTags[slug];
+    }
+    delete state.tagColors[name];
+    if (state.activeTag === name) state.activeTag = null;
+    await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors });
+    renderTagList();
+    window.GOGPlusTagsGamesList.renderGames();
+    await window.GOGPlusTagsStats.renderStats();
+  };
+
+  await commitDeletion();
+
+  window.GOGPlusToasts?.show(`Deleted "${name}"`, {
+    variant: "muted",
+    duration: 5000,
+    action: {
+      label: "Undo",
+      onClick: async () => {
+        for (const [slug, tags] of Object.entries(snapshot.tagsBySlug)) {
+          state.allTags[slug] = tags;
+        }
+        if (snapshot.color) state.tagColors[name] = snapshot.color;
+        if (snapshot.wasActive) state.activeTag = name;
+        await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors });
+        renderTagList();
+        window.GOGPlusTagsGamesList.renderGames();
+        await window.GOGPlusTagsStats.renderStats();
+      },
+    },
+  });
 }
 
 function openColorPicker(tag, anchor) {
