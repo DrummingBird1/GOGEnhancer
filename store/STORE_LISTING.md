@@ -107,7 +107,7 @@ with, endorsed by, or sponsored by GOG sp. z o.o. or CD Projekt S.A.
 The "GOG" name is used nominatively to describe the website the extension
 works with.
 
-Privacy policy: https://github.com/DrummingBird1/GOGEnhancer/blob/main/PRIVACY.md
+Privacy policy: https://drummingbird1.github.io/GOGEnhancer/privacy.html
 Source code:    https://github.com/DrummingBird1/GOGEnhancer
 ```
 
@@ -261,7 +261,7 @@ Capture them all in a clean Chrome window with no other extensions visible.
 
 Before clicking "Submit for review", verify:
 
-- [ ] Privacy policy is hosted at a publicly reachable URL (GitHub Pages works). Paste that URL into the Privacy section of the dashboard.
+- [ ] Privacy policy is live at https://drummingbird1.github.io/GOGEnhancer/privacy.html (GitHub Pages). Paste that URL into the Privacy section of the dashboard.
 - [ ] All **six** permission justifications above are pasted into the form (including the new `notifications` one for v2.1+).
 - [ ] At least one 1280×800 screenshot is uploaded. Reshoot popup + advanced-settings if your earlier captures predate v2.1's refund-timer toggle and theme picker.
 - [ ] The Single-purpose statement above is pasted in the Distribution tab.

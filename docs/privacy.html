@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — GOG Enhancer</title>
+<meta name="description" content="GOG Enhancer's privacy policy: what data the extension handles, where it goes, and what it never does. No analytics, no ads, no remote code — everything stays on your device." />
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+
+<meta property="og:title" content="Privacy Policy — GOG Enhancer" />
+<meta property="og:description" content="What GOG Enhancer stores, the two network requests it ever makes, and everything it does not do." />
+<meta property="og:image" content="assets/hero-icon.png" />
+<meta property="og:type" content="website" />
+
+<link rel="stylesheet" href="assets/site.css" />
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <img src="assets/favicon.png" alt="" />
+      <span>GOG Enhancer</span>
+    </a>
+    <nav class="links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#screenshots">Screenshots</a>
+      <a href="index.html#install">Install</a>
+      <a class="active" href="privacy.html">Privacy</a>
+      <a class="nav-gh" href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">
+        ★ GitHub
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <div class="policy-hero wrap">
+    <span class="eyebrow">Trust</span>
+    <h1>Privacy Policy</h1>
+    <div class="policy-meta">
+      <span>Last updated: May 18, 2026</span>
+      <span>Extension version: 2.4.1+</span>
+      <span><a href="https://github.com/DrummingBird1/GOGEnhancer/issues" target="_blank" rel="noopener" style="color:var(--accent-cyan)">Contact / file an issue</a></span>
+    </div>
+    <p class="policy-lede">
+      GOG Enhancer is an unofficial third-party browser extension that enhances
+      the shopping experience on GOG.com. It is not affiliated with, endorsed
+      by, or sponsored by GOG sp. z o.o. or CD Projekt S.A.
+    </p>
+    <p class="policy-lede">
+      This page describes, in plain language, exactly what data the extension
+      handles, where it goes, and what it does <strong>not</strong> do. It is
+      the source of truth for our data practices — if anything in the code
+      contradicts what's written here, that's a bug, please
+      <a href="https://github.com/DrummingBird1/GOGEnhancer/issues" target="_blank" rel="noopener">file an issue</a>.
+    </p>
+  </div>
+
+  <article class="policy-article wrap">
+
+    <h2 id="summary">1. Summary in one paragraph</h2>
+    <p>
+      GOG Enhancer stores all of your data on your own device. It does not
+      have a server, does not log anything, does not use analytics, does not
+      show ads, and does not share your data with anyone. It makes exactly two
+      kinds of network requests, both to public unauthenticated endpoints,
+      both of which transmit <strong>no information about you</strong>:
+      (a) currency exchange rates from <code>api.frankfurter.app</code>, and
+      (b) a periodic read of the public GOG mods page at <code>gog.com/en/mods</code>.
+    </p>
+
+    <h2 id="stored-data">2. Data stored on your device</h2>
+    <p>
+      All of the following is kept locally on your device using the Chromium
+      storage API. Nothing in this list ever leaves your computer through
+      this extension:
+    </p>
+    <div class="policy-table-wrap">
+      <table class="policy-table">
+        <thead>
+          <tr><th>What</th><th>Where</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Your feature toggles (which UI pieces are on, including the refund timer and desktop notifications switches)</td><td><code>chrome.storage.sync</code></td><td>So your preferences survive across devices if you are signed into Chrome with sync enabled</td></tr>
+          <tr><td>Your currency choice, VAT rate, region preset, and selected theme</td><td><code>chrome.storage.sync</code></td><td>Same — small preferences that should travel with you</td></tr>
+          <tr><td>Tags, per-tag colors, your custom tag ordering, and notes you add to games</td><td><code>chrome.storage.local</code></td><td>Personal organization on the GOG store</td></tr>
+          <tr><td>Price snapshots from game pages you visit</td><td><code>chrome.storage.local</code></td><td>Personal price-history charts (up to 100 snapshots per game; duplicates of the same price are collapsed)</td></tr>
+          <tr><td>Manual purchase dates you enter for the refund-window timer</td><td><code>chrome.storage.local</code></td><td>Local-only countdown of GOG's 30-day refund window</td></tr>
+          <tr><td>Dedup log for desktop notifications you've already received</td><td><code>chrome.storage.local</code></td><td>So we don't fire the same alert twice</td></tr>
+          <tr><td>Cached list of moddable games</td><td><code>chrome.storage.local</code></td><td>To show the "★ MOD" badge without re-fetching constantly</td></tr>
+          <tr><td>Cached count of discounted wishlist items</td><td><code>chrome.storage.local</code></td><td>To set the toolbar badge counter</td></tr>
+          <tr><td>Cached currency exchange rates and the last fetch error (if any)</td><td><code>chrome.storage.sync</code></td><td>So we don't refetch on every page; the error string lets the popup tell you when the rate refresh failed</td></tr>
+          <tr><td>Onboarding completion flag and the verbose-logging toggle</td><td><code>chrome.storage.sync</code></td><td>So we don't show the welcome wizard twice; the debug toggle is yours to flip in Advanced Options</td></tr>
+          <tr><td>Tag-dashboard density preference (comfortable / compact)</td><td><code>chrome.storage.local</code></td><td>Per-device UI preference — the dashboard remembers your choice between visits</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      You can wipe all of this at any time from the <strong>Advanced Settings</strong>
+      page (toolbar icon → Advanced → Reset everything).
+    </p>
+    <p>
+      If you sign out of Chrome sync, the <code>chrome.storage.sync</code>
+      portion is removed from Google's servers per Google's Chrome Sync
+      policy, which is independent of this extension.
+    </p>
+
+    <h2 id="network">3. Background jobs and network requests</h2>
+    <p>
+      The extension runs four background jobs on a schedule. Two make network
+      requests (to two destinations only — both public, both unauthenticated);
+      the other two are entirely local.
+    </p>
+
+    <h3>3.1 api.frankfurter.app — currency exchange rates</h3>
+    <ul>
+      <li><strong>What is sent:</strong> A simple <code>GET https://api.frankfurter.app/latest?from=USD&amp;to=ILS,EUR,GBP,PLN</code>. No headers identifying you, no cookies, no referrer linking back to you, no User-Agent uniqueness.</li>
+      <li><strong>What is received:</strong> A small JSON object with the day's published exchange rates from the European Central Bank.</li>
+      <li><strong>Frequency:</strong> Once every 12 hours, plus once when you press "Refresh rates" manually.</li>
+      <li><strong>Why frankfurter.app:</strong> They are a public, unauthenticated, ad-free, ECB-backed rate service that requires no API key. Their privacy policy is at <a href="https://www.frankfurter.app/" target="_blank" rel="noopener">frankfurter.app</a>.</li>
+      <li><strong>What this could reveal:</strong> Your IP address (as with any HTTP request from a browser). The service has no way to associate that IP with your identity, your GOG account, or any of your data inside this extension.</li>
+    </ul>
+
+    <h3>3.2 www.gog.com/en/mods — moddable games list</h3>
+    <ul>
+      <li><strong>What is sent:</strong> A standard <code>GET https://www.gog.com/en/mods</code> with <code>credentials: "omit"</code> (no cookies). This is the same request anyone gets when visiting that public page.</li>
+      <li><strong>What is received:</strong> The HTML of the public mods catalog page, which we parse to extract game slugs.</li>
+      <li><strong>Frequency:</strong> Once every 24 hours, plus when you press "Refresh mods" manually in Advanced Settings.</li>
+      <li><strong>Why:</strong> To keep the list of "★ MOD" badges accurate without your having to visit /mods yourself.</li>
+      <li><strong>What this could reveal:</strong> That you visited a public page. GOG cannot tie this request to your account because we explicitly omit your cookies.</li>
+    </ul>
+
+    <h3>3.3 Wishlist badge refresh — no network request</h3>
+    <ul>
+      <li><strong>What happens:</strong> Every 6 hours we read the locally-cached count of discounted wishlist items (last seen when you visited /account/wishlist) and update the toolbar badge text. If the cache is older than 24 hours, the badge is cleared and the tooltip tells you to revisit your wishlist.</li>
+      <li><strong>Why it's not a network request:</strong> GOG's wishlist page is an Angular app — the items only render in the live page DOM. We can't fetch it server-side meaningfully, so we don't try. The content script reports the count next time you actually visit the page.</li>
+    </ul>
+
+    <h3>3.4 Daily refund-window check — no network request</h3>
+    <ul>
+      <li><strong>What happens:</strong> Once a day, we walk the purchase log you've entered manually and compare each entry to today's date. If your opt-in "Desktop notifications" toggle is on AND any entry has 1–2 days left of GOG's 30-day refund window, we fire a local <code>chrome.notifications.create</code> so you know to decide on the refund. We also dedupe so the same alert never fires twice.</li>
+      <li><strong>Why it's not a network request:</strong> Everything happens inside the browser. <code>chrome.notifications</code> is local to your machine. No data goes anywhere.</li>
+    </ul>
+
+    <h2 id="permissions">4. Permissions we request and why</h2>
+    <div class="policy-table-wrap">
+      <table class="policy-table">
+        <thead>
+          <tr><th>Permission</th><th>Why we need it</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>storage</code></td><td>To save your settings, tags, notes, and price history on your device</td></tr>
+          <tr><td><code>activeTab</code></td><td>When you click the toolbar icon, this lets the popup reload the active tab if you press the "Reload tab" button</td></tr>
+          <tr><td><code>alarms</code></td><td>To schedule four periodic background jobs: exchange-rate refresh (12h), mods-catalog refresh (24h), wishlist sale-count badge update (6h), and a once-daily local check for refund windows about to close</td></tr>
+          <tr><td><code>notifications</code></td><td><strong>Opt-in only.</strong> When you enable "Desktop notifications" in Advanced Options, the extension can show a system notification when a refund window has 1–2 days left or when new wishlist items go on sale. Uses <code>chrome.notifications</code>, local to the browser — nothing is transmitted off-device. Off by default.</td></tr>
+          <tr><td>Host permission for <code>https://www.gog.com/*</code></td><td>To run the content script on GOG pages and to fetch the public /en/mods page in the background</td></tr>
+          <tr><td>Host permission for <code>https://api.frankfurter.app/*</code></td><td>To fetch currency exchange rates</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      We do not request any other permissions. In particular we do not
+      request <code>tabs</code> (full tab access), <code>webRequest</code>
+      (network interception), <code>cookies</code> (cookie reading),
+      <code>history</code> (browsing history), or <code>&lt;all_urls&gt;</code> host access.
+    </p>
+
+    <h2 id="do-not">5. Things we do not do</h2>
+    <ul>
+      <li>We do <strong>not</strong> run analytics. There is no Google Analytics, no Mixpanel, no Sentry, no PostHog, no first-party telemetry, nothing.</li>
+      <li>We do <strong>not</strong> show ads or accept payments from publishers/storefronts to highlight or hide products.</li>
+      <li>We do <strong>not</strong> load any code from a remote source. All JavaScript that runs is shipped inside the extension and reviewed by Chrome at install time.</li>
+      <li>We do <strong>not</strong> read your GOG account information, your purchase history, your library, your payment methods, or your messages.</li>
+      <li>We do <strong>not</strong> track which games you view, search for, or wishlist on any server.</li>
+      <li>We do <strong>not</strong> sell, trade, or rent data, because we have no data to sell.</li>
+      <li>We do <strong>not</strong> load any third-party fonts (no Google Fonts requests). All fonts are system fonts.</li>
+    </ul>
+
+    <h2 id="children">6. Children</h2>
+    <p>
+      The extension is not directed at children under 13 and does not
+      knowingly process data from anyone under 13. It also does not collect
+      age information.
+    </p>
+
+    <h2 id="changes">7. Changes to this policy</h2>
+    <p>
+      If we change what data the extension handles, this page will be
+      updated and the "Last updated" date at the top will change.
+      Significant changes will also appear in the
+      <a href="https://github.com/DrummingBird1/GOGEnhancer#-changelog--%D7%99%D7%95%D7%9E%D7%9F-%D7%A9%D7%99%D7%A0%D7%95%D7%99%D7%99%D7%9D" target="_blank" rel="noopener">README changelog</a>.
+    </p>
+
+    <h2 id="open-source">8. Open source</h2>
+    <p>
+      The full source code of this extension is open. You can verify
+      everything this page claims by reading the
+      <a href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">code on GitHub</a>.
+    </p>
+
+    <div class="policy-callout" style="margin-top:36px;">
+      This page mirrors <a href="https://github.com/DrummingBird1/GOGEnhancer/blob/main/PRIVACY.md" target="_blank" rel="noopener">PRIVACY.md</a>
+      in the repository, which is the canonical, version-controlled source —
+      check there for the full edit history.
+    </div>
+
+    <p class="policy-footnote">
+      This privacy policy is written by the developer and reflects current
+      behavior of the extension. It is not legal advice.
+    </p>
+
+  </article>
+
+</main>
+
+<footer class="wrap">
+  <div class="footer-inner">
+    <a class="brand" href="index.html">
+      <img src="assets/favicon.png" alt="" />
+      <span>GOG Enhancer</span>
+    </a>
+    <div class="footer-links">
+      <a href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/DrummingBird1/GOGEnhancer/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="https://github.com/DrummingBird1/GOGEnhancer/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+      <a href="https://www.patreon.com/cw/MrIdan" target="_blank" rel="noopener">Patreon</a>
+    </div>
+  </div>
+  <p class="disclaimer">
+    GOG Enhancer is an unofficial, third-party browser extension. It is not
+    affiliated with, endorsed by, or sponsored by GOG sp. z o.o. or CD Projekt
+    S.A. The "GOG" name is used nominatively to describe the website the
+    extension works with. All trademarks belong to their respective owners.
+  </p>
+</footer>
+
+</body>
+</html>
