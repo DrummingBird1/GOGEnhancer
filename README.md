@@ -139,16 +139,20 @@ gog-plus/
 - **Refund timer מבוסס על תאריך ידני** — GOG לא חושף תאריך רכישה דרך DOM פומבי, אז ה-countdown של 30 הימים נשען על תאריך שאתה מקליד ב-panel. אם לא הקלדת תאריך — אין countdown.
 - **Genre detection — חלקית אוטומטית מ-v2.6.0** — Horror/Role-playing/Strategy נקראים כעת מה"Genre:" האמיתי בעמוד המשחק ונשמרים ב-cache לפי slug (`gameGenres`) בביקור ראשון. Sci-fi ו-Indie עדיין מבוססים על regex ידני של שמות משחקים מוכרים — ב-GOG הם נראים משויכים ל-"Tags" הרחב יותר ולא ל-"Genre:", ומבנה זה לא אומת במלואו. עד שמשחק מסוים לא בוקר, כל חמשת הז'אנרים נופלים חזרה ל-regex הישן.
 - **Cross-currency conversion דרך USD** — ההמרה מבוצעת תמיד דרך USD כ-pivot. אם השער של אחד הזוגות חסר ב-`rates`, ההמרה לא תתבצע. כל ה-rates נשלפים אוטומטית כל 12 שעות מ-frankfurter.app.
-- **Wishlist-wide price alerts (v2.9.0) מכסים רק משחקים שביקרת בהם** — ההתראה משווה למחיר-שיא שנרשם ב-`priceHistory`, שנבנה רק מביקור בעמוד המשחק עצמו. משחק ברשימת המשאלות שמעולם לא ביקרת בו — אין לו נתון להשוואה, ולכן לא יקבל התראה גם אם המחיר צנח.
+- **Wishlist-wide price alerts (v2.8.0) מכסים רק משחקים שביקרת בהם** — ההתראה משווה למחיר-שיא שנרשם ב-`priceHistory`, שנבנה רק מביקור בעמוד המשחק עצמו. משחק ברשימת המשאלות שמעולם לא ביקרת בו — אין לו נתון להשוואה, ולכן לא יקבל התראה גם אם המחיר צנח.
 
 ---
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.9.0 (current) — Command palette, wishlist-wide alerts, backlog status, and more
+### v2.8.0 (current) — content.js / tags.js module split, plus a feature round built on top
 
-Feature round built on the v2.8.0 module split. Six items from the standing
-feature backlog plus a design pass:
+Two parts shipped together: the refactor v2.7.0 explicitly flagged as too
+risky to bundle with anything else, and a round of six items from the
+standing feature backlog plus a design pass, built on top of that new
+foundation.
+
+**New features**
 
 - **Command palette (Ctrl/Cmd+K)** — new `content/features/command-palette.js`.
   Searchable overlay for actions that already existed behind menus: open
@@ -194,15 +198,18 @@ feature backlog plus a design pass:
   chart already had. Added `prefers-reduced-motion` guards to the popup's
   entrance animations and the new toast/palette transitions, which didn't
   have them.
+- **Interface language selector** — `lib/i18n.js` grew 5 new languages
+  (Russian, Polish, German, French, Spanish) alongside the existing English
+  and Hebrew, picked from a dropdown in Advanced Options. Same
+  `data-i18n`/`data-i18n-attr` mechanism as before — no code changes outside
+  `lib/i18n.js` and the dropdown markup.
 
-### v2.8.0 — content.js / tags.js module split
+**Module split (the foundation the features above were built on)**
 
-Pure refactor, zero user-visible change. The two files v2.7.0 explicitly
-flagged as too risky to bundle with everything else — `content.js`
-(~1560 lines) and `tags.js` (~1028 lines) — are now genuinely modular.
-Shipped as its own isolated, fully-tested release before any new feature
-work landed on top of it, specifically to keep this the one thing under
-review if anything regressed.
+Pure refactor, zero user-visible change on its own. The two files v2.7.0
+explicitly flagged as too risky to bundle with everything else —
+`content.js` (~1560 lines) and `tags.js` (~1028 lines) — are now genuinely
+modular.
 
 - **`content.js`** (was one file) is now an orchestrator plus:
   `content/state.js` (shared mutable `{ settings, pageCurrency, observers }`
@@ -223,10 +230,10 @@ review if anything regressed.
 - `manifest.json`'s content-script list and `tags.html`'s script tags were
   updated to the new load order; `tsconfig.json`/typecheck scope is
   unchanged (still `lib/` only — `content/` and `tags/` aren't JSDoc-typed).
-- All 118 tests (including the `applyCardBadges` hot-zone regression suite
-  from v2.7.0) pass unchanged against the split code — those tests import
-  the real module files in manifest order, so they're exercising the actual
-  production load path, not a mock.
+- All tests (122 by the time the feature round above landed on top, including
+  the `applyCardBadges` hot-zone regression suite from v2.7.0) pass against
+  the split code — those tests import the real module files in manifest
+  order, so they're exercising the actual production load path, not a mock.
 
 ### v2.7.0 — Infrastructure audit: security, testing, CI/CD, architecture
 

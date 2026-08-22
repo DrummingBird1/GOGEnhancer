@@ -33,16 +33,15 @@
       "A big pass of under-the-hood reliability, security, and testing work — nothing to click, just a sturdier foundation",
     ],
     "2.8.0": [
-      "No visible changes — a full internal rewrite of how the extension's code is organized, to make future updates faster and safer. Every feature was re-tested end to end before shipping.",
-    ],
-    "2.9.0": [
       "⌘K / Ctrl+K command palette — quick access to settings, the tag dashboard, and force-refreshes without hunting through menus",
       "Wishlist-wide price alerts — get notified when any wishlisted game drops off its tracked peak price, no per-game setup needed (Advanced Options)",
       "New Playing / Backlog / Finished status per game, separate from tags — set it on the game page or in the tag dashboard, filter with status:playing",
       "New Auto theme that follows your system's light/dark preference",
+      "Interface language selector — 7 languages available in Advanced Options (English, Hebrew, Russian, Polish, German, French, Spanish)",
       "Search box in Advanced Options — the page has a lot of settings now",
       "Deleting a tag now shows an undoable toast instead of a blocking confirmation",
       "Small chart & animation polish, plus a reduced-motion pass for anyone who prefers less movement",
+      "A full internal rewrite of how the extension's code is organized, to make future updates faster and safer. Every feature was re-tested end to end before shipping.",
     ],
   };
 
