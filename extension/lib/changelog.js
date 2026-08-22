@@ -32,6 +32,9 @@
       "Storage-used % in the tag dashboard is now exact (was an estimate that had drifted out of sync)",
       "A big pass of under-the-hood reliability, security, and testing work — nothing to click, just a sturdier foundation",
     ],
+    "2.8.0": [
+      "No visible changes — a full internal rewrite of how the extension's code is organized, to make future updates faster and safer. Every feature was re-tested end to end before shipping.",
+    ],
   };
 
   // Dotted-numeric version compare (2.9.0 < 2.10.0, unlike string sort).

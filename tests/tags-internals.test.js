@@ -8,6 +8,11 @@ await import("../extension/lib/defaults.js");
 await import("../extension/lib/storage.js");
 await import("../extension/lib/dom-safety.js");
 await import("../extension/lib/currency-format.js");
+await import("../extension/tags/state.js");
+await import("../extension/tags/features/tag-management.js");
+await import("../extension/tags/features/games-list.js");
+await import("../extension/tags/features/stats.js");
+await import("../extension/tags/features/export-import.js");
 await import("../extension/tags/tags.js");
 
 const { parseSearchQuery, slugToTitle, safeHexColor, renderMarkdown } =

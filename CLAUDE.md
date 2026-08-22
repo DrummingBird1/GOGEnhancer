@@ -32,7 +32,7 @@ The extension itself is plain vanilla JS — no bundler, no framework. A Vitest 
 - **Repack for Web Store**: `.\build.ps1` → zips `extension/` into `dist/gog-enhancer-webstore.zip`.
 - **Run tests**: `npm install` (one-time) → `npm test` (one-shot) or `npm run test:watch`. Specs live under `tests/`; environment is happy-dom with a chrome.* shim in `tests/setup.js`.
 - **Lint**: `npm run lint` (runs ESLint flat config in `eslint.config.js`). CI also runs this on every push and PR via `.github/workflows/test.yml`.
-- **Typecheck**: `npm run typecheck` (`tsc --noEmit` against `tsconfig.json`). Scoped to `extension/lib/**/*.js` only — every module there carries `// @ts-check` + JSDoc annotations. Ambient globals (`window.GOGPlusStorage` etc.) are declared in `types/globals.d.ts` at the repo root, kept out of `extension/` so `build.ps1`'s wholesale `lib` folder copy never ships it. `content/` and `tags/tags.js` aren't covered — see the "known limitations" note if extending this.
+- **Typecheck**: `npm run typecheck` (`tsc --noEmit` against `tsconfig.json`). Scoped to `extension/lib/**/*.js` only — every module there carries `// @ts-check` + JSDoc annotations. Ambient globals (`window.GOGPlusStorage` etc.) are declared in `types/globals.d.ts` at the repo root, kept out of `extension/` so `build.ps1`'s wholesale `lib` folder copy never ships it. `content/` and `tags/` aren't covered — see the "known limitations" note if extending this.
 
 ## GitHub workflow
 
@@ -72,17 +72,26 @@ content/currency-detection.js → window.GOGPlusCurrency
 content/price-history.js → window.GOGPlusPriceHistory
 content/tooltips.js     → (binds to data-gog-plus-tip)
 content/toasts.js       → window.GOGPlusToasts
+content/state.js        → window.GOGPlusContentState ({ settings, pageCurrency, observers })
+content/utils.js        → window.GOGPlusContentUtils (debounce, log, slugFromHref, slugFromLocation, gameTitleFromPage)
+content/features/currency.js     → window.GOGPlusCurrencyFeature
+content/features/card-badges.js  → window.GOGPlusCardBadges
+content/features/misc.js         → window.GOGPlusMiscFeatures
+content/features/wishlist.js     → window.GOGPlusWishlistFeature
+content/features/game-page.js    → window.GOGPlusGamePage
 content/content.js      → orchestrator (depends on all of the above)
 ```
 
-`content.js` is the orchestrator; the other files are pure modules that attach singletons to `window`. Adding a new content-script module means registering it in `manifest.json` **before** `content.js`.
+`content.js` used to be one ~1560-line file (through v2.7.0); it's now an orchestrator that's genuinely just orchestration, with each feature split into its own file (the v2.8.0 module split). Every feature module shares mutable state via `content/state.js` rather than closure variables — see that file's own doc comment for the discipline this requires (always dereference `state.settings.x`, never capture `const settings = state.settings`). A few feature modules reference each other via the fully-qualified `window.GOGPlusX.fn()` path instead of top-level destructuring specifically to break circular load-order dependencies (e.g. wishlist ↔ currency); check for that pattern before "simplifying" an import.
+
+Adding a new content-script module means registering it in `manifest.json` **before** `content.js`, and after `content/state.js` if it needs shared state.
 
 ### Content-script orchestration (`content/content.js`)
 
 gog.com is an Angular SPA, so the DOM mutates constantly. Strategy:
 
-1. On boot, load settings via `GOGPlusStorage.get(DEFAULTS)`.
-2. Run `processAll()` once, which dispatches to per-feature functions (`applyCurrencyConversion`, `applyCardBadges`, `hideExpiredSales`, `applyHebrewTranslations`, `ensureWishlistFilters`, `enhanceGamePage`, etc.).
+1. On boot, load settings via `GOGPlusStorage.get(DEFAULTS)` into `state.settings`.
+2. Run `processAll()` once, which dispatches to per-feature functions imported from `content/features/*.js` (`applyCurrencyConversion`, `applyCardBadges`, `hideExpiredSales`, `applyHebrewTranslations`, `ensureWishlistFilters`, `enhanceGamePage`, etc.).
 3. Attach a `MutationObserver` to `main` / `[ng-view]` / `body` with a 250 ms debounced `processAll()`.
 4. Subscribe to `GOGPlusStorage.onChange` — when a pref flips, clear `gog-plus-*-done` marker classes and re-run.
 
@@ -90,7 +99,7 @@ Each per-feature pass marks the nodes it processed with a class (`gog-plus-card-
 
 ### Card badge placement (regression-sensitive)
 
-`applyCardBadges` is the v2.0.2 hot zone. Critical rules:
+`applyCardBadges` (`content/features/card-badges.js`) is the v2.0.2 hot zone, with direct regression coverage in `tests/apply-card-badges.test.js` — read that file's comments (including the happy-dom layout-engine caveats) before touching the cover-host resolution logic. Critical rules:
 
 - **Never set `position: relative` on the card anchor itself.** GOG's internal carousel/preview overlays use the card anchor as their positioned ancestor; reparenting `position` there collapses the overlays into the card. Walk up from the cover `<img>` and pick the smallest non-card ancestor (`gog-plus-cover-host`).
 - **De-dup by slug.** GOG renders each game as multiple anchors (cover-link + body-link). Stamp only the first one per slug or you'll get duplicate badges.

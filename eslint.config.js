@@ -32,6 +32,23 @@ export default [
         GOGPlusPriceHistory: "readonly",
         GOGPlusTooltips: "readonly",
         GOGPlusToasts: "readonly",
+        // content/state.js, content/utils.js, content/features/*.js — the
+        // v2.8.0 content.js module split (see CLAUDE.md).
+        GOGPlusContentState: "readonly",
+        GOGPlusContentUtils: "readonly",
+        GOGPlusCurrencyFeature: "readonly",
+        GOGPlusCardBadges: "readonly",
+        GOGPlusMiscFeatures: "readonly",
+        GOGPlusWishlistFeature: "readonly",
+        GOGPlusGamePage: "readonly",
+        // tags/state.js, tags/features/*.js — the v2.8.0 tags.js module split.
+        GOGPlusTagsState: "readonly",
+        GOGPlusTagsConstants: "readonly",
+        GOGPlusTagsStats: "readonly",
+        GOGPlusTagsManagement: "readonly",
+        GOGPlusTagsGamesList: "readonly",
+        GOGPlusTagsExportImport: "readonly",
+        GOGPlusTagsInternals: "readonly",
       },
     },
     rules: {

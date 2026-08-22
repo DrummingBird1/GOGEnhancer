@@ -144,7 +144,40 @@ gog-plus/
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.7.0 (current) — Infrastructure audit: security, testing, CI/CD, architecture
+### v2.8.0 (current) — content.js / tags.js module split
+
+Pure refactor, zero user-visible change. The two files v2.7.0 explicitly
+flagged as too risky to bundle with everything else — `content.js`
+(~1560 lines) and `tags.js` (~1028 lines) — are now genuinely modular.
+Shipped as its own isolated, fully-tested release before any new feature
+work landed on top of it, specifically to keep this the one thing under
+review if anything regressed.
+
+- **`content.js`** (was one file) is now an orchestrator plus:
+  `content/state.js` (shared mutable `{ settings, pageCurrency, observers }`
+  — every feature module dereferences through it live instead of closing
+  over local variables), `content/utils.js`, and five feature modules under
+  `content/features/`: `currency.js`, `card-badges.js` (the hot zone —
+  `applyCardBadges` didn't move an inch of *logic*, just *location*),
+  `misc.js` (expired sales / DRM banner / Hebrew+RTL), `wishlist.js`, and
+  `game-page.js` (the whole insights panel).
+- **`tags.js`** (was one file) is now an orchestrator plus `tags/state.js`
+  and four feature modules under `tags/features/`: `tag-management.js`,
+  `games-list.js`, `stats.js`, `export-import.js`.
+- A few modules on each side reference each other via the fully-qualified
+  `window.GOGPlusX.fn()` path instead of top-level destructuring —
+  necessary in a couple of spots to break genuine circular dependencies
+  (e.g. tags' tag-management ↔ games-list ↔ stats all need each other to
+  refresh the dashboard after an edit). Documented inline where it matters.
+- `manifest.json`'s content-script list and `tags.html`'s script tags were
+  updated to the new load order; `tsconfig.json`/typecheck scope is
+  unchanged (still `lib/` only — `content/` and `tags/` aren't JSDoc-typed).
+- All 118 tests (including the `applyCardBadges` hot-zone regression suite
+  from v2.7.0) pass unchanged against the split code — those tests import
+  the real module files in manifest order, so they're exercising the actual
+  production load path, not a mock.
+
+### v2.7.0 — Infrastructure audit: security, testing, CI/CD, architecture
 
 A grounded pass over the codebase's technical foundations — not a features
 release. Six areas, each addressing findings from a self-audit against the

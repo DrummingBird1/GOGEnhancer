@@ -18,6 +18,13 @@ await import("../extension/content/currency-detection.js");
 await import("../extension/content/price-history.js");
 await import("../extension/content/tooltips.js");
 await import("../extension/content/toasts.js");
+await import("../extension/content/state.js");
+await import("../extension/content/utils.js");
+await import("../extension/content/features/currency.js");
+await import("../extension/content/features/card-badges.js");
+await import("../extension/content/features/misc.js");
+await import("../extension/content/features/wishlist.js");
+await import("../extension/content/features/game-page.js");
 await import("../extension/content/content.js");
 
 const { slugFromHref, buildMiniSparkline, convertedFromCurrency, fxFreshness } =
