@@ -17,6 +17,6 @@
     "globals": "^15.14.0",
     "happy-dom": "^20.10.6",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
