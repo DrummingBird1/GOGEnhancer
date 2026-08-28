@@ -43,6 +43,14 @@
       "Small chart & animation polish, plus a reduced-motion pass for anyone who prefers less movement",
       "A full internal rewrite of how the extension's code is organized, to make future updates faster and safer. Every feature was re-tested end to end before shipping.",
     ],
+    "2.9.0": [
+      "🔥 Wishlist deals — the popup now shows your top 3 wishlisted price drops with a link straight to each game",
+      "\"Worth waiting?\" verdict on the game-page price panel — tells you at a glance whether now's a good time to buy or worth holding out for a sale",
+      "New Wishlist value stat in the tag dashboard, with a one-click CSV export of every wishlisted game's tracked price",
+      "Replaced the single Patreon link with three: Ko-fi, Buy Me a Coffee, and Patreon — pick whichever you already use",
+      "Two more stale \"v2.4\" version badges fixed (onboarding wizard, options page footer)",
+      "A large pass of under-the-hood testing and type-checking work — extension-wide test coverage roughly doubled and now covers every top-level page script, closing real gaps that had zero tests before",
+    ],
   };
 
   // Dotted-numeric version compare (2.9.0 < 2.10.0, unlike string sort).

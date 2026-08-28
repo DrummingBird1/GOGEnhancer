@@ -139,13 +139,64 @@ gog-plus/
 - **Refund timer מבוסס על תאריך ידני** — GOG לא חושף תאריך רכישה דרך DOM פומבי, אז ה-countdown של 30 הימים נשען על תאריך שאתה מקליד ב-panel. אם לא הקלדת תאריך — אין countdown.
 - **Genre detection — חלקית אוטומטית מ-v2.6.0** — Horror/Role-playing/Strategy נקראים כעת מה"Genre:" האמיתי בעמוד המשחק ונשמרים ב-cache לפי slug (`gameGenres`) בביקור ראשון. Sci-fi ו-Indie עדיין מבוססים על regex ידני של שמות משחקים מוכרים — ב-GOG הם נראים משויכים ל-"Tags" הרחב יותר ולא ל-"Genre:", ומבנה זה לא אומת במלואו. עד שמשחק מסוים לא בוקר, כל חמשת הז'אנרים נופלים חזרה ל-regex הישן.
 - **Cross-currency conversion דרך USD** — ההמרה מבוצעת תמיד דרך USD כ-pivot. אם השער של אחד הזוגות חסר ב-`rates`, ההמרה לא תתבצע. כל ה-rates נשלפים אוטומטית כל 12 שעות מ-frankfurter.app.
-- **Wishlist-wide price alerts (v2.8.0) מכסים רק משחקים שביקרת בהם** — ההתראה משווה למחיר-שיא שנרשם ב-`priceHistory`, שנבנה רק מביקור בעמוד המשחק עצמו. משחק ברשימת המשאלות שמעולם לא ביקרת בו — אין לו נתון להשוואה, ולכן לא יקבל התראה גם אם המחיר צנח.
+- **Wishlist-wide price alerts (v2.8.0), Wishlist deals ו-Wishlist value (v2.9.0) מכסים רק משחקים שביקרת בהם** — כל שלושת הפיצ'רים נשענים על `priceHistory`, שנבנה רק מביקור בעמוד המשחק עצמו. משחק ברשימת המשאלות שמעולם לא ביקרת בו — אין לו נתון להשוואה, ולכן לא יופיע בהתראות, ב"מבצעים ברשימת המשאלות" בפופאפ, או ב-stat של "Wishlist value" גם אם המחיר צנח.
 
 ---
 
 ## 📜 Changelog / יומן שינויים
 
-### v2.8.0 (current) — content.js / tags.js module split, plus a feature round built on top
+### v2.9.0 (current) — Wishlist deals, worth-waiting verdicts, and a big testing pass
+
+Two tracks shipped together: three small user-facing features built entirely
+from data the extension already collects, and a substantial technical-debt
+pass on test coverage and type-checking.
+
+**New features**
+
+- **Wishlist deals in the popup** — a "🔥 Wishlist deals" panel shows your
+  top 3 wishlisted price drops (≥10% off each game's own tracked peak),
+  each linking straight to the game's page. Computed from `wishlistSlugs`
+  (already reported via the wishlist-badge round-trip) and `priceHistory`
+  (already recorded on game-page visits) — no new fetches or permissions.
+  Gated behind the existing "Wishlist sale alerts" toggle rather than a new
+  setting.
+- **"Worth waiting?" verdict** — the game-page price-history panel now adds
+  a plain-language read on whether the current price is close to the
+  game's all-time low, below its average, or above it — built from stats
+  the panel was already computing.
+- **Wishlist value stat + CSV export** — a new "Wishlist value" card in the
+  tag dashboard's stats grid totals the current price of every wishlisted
+  game with tracked history, and how far that total sits from each game's
+  own all-time low. A "↓ CSV" button on the card exports the full
+  breakdown per game.
+- **Ko-fi + Buy Me a Coffee alongside Patreon** — the single "Support on
+  Patreon" link is now three: [Ko-fi](https://ko-fi.com/idanlights),
+  [Buy Me a Coffee](https://buymeacoffee.com/MrIdan), and Patreon (moved to
+  a new handle). Added `.github/FUNDING.yml` so GitHub's own Sponsor button
+  picks up all three.
+- Two more hardcoded "v2.4" version badges fixed (onboarding wizard header,
+  Advanced Options footer) — same bug class the v2.8.0 hero-version fix
+  addressed, just two spots it missed.
+
+**Under the hood**
+
+- Real test suites for `background.js`, `popup.js`, `options.js`, and
+  `onboarding.js` — all four had **zero** test coverage before this
+  release despite `background.js` alone driving every alarm, fetch, and
+  notification the extension fires. Also brought `command-palette.js` and
+  `wishlist.js` up from 0%/8% to ~93% each. Extension-wide statement
+  coverage: **23% → 55%**.
+- Writing those tests surfaced and fixed two real bugs: `ensureDefaults()`
+  in `background.js` was silently a no-op (it checked for missing settings
+  keys through a wrapper that already back-fills them, so the check never
+  triggered), and a CSS rule was overriding the Advanced Options search
+  box's `hidden` attribute so the "no results" message showed on every
+  page load.
+- `npm run typecheck` now covers all of `content/` and `tags/`, not just
+  `lib/` — every content-script and tag-dashboard module is type-checked
+  for the first time, closing a known limitation from earlier releases.
+
+### v2.8.0 — content.js / tags.js module split, plus a feature round built on top
 
 Two parts shipped together: the refactor v2.7.0 explicitly flagged as too
 risky to bundle with anything else, and a round of six items from the
