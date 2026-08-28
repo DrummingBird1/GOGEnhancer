@@ -15,6 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "20"
+
       - name: Verify tag matches manifest.json version
         shell: pwsh
         run: |
@@ -29,12 +34,13 @@ jobs:
       - name: Verify a changelog entry exists for this version
         shell: pwsh
         run: |
-          # Two independent changelog sources of truth exist: README.md's
-          # "### vX.Y.Z" sections (used below for the GitHub Release body) and
-          # extension/lib/changelog.js's CHANGELOG object (read by the
-          # popup's What's New panel at runtime). Nothing else keeps them in
-          # sync — this is that check, run once per release so a forgotten
-          # entry fails the release instead of shipping a silent gap.
+          # Two independent changelog sources of truth exist: extension/lib/changelog.js's
+          # CHANGELOG object (read by the popup's What's New panel, and also used below
+          # to build the GitHub Release body) and docs/changelog.html (the website's
+          # full version-history page). Nothing else keeps them in sync — this is that
+          # check, run once per release so a forgotten entry fails the release instead
+          # of shipping a silent gap. (README.md no longer carries per-version sections —
+          # it points to these two places instead, see its own Changelog heading.)
           $tagVersion = "${{ github.ref_name }}".TrimStart("v")
 
           $changelogJs = Get-Content extension/lib/changelog.js -Raw
@@ -44,32 +50,38 @@ jobs:
             exit 1
           }
 
-          $readme = Get-Content README.md -Raw
-          if (-not $readme.Contains("### v$tagVersion")) {
-            Write-Error "No '### v$tagVersion' section found in README.md — add a changelog entry before tagging."
+          $changelogHtml = Get-Content docs/changelog.html -Raw
+          if (-not $changelogHtml.Contains(">v$tagVersion<")) {
+            Write-Error "No 'v$tagVersion' entry found in docs/changelog.html — add one before tagging."
             exit 1
           }
 
-          Write-Output "Found changelog entries for v$tagVersion in both lib/changelog.js and README.md — proceeding."
+          Write-Output "Found changelog entries for v$tagVersion in both lib/changelog.js and docs/changelog.html — proceeding."
 
       - name: Build extension zip
         shell: pwsh
         run: ./build.ps1
 
-      - name: Extract changelog section from README into release-notes.md
+      - name: Extract changelog section from lib/changelog.js into release-notes.md
         id: changelog
         shell: bash
         run: |
-          TARGET="### ${{ github.ref_name }}"
-          NOTES=$(awk -v target="$TARGET" '
-            /^### v/ {
-              if (matched) exit
-              if (index($0, target) == 1) matched=1
-            }
-            matched
-          ' README.md)
+          TAG_VERSION="${{ github.ref_name }}"
+          TAG_VERSION="${TAG_VERSION#v}"
+          NOTES=$(node -e '
+            const fs = require("fs");
+            const vm = require("vm");
+            const src = fs.readFileSync("extension/lib/changelog.js", "utf8");
+            const sandbox = { window: {}, self: {} };
+            vm.createContext(sandbox);
+            vm.runInContext(src, sandbox);
+            const CHANGELOG = sandbox.window.GOGPlusChangelog.CHANGELOG;
+            const bullets = CHANGELOG[process.argv[1]];
+            if (!bullets) process.exit(1);
+            console.log(bullets.map((b) => "- " + b).join("\n"));
+          ' "$TAG_VERSION")
           if [ -z "$NOTES" ]; then
-            echo "::warning::No changelog section found for ${{ github.ref_name }} in README.md — falling back to auto notes."
+            echo "::warning::No changelog entry found for $TAG_VERSION in lib/changelog.js — falling back to auto notes."
             echo "fallback=true" >> "$GITHUB_OUTPUT"
             : > release-notes.md
           else

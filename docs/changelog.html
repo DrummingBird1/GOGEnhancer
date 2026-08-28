@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Changelog — GOG Enhancer</title>
+<meta name="description" content="Full version history for GOG Enhancer — every feature, fix, and infrastructure pass since v1.0.0." />
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+
+<meta property="og:title" content="Changelog — GOG Enhancer" />
+<meta property="og:description" content="Full version history for GOG Enhancer, from v1.0.0 to today." />
+<meta property="og:image" content="assets/hero-icon.png" />
+<meta property="og:type" content="website" />
+
+<link rel="stylesheet" href="assets/site.css" />
+<style>
+  .cl-hero { padding: 56px 0 24px; text-align: center; }
+  .cl-hero h1 { font-family: var(--display); font-size: clamp(28px, 5vw, 42px); margin: 0 0 14px; }
+  .cl-hero p { max-width: 620px; margin: 0 auto; color: var(--text-secondary); font-size: 15px; }
+
+  .cl-list { max-width: 780px; margin: 0 auto; padding: 8px 0 80px; }
+  .cl-entry {
+    position: relative;
+    padding: 0 0 40px 30px;
+    border-left: 2px solid var(--border);
+  }
+  .cl-entry:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .cl-entry::before {
+    content: "";
+    position: absolute;
+    left: -7px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bg-base);
+    border: 2px solid var(--accent-cyan);
+  }
+  .cl-entry.is-current::before {
+    background: var(--accent-magenta);
+    border-color: var(--accent-magenta);
+    box-shadow: 0 0 0 4px rgba(198, 79, 255, 0.18);
+  }
+  .cl-version-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .cl-version {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--text-primary);
+  }
+  .cl-badge-current {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--bg-base);
+    background: var(--accent-magenta);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .cl-title {
+    font-size: 14.5px;
+    color: var(--text-secondary);
+    margin: 0 0 14px;
+  }
+  .cl-entry ul { margin: 0; padding-left: 20px; }
+  .cl-entry li { font-size: 13.8px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.55; }
+  .cl-entry li strong { color: var(--text-primary); }
+  .cl-entry li code {
+    font-family: var(--mono);
+    background: rgba(244, 234, 255, 0.08);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+  .cl-entry h4 {
+    font-family: var(--display);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent-cyan);
+    margin: 16px 0 8px;
+  }
+  .cl-entry h4:first-of-type { margin-top: 0; }
+  .cl-release-link {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--accent-cyan);
+    text-decoration: none;
+  }
+  .cl-release-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <img src="assets/favicon.png" alt="" />
+      <span>GOG Enhancer</span>
+    </a>
+    <nav class="links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#screenshots">Screenshots</a>
+      <a href="index.html#install">Install</a>
+      <a class="active" href="changelog.html">Changelog</a>
+      <a class="nav-gh" href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">
+        ★ GitHub
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="cl-hero wrap">
+    <span class="eyebrow">Version history</span>
+    <h1>Changelog</h1>
+    <p>Every release, from the first version to today. Each one also has its own page on <a href="https://github.com/DrummingBird1/GOGEnhancer/releases" target="_blank" rel="noopener" style="color:var(--accent-cyan)">GitHub Releases</a>, with the download and its own banner.</p>
+  </div>
+
+  <div class="cl-list wrap">
+
+    <div class="cl-entry is-current">
+      <div class="cl-version-row"><span class="cl-version">v2.9.0</span><span class="cl-badge-current">Current</span></div>
+      <p class="cl-title">Wishlist deals, worth-waiting verdicts, and a big testing pass</p>
+      <h4>New features</h4>
+      <ul>
+        <li>🔥 <strong>Wishlist deals in the popup</strong> — shows your top 3 wishlisted price drops (≥10% off each game's tracked peak), linking straight to the game.</li>
+        <li><strong>"Worth waiting?" verdict</strong> on the game-page price panel — a plain-language read on whether now looks like a good time to buy.</li>
+        <li><strong>Wishlist value stat + CSV export</strong> in the tag dashboard — totals the current price of every wishlisted game with tracked history.</li>
+        <li><strong>Ko-fi + Buy Me a Coffee</strong> alongside Patreon — three ways to support instead of one.</li>
+        <li>Two more stale "v2.4" version badges fixed (onboarding wizard, options footer).</li>
+      </ul>
+      <h4>Under the hood</h4>
+      <ul>
+        <li>Real test suites for <code>background.js</code>, <code>popup.js</code>, <code>options.js</code>, <code>onboarding.js</code> — all four had zero coverage before. Extension-wide coverage: 23% → 55%.</li>
+        <li>Found and fixed two real bugs while writing those tests: a silently-dead <code>ensureDefaults()</code>, and a CSS rule that showed "no results" on every Advanced Options page load.</li>
+        <li><code>npm run typecheck</code> now covers all of <code>content/</code> and <code>tags/</code>, not just <code>lib/</code>.</li>
+      </ul>
+      <a class="cl-release-link" href="https://github.com/DrummingBird1/GOGEnhancer/releases/tag/v2.9.0" target="_blank" rel="noopener">View release →</a>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.8.0</span></div>
+      <p class="cl-title">content.js / tags.js module split, plus a feature round built on top</p>
+      <ul>
+        <li><strong>⌘K / Ctrl+K command palette</strong> — quick access to settings, the tag dashboard, and force-refreshes.</li>
+        <li><strong>Wishlist-wide price alerts</strong> — get notified when any wishlisted game drops off its tracked peak price, no per-game setup needed.</li>
+        <li><strong>Playing / Backlog / Finished status</strong> per game, separate from tags, filterable with <code>status:playing</code>.</li>
+        <li><strong>Auto theme</strong> that follows your system's light/dark preference.</li>
+        <li><strong>7-language interface</strong> — English, Hebrew, Russian, Polish, German, French, Spanish.</li>
+        <li>Search box in Advanced Options; undoable toast for tag deletion; design & reduced-motion polish.</li>
+        <li>Under the hood: <code>content.js</code> and <code>tags.js</code> split from two giant files into a real module structure — the single riskiest refactor in the project's history, shipped as its own isolated, fully re-tested release.</li>
+      </ul>
+      <a class="cl-release-link" href="https://github.com/DrummingBird1/GOGEnhancer/releases/tag/v2.8.0" target="_blank" rel="noopener">View release →</a>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.7.0</span></div>
+      <p class="cl-title">Infrastructure audit: security, testing, CI/CD, architecture</p>
+      <ul>
+        <li>Storage writes now surface failures loudly instead of silently resolving; settings import runs the same migration pass a real upgrade would.</li>
+        <li>GitHub Actions pinned to commit SHAs (supply-chain hardening); <code>npm audit</code> added to CI.</li>
+        <li>Test suite grew 44 → 118 tests, including direct regression coverage for the card-badge placement "hot zone."</li>
+        <li>New <code>lib/genres.js</code>, <code># @ts-check</code> + JSDoc typing for <code>lib/</code>.</li>
+        <li>Price-history storage now enforces a 2 MB total-size budget, evicting least-recently-updated games rather than growing unbounded.</li>
+      </ul>
+      <a class="cl-release-link" href="https://github.com/DrummingBird1/GOGEnhancer/releases/tag/v2.7.0" target="_blank" rel="noopener">View release →</a>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.6.0</span></div>
+      <p class="cl-title">Genre detection from the game page</p>
+      <ul>
+        <li>Visiting a game page now reads its actual "Genre:" field (Horror, Role-playing, Strategy) and caches the result per slug, falling back to the old keyword regex for anything else.</li>
+      </ul>
+      <a class="cl-release-link" href="https://github.com/DrummingBird1/GOGEnhancer/releases/tag/v2.6.0" target="_blank" rel="noopener">View release →</a>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.5.1</span></div>
+      <p class="cl-title">What's new panel</p>
+      <ul>
+        <li>The popup now shows a short "What's new" panel after an update, tracking which version you've last seen so you never miss (or re-see) an entry.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.5.0</span></div>
+      <p class="cl-title">Smart prices &amp; historical lows</p>
+      <ul>
+        <li>💎 Lowest-price badge on cards at their tracked all-time low.</li>
+        <li>Stale-rate warning + exact rate and age shown on converted prices.</li>
+        <li>Tag-colour dot on cards you've tagged.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.4.1</span></div>
+      <p class="cl-title">Repo restructure: <code>extension/</code> + <code>store/</code></p>
+      <ul>
+        <li>Housekeeping only. The repo root now cleanly separates the shippable extension from Web Store material and dev tooling.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.4.0</span></div>
+      <p class="cl-title">Support links</p>
+      <ul>
+        <li>Donation links added in four unobtrusive spots across the popup, options, onboarding, and README.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.3.2</span></div>
+      <p class="cl-title">Privacy cleanup of repo metadata</p>
+      <ul>
+        <li>Removed personal identifiers from tracked files; fixed stale version pills.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.3.1</span></div>
+      <p class="cl-title">Security audit hardening</p>
+      <ul>
+        <li>Bounded the notification dedup log with a 90-day prune; defense-in-depth hex-color validation for tag colors interpolated into CSS.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.3.0</span></div>
+      <p class="cl-title">i18n, price alerts, sale heatmap, tag packs</p>
+      <ul>
+        <li>Full Hebrew UI translation with an interface-language selector.</li>
+        <li>Per-game price alerts with desktop notifications.</li>
+        <li>Cover-art color sampling on the game-page panel; mini sparkline in the hover quick-look.</li>
+        <li>Sale-calendar heatmap; shareable tag packs (export/import); advanced dashboard search operators.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.2.0</span></div>
+      <p class="cl-title">Hover quick-look, year selector, dashboard polish</p>
+      <ul>
+        <li>Rich hover tooltip on game cards; year-in-review gets a year selector; sortable dashboard columns.</li>
+        <li>Per-game JSON export; custom hex tag colors; history-depth control; storage-usage estimate.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.1.1</span></div>
+      <p class="cl-title">Cross-currency wishlist filters, Light theme, polish</p>
+      <ul>
+        <li>Wishlist price filters now work in any locale; Light theme added; live theme preview; compact density toggle.</li>
+        <li>First GitHub Actions CI workflow.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.1.0</span></div>
+      <p class="cl-title">Tag management, themes, refund timer, notifications</p>
+      <ul>
+        <li>Four-theme picker; refund-window timer; library year-in-review; cross-currency conversion.</li>
+        <li>Genre-aware cards; all-time-low celebration banner; sparkline sale markers; glassmorphism game panel.</li>
+        <li>Wishlist filter bar; full tag management (color, rename, merge, drag-reorder, CSV import); markdown notes.</li>
+        <li>Opt-in desktop notifications; verbose debug logging toggle.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.0.3</span></div>
+      <p class="cl-title">Web Store readiness rename</p>
+      <ul>
+        <li>Renamed "GOG+" → "GOG Enhancer"; added <code>PRIVACY.md</code>, <code>LICENSE</code>, <code>STORE_LISTING.md</code>.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.0.2</span></div>
+      <p class="cl-title">Layout regression hotfix</p>
+      <ul>
+        <li>A prior release had forced <code>position: relative</code> on GOG's own card anchors, collapsing GOG's internal preview/carousel overlays into the card. Badges and era effects moved to the cover-image wrapper instead; de-duplicated by slug.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.0.1</span></div>
+      <p class="cl-title">Security &amp; privacy fixes</p>
+      <ul>
+        <li>Patched an XSS via tag names rendered through <code>innerHTML</code>; removed an inline <code>onclick</code> (Manifest V3 CSP); removed two pages from <code>web_accessible_resources</code> (a fingerprinting vector); rewrote the wishlist-badge scrape strategy.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v2.0.0</span></div>
+      <p class="cl-title">Major rewrite</p>
+      <ul>
+        <li>Re-architected storage (sync vs. local split); live FX rates; price-history tracking; tag dashboard with CSV; wishlist toolbar badge; onboarding wizard; era-aware card styling; rich tooltips and toasts; expanded Hebrew dictionary; system fonts only.</li>
+      </ul>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v1.0.0</span></div>
+      <p class="cl-title">Initial release</p>
+      <ul>
+        <li>Currency converter, refund badge, mod indicator, custom tags, wishlist filters, basic Hebrew, options page.</li>
+      </ul>
+    </div>
+
+  </div>
+</main>
+
+<footer class="wrap">
+  <div class="footer-inner">
+    <a class="brand" href="index.html">
+      <img src="assets/favicon.png" alt="" />
+      <span>GOG Enhancer</span>
+    </a>
+    <div class="footer-links">
+      <a href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/DrummingBird1/GOGEnhancer/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="changelog.html">Changelog</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="https://github.com/DrummingBird1/GOGEnhancer/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+      <a href="https://ko-fi.com/idanlights" target="_blank" rel="noopener">Ko-fi</a>
+      <a href="https://buymeacoffee.com/MrIdan" target="_blank" rel="noopener">Buy Me a Coffee</a>
+      <a href="https://www.patreon.com/c/IdanLights" target="_blank" rel="noopener">Patreon</a>
+    </div>
+  </div>
+  <p class="disclaimer">
+    GOG Enhancer is an unofficial, third-party browser extension. It is not
+    affiliated with, endorsed by, or sponsored by GOG sp. z o.o. or CD Projekt
+    S.A. The "GOG" name is used nominatively to describe the website the
+    extension works with. All trademarks belong to their respective owners.
+  </p>
+</footer>
+
+</body>
+</html>
