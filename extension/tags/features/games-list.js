@@ -4,6 +4,7 @@
  * per-game card grid with its per-game export button. Pulled out of the
  * former single-file tags.js during the v2.8.0 module split.
  */
+// @ts-check
 
 (() => {
   "use strict";
@@ -169,7 +170,8 @@ function renderGames() {
       e.stopPropagation();
       window.GOGPlusTagsExportImport.exportSingleGame(slug);
     });
-    card.querySelectorAll(".game-card-status-btn").forEach((btn) => {
+    card.querySelectorAll(".game-card-status-btn").forEach((btnEl) => {
+      const btn = /** @type {HTMLElement} */ (btnEl);
       btn.addEventListener("click", async (e) => {
         e.stopPropagation();
         const id = btn.dataset.status;

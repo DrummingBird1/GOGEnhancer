@@ -8,6 +8,7 @@
  * coverage lives in tests/apply-card-badges.test.js. Read that file's
  * comments before touching the cover-host resolution logic below.
  */
+// @ts-check
 
 (() => {
   "use strict";
@@ -116,7 +117,7 @@
       card.classList.add("gog-plus-card");
       if (state.settings.richTooltips) {
         const ql = buildQuickLookHtml(slug);
-        if (ql) card.dataset.gogPlusTip = ql;
+        if (ql) /** @type {HTMLElement} */ (card).dataset.gogPlusTip = ql;
       }
 
       // Mark the chosen cover host so CSS scopes badges to it.

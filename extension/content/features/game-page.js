@@ -8,6 +8,7 @@
  * Pulled out of the former single-file content.js during the v2.8.0
  * module split.
  */
+// @ts-check
 
 (() => {
   "use strict";
@@ -396,7 +397,7 @@
     `;
 
     setTimeout(() => {
-      const input = wrap.querySelector("#gog-plus-purchase-date");
+      const input = /** @type {HTMLInputElement} */ (wrap.querySelector("#gog-plus-purchase-date"));
       const status = wrap.querySelector("#gog-plus-refund-status");
       const clearBtn = wrap.querySelector("#gog-plus-refund-clear");
 
@@ -481,8 +482,8 @@
     `;
 
     setTimeout(() => {
-      const input = wrap.querySelector("#gog-plus-alert-threshold");
-      const saveBtn = wrap.querySelector("#gog-plus-alert-save");
+      const input = /** @type {HTMLInputElement} */ (wrap.querySelector("#gog-plus-alert-threshold"));
+      const saveBtn = /** @type {HTMLElement} */ (wrap.querySelector("#gog-plus-alert-save"));
       const clearBtn = wrap.querySelector("#gog-plus-alert-clear");
 
       const refresh = () => {
@@ -502,7 +503,7 @@
         await window.GOGPlusStorage.set({ priceAlerts: cur });
         refresh();
       });
-      input.addEventListener("keydown", (e) => {
+      input.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
         if (e.key === "Enter") {
           e.preventDefault();
           saveBtn.click();
@@ -580,7 +581,8 @@
     `;
 
     setTimeout(() => {
-      wrap.querySelectorAll(".gog-plus-status-btn").forEach((btn) => {
+      wrap.querySelectorAll(".gog-plus-status-btn").forEach((btnEl) => {
+        const btn = /** @type {HTMLElement} */ (btnEl);
         btn.addEventListener("click", async () => {
           const id = btn.dataset.status;
           const { gameStatus: cur = {} } = await window.GOGPlusStorage.get({ gameStatus: {} });
@@ -614,8 +616,8 @@
       };
       renderTags();
 
-      const input = wrap.querySelector("#gog-plus-tag-input");
-      const addBtn = wrap.querySelector("#gog-plus-tag-add");
+      const input = /** @type {HTMLInputElement} */ (wrap.querySelector("#gog-plus-tag-input"));
+      const addBtn = /** @type {HTMLElement} */ (wrap.querySelector("#gog-plus-tag-add"));
 
       const addTag = async () => {
         const val = input.value.trim();
@@ -630,7 +632,7 @@
       };
 
       addBtn.addEventListener("click", addTag);
-      input.addEventListener("keydown", (e) => {
+      input.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
         if (e.key === "Enter") {
           e.preventDefault();
           addTag();
@@ -638,7 +640,7 @@
       });
 
       wrap.querySelector("#gog-plus-tag-list").addEventListener("click", async (e) => {
-        const btn = e.target.closest("button[data-remove]");
+        const btn = /** @type {Element} */ (e.target).closest("button[data-remove]");
         if (!btn) return;
         const t = btn.getAttribute("data-remove");
         const { tags: cur = {} } = await window.GOGPlusStorage.get({ tags: {} });
@@ -648,7 +650,7 @@
         renderTags();
       });
 
-      const noteEl = wrap.querySelector("#gog-plus-note");
+      const noteEl = /** @type {HTMLTextAreaElement} */ (wrap.querySelector("#gog-plus-note"));
       noteEl.addEventListener(
         "input",
         debounce(async () => {

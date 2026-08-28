@@ -9,6 +9,7 @@
  *
  * One global tooltip element is reused.
  */
+// @ts-check
 
 (() => {
   "use strict";
@@ -69,7 +70,7 @@
   }
 
   document.addEventListener("mouseover", (e) => {
-    const el = e.target.closest("[data-gog-plus-tip]");
+    const el = /** @type {Element} */ (e.target).closest("[data-gog-plus-tip]");
     if (!el || el === target) return;
     clearTimeout(showTimer);
     clearTimeout(hideTimer);
@@ -77,7 +78,7 @@
   });
 
   document.addEventListener("mouseout", (e) => {
-    const el = e.target.closest("[data-gog-plus-tip]");
+    const el = /** @type {Element} */ (e.target).closest("[data-gog-plus-tip]");
     if (!el) return;
     clearTimeout(showTimer);
     hideTimer = setTimeout(hide, 100);

@@ -6,6 +6,7 @@
  * three most common toggles — see manifest.json — this complements those
  * with a discoverable, searchable list of everything else).
  */
+// @ts-check
 
 (() => {
   "use strict";

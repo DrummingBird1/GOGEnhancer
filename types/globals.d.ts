@@ -90,6 +90,64 @@ interface GogPlusGameStatusApi {
   statusById(id: string | null | undefined): GogPlusGameStatusEntry | null;
 }
 
+// ---------------------------------------------------------------------
+// content/ and tags/ — same "catch typos across module boundaries, not
+// full type safety" philosophy as above. Every content/features/*.js and
+// tags/features/*.js module shares state and helpers purely through
+// window.GOGPlusX (see content/state.js's own doc comment on why), so
+// without these declarations tsc can't see those properties exist at
+// all. Loose `any`-shaped interfaces are enough to catch a typo'd
+// property name or wrong argument count — the two failure modes this
+// repo has actually hit — without modeling every render function's
+// full signature.
+
+interface GogPlusContentStateApi {
+  settings: GogPlusSettings;
+  pageCurrency: { code: string; symbol: string };
+  observers: any[];
+}
+
+interface GogPlusContentUtilsApi {
+  debounce(fn: (...args: any[]) => void, ms: number): (...args: any[]) => void;
+  log(...args: any[]): void;
+  slugFromHref(href: string | null | undefined): string | null;
+  slugFromLocation(): string | null;
+  gameTitleFromPage(): string | null;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface GogPlusLooseApi {
+  [key: string]: any;
+}
+
+declare global {
+  interface Window {
+    GOGPlusContentState?: GogPlusContentStateApi;
+    GOGPlusContentUtils?: GogPlusContentUtilsApi;
+    GOGPlusContentInternals?: GogPlusLooseApi;
+    GOGPlusCurrency?: GogPlusLooseApi;
+    GOGPlusPriceHistory?: GogPlusLooseApi;
+    GOGPlusToasts?: GogPlusLooseApi;
+    GOGPlusTooltips?: GogPlusLooseApi;
+    GOG_PLUS_TRANSLATIONS?: GogPlusLooseApi;
+    GOG_PLUS_DEBUG?: boolean;
+    GOGPlusCurrencyFeature?: GogPlusLooseApi;
+    GOGPlusCardBadges?: GogPlusLooseApi;
+    GOGPlusMiscFeatures?: GogPlusLooseApi;
+    GOGPlusWishlistFeature?: GogPlusLooseApi;
+    GOGPlusGamePage?: GogPlusLooseApi;
+    GOGPlusCommandPalette?: GogPlusLooseApi;
+
+    GOGPlusTagsState?: GogPlusLooseApi;
+    GOGPlusTagsConstants?: GogPlusLooseApi;
+    GOGPlusTagsInternals?: GogPlusLooseApi;
+    GOGPlusTagsManagement?: GogPlusLooseApi;
+    GOGPlusTagsGamesList?: GogPlusLooseApi;
+    GOGPlusTagsStats?: GogPlusLooseApi;
+    GOGPlusTagsExportImport?: GogPlusLooseApi;
+  }
+}
+
 declare global {
   interface Window {
     GOG_PLUS_DEFAULTS?: GogPlusSettings;

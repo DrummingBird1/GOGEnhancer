@@ -7,6 +7,7 @@
  * it's an Angular SPA route). Pulled out of the former single-file
  * content.js during the v2.8.0 module split.
  */
+// @ts-check
 
 (() => {
   "use strict";
@@ -54,11 +55,11 @@
     target.prepend(bar);
 
     bar.addEventListener("click", (e) => {
-      const btn = e.target.closest("button");
+      const btn = /** @type {HTMLElement} */ (e.target).closest("button");
       if (!btn) return;
       bar.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      applyWishlistFilter(btn.dataset.f);
+      applyWishlistFilter(/** @type {HTMLElement} */ (btn).dataset.f);
     });
 
     // Live counts: recompute when the wishlist DOM mutates (debounced).

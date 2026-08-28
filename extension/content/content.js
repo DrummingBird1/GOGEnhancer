@@ -9,6 +9,7 @@
  * feature once, deciding when to re-run (the Angular SPA's DOM mutates
  * constantly), loading/watching settings, and boot.
  */
+// @ts-check
 
 (() => {
   "use strict";

@@ -19,6 +19,7 @@
  * object, evicting the least-recently-updated game(s) — never the game
  * just recorded — when it's exceeded. See evictLeastRecentlyUpdated().
  */
+// @ts-check
 
 (() => {
   "use strict";

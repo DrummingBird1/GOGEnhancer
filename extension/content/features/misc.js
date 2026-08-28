@@ -3,6 +3,7 @@
  * the DRM-free banner, Hebrew translations, and RTL layout. Pulled out of
  * the former single-file content.js during the v2.8.0 module split.
  */
+// @ts-check
 
 (() => {
   "use strict";
@@ -28,7 +29,7 @@
         const y = parseInt(yearMatch[1], 10);
         if (y < currentYear) {
           el.classList.add("gog-plus-expired");
-          el.title = "This sale appears to have ended.";
+          /** @type {HTMLElement} */ (el).title = "This sale appears to have ended.";
         }
       }
     });

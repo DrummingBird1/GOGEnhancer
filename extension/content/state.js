@@ -18,6 +18,7 @@
  * they're all reading through the same shared container object, not a
  * snapshot of one of its properties.
  */
+// @ts-check
 
 (() => {
   "use strict";

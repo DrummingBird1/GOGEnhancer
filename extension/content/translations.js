@@ -9,6 +9,7 @@
  * We translate only stable navigation/UI strings — never user-generated
  * content, game titles, or developer/publisher names.
  */
+// @ts-check
 
 window.GOG_PLUS_TRANSLATIONS = {
   exact: {

@@ -3,6 +3,7 @@
  * panel, and the top stat cards (tagged games, storage used, etc). Pulled
  * out of the former single-file tags.js during the v2.8.0 module split.
  */
+// @ts-check
 
 (() => {
   "use strict";
@@ -201,7 +202,7 @@ function renderYearReview() {
     </div>
   `;
 
-  const yrSel = document.getElementById("yrYearSelect");
+  const yrSel = /** @type {HTMLSelectElement} */ (document.getElementById("yrYearSelect"));
   if (yrSel) {
     yrSel.addEventListener("change", () => {
       state.yearReviewYear = yrSel.value;
@@ -250,7 +251,7 @@ async function renderStats() {
   const today = new Date().toISOString().slice(0, 10);
   const activeRefunds = Object.entries(state.allPurchases).filter(([, d]) => {
     if (!d) return false;
-    const ms = new Date(today) - new Date(d);
+    const ms = new Date(today).getTime() - new Date(d).getTime();
     return ms >= 0 && ms <= 30 * 24 * 60 * 60 * 1000;
   }).length;
 

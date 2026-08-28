@@ -13,6 +13,7 @@
  *   window.GOGPlusCurrency.detect() → { code, symbol }
  *   window.GOGPlusCurrency.parsePrice(text, knownCurrency?) → number | null
  */
+// @ts-check
 
 (() => {
   "use strict";

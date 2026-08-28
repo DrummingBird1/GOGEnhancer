@@ -6,9 +6,19 @@
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "strict": false,
-    "types": ["chrome"]
+    "types": [
+      "chrome"
+    ]
   },
-  "include": ["extension/lib/**/*.js", "types/**/*.d.ts"]
+  "include": [
+    "extension/lib/**/*.js",
+    "extension/content/**/*.js",
+    "extension/tags/**/*.js",
+    "types/**/*.d.ts"
+  ]
 }

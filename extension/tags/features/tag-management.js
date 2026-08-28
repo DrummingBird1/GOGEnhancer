@@ -3,6 +3,7 @@
  * colour picker, and the rename/merge/delete action menu. Pulled out of
  * the former single-file tags.js during the v2.8.0 module split.
  */
+// @ts-check
 
 (() => {
   "use strict";
@@ -74,7 +75,7 @@ function renderTagList() {
       <button class="tag-pill-menu" type="button" aria-label="Tag actions">⋯</button>
     `;
     pill.addEventListener("click", (e) => {
-      if (e.target.closest(".tag-pill-swatch, .tag-pill-menu")) return;
+      if (/** @type {Element} */ (e.target).closest(".tag-pill-swatch, .tag-pill-menu")) return;
       state.activeTag = state.activeTag === tag ? null : tag;
       renderTagList();
       window.GOGPlusTagsGamesList.renderGames();
@@ -144,8 +145,9 @@ function openTagMenu(tag, anchor) {
   menu.style.top = `${Math.round(r.bottom + window.scrollY + 6)}px`;
 
   menu.addEventListener("click", async (e) => {
-    const btn = e.target.closest("button[data-act]");
-    if (!btn) return;
+    const found = /** @type {HTMLElement} */ (e.target).closest("button[data-act]");
+    if (!found) return;
+    const btn = /** @type {HTMLElement} */ (found);
     menu.remove();
     if (btn.dataset.act === "rename") await renameTag(tag);
     else if (btn.dataset.act === "merge") await mergeTag(tag);
@@ -292,14 +294,15 @@ function openColorPicker(tag, anchor) {
   };
 
   picker.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-color], [data-clear]");
+    const btn = /** @type {HTMLElement} */ (e.target).closest("[data-color], [data-clear]");
     if (!btn) return;
-    saveColor(btn.dataset.clear ? null : btn.dataset.color);
+    const b = /** @type {HTMLElement} */ (btn);
+    saveColor(b.dataset.clear ? null : b.dataset.color);
   });
   // The native color input doesn't fire "click" usefully — use "change".
   // We don't dismiss on input — let the user open the OS picker freely.
   picker.querySelector("#tagColorCustom").addEventListener("change", (e) => {
-    saveColor(e.target.value);
+    saveColor(/** @type {HTMLInputElement} */ (e.target).value);
   });
 }
 

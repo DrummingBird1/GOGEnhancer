@@ -3,6 +3,7 @@
  * export/import, single-game JSON export, and CSV export. Pulled out of
  * the former single-file tags.js during the v2.8.0 module split.
  */
+// @ts-check
 
 (() => {
   "use strict";

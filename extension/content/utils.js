@@ -3,6 +3,7 @@
  * Pulled out of the former single-file content.js during the v2.8.0 module
  * split — see CLAUDE.md's content-script load-order section.
  */
+// @ts-check
 
 (() => {
   "use strict";

@@ -3,6 +3,7 @@
  * estimation, FX freshness). Pulled out of the former single-file
  * content.js during the v2.8.0 module split.
  */
+// @ts-check
 
 (() => {
   "use strict";

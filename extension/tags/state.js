@@ -13,6 +13,7 @@
  * what makes plain property reassignment (`state.allTags = data.tags`,
  * `state.activeTag = null`, etc.) safe and visible everywhere immediately.
  */
+// @ts-check
 
 (() => {
   "use strict";

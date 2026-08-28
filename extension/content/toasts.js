@@ -15,6 +15,7 @@
  *     action: { label: "Undo", onClick: () => restoreTag() },
  *   });
  */
+// @ts-check
 
 (() => {
   "use strict";

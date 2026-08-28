@@ -7,6 +7,7 @@
  * only what's genuinely orchestration: loading storage into state on boot,
  * wiring up the top-level DOM event listeners, and the density toggle.
  */
+// @ts-check
 
 const state = window.GOGPlusTagsState;
 const { $ } = window.GOGPlusTagsConstants;
@@ -68,12 +69,13 @@ function bind() {
   $("importPack").addEventListener("click", () => $("importPackFile").click());
   $("importPackFile").addEventListener("change", importPackFromFile);
   document.addEventListener("click", (e) => {
+    const target = /** @type {Element} */ (e.target);
     const picker = document.getElementById("tagColorPicker");
-    if (picker && !picker.contains(e.target) && !e.target.closest(".tag-pill-swatch")) {
+    if (picker && !picker.contains(target) && !target.closest(".tag-pill-swatch")) {
       picker.remove();
     }
     const menu = document.getElementById("tagActionMenu");
-    if (menu && !menu.contains(e.target) && !e.target.closest(".tag-pill-menu")) {
+    if (menu && !menu.contains(target) && !target.closest(".tag-pill-menu")) {
       menu.remove();
     }
   });
