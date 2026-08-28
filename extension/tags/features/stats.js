@@ -247,6 +247,39 @@ async function renderStats() {
     .map(([cur, v]) => formatPrice(v, cur))
     .join(" + ");
 
+  // Wishlist value + potential savings: current total price of every
+  // wishlisted game that has price history, plus how much more it'd cost
+  // to close the gap to each game's own tracked all-time low. Scoped to
+  // allWishlistSlugs (not the whole tracked library) — a wishlist item
+  // never visited on its own page has no price data to sum.
+  const wishlistValueByCur = {};
+  const wishlistSavingsByCur = {};
+  let wishlistPricedCount = 0;
+  for (const slug of state.allWishlistSlugs || []) {
+    const arr = state.allHistory[slug];
+    if (!arr || !arr.length) continue;
+    wishlistPricedCount++;
+    const latest = arr[arr.length - 1];
+    const low = arr.reduce((a, e) => (e.p < a.p ? e : a), arr[0]);
+    const cur = latest.c || "USD";
+    wishlistValueByCur[cur] = (wishlistValueByCur[cur] || 0) + latest.p;
+    if (low.c === cur) {
+      wishlistSavingsByCur[cur] = (wishlistSavingsByCur[cur] || 0) + Math.max(0, latest.p - low.p);
+    }
+  }
+  const wishlistValueParts = Object.entries(wishlistValueByCur)
+    .map(([cur, v]) => formatPrice(v, cur))
+    .join(" + ");
+  const wishlistSavingsParts = Object.entries(wishlistSavingsByCur)
+    .filter(([, v]) => v > 0)
+    .map(([cur, v]) => formatPrice(v, cur))
+    .join(" + ");
+  const wishlistSub = !wishlistPricedCount
+    ? "visit wishlisted games to track"
+    : wishlistSavingsParts
+      ? `${wishlistSavingsParts} away from all-time lows · ${wishlistPricedCount} priced`
+      : `already at tracked lows · ${wishlistPricedCount} priced`;
+
   // Active refund timers
   const today = new Date().toISOString().slice(0, 10);
   const activeRefunds = Object.entries(state.allPurchases).filter(([, d]) => {
@@ -281,6 +314,7 @@ async function renderStats() {
     { label: "Games tracked", value: trackedGames, sub: `${snapshots} price snapshot${snapshots === 1 ? "" : "s"}` },
     { label: "Tracking since", value: oldest || "—", sub: oldest ? daysSince(oldest) : "no snapshots yet" },
     { label: "Watch advantage", value: savingsParts || "—", sub: "current vs. peak across tracked games" },
+    { label: "Wishlist value", value: wishlistValueParts || "—", sub: wishlistSub },
     { label: "Refunds open", value: activeRefunds, sub: activeRefunds ? "within 30-day window" : "no purchases logged" },
     { label: "Storage used", value: `${localKb} KB`, sub: storageSub },
   ];

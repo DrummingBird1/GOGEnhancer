@@ -22,6 +22,7 @@
     allTags: {}, // { slug: [tag, ...] }
     allNotes: {}, // { slug: text }
     allHistory: {}, // { slug: [{d, p, c}, ...] }
+    allWishlistSlugs: [], // [slug, ...] — from the wishlist-report round-trip, see background.js
     allPurchases: {}, // { slug: "YYYY-MM-DD" }
     allStatus: {}, // { slug: "playing" | "backlog" | "finished" }
     tagColors: {}, // { tagName: "#hex" }

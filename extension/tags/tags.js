@@ -27,11 +27,13 @@ async function init() {
     gameStatus: {},
     tagDashboardDensity: "comfortable",
     uiLanguage: "en",
+    wishlistSlugs: [],
   });
   window.GOGPlusI18n?.apply(data.uiLanguage || "en");
   state.allTags = data.tags || {};
   state.allNotes = data.notes || {};
   state.allHistory = data.priceHistory || {};
+  state.allWishlistSlugs = Array.isArray(data.wishlistSlugs) ? data.wishlistSlugs : [];
   state.allPurchases = data.purchaseLog || {};
   state.tagColors = data.tagColors || {};
   state.tagOrder = Array.isArray(data.tagOrder) ? data.tagOrder : [];
