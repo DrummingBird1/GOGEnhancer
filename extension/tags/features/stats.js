@@ -314,20 +314,34 @@ async function renderStats() {
     { label: "Games tracked", value: trackedGames, sub: `${snapshots} price snapshot${snapshots === 1 ? "" : "s"}` },
     { label: "Tracking since", value: oldest || "—", sub: oldest ? daysSince(oldest) : "no snapshots yet" },
     { label: "Watch advantage", value: savingsParts || "—", sub: "current vs. peak across tracked games" },
-    { label: "Wishlist value", value: wishlistValueParts || "—", sub: wishlistSub },
+    { label: "Wishlist value", value: wishlistValueParts || "—", sub: wishlistSub, id: "wishlistValueCard" },
     { label: "Refunds open", value: activeRefunds, sub: activeRefunds ? "within 30-day window" : "no purchases logged" },
     { label: "Storage used", value: `${localKb} KB`, sub: storageSub },
   ];
 
   panel.innerHTML = cards
     .map((c) => `
-      <div class="stat-card">
+      <div class="stat-card"${c.id ? ` id="${c.id}"` : ""}>
         <div class="stat-label">${escapeHtml(c.label)}</div>
         <div class="stat-value">${escapeHtml(String(c.value))}</div>
         <div class="stat-sub">${escapeHtml(c.sub)}</div>
       </div>
     `)
     .join("");
+
+  if (wishlistPricedCount) {
+    const wlCard = document.getElementById("wishlistValueCard");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "stat-card-action";
+    btn.textContent = "↓ CSV";
+    btn.title = "Export wishlisted games with tracked prices as CSV";
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.GOGPlusTagsExportImport.exportWishlistCsv();
+    });
+    wlCard?.appendChild(btn);
+  }
 }
 
 

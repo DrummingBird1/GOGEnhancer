@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 await import("../extension/lib/defaults.js");
 await import("../extension/lib/storage.js");
@@ -92,5 +92,63 @@ describe("wishlist value stat card", () => {
     const text = card.querySelector(".stat-value").textContent;
     expect(text).toContain("100");
     expect(text).toContain("20.00");
+  });
+});
+
+describe("wishlist CSV export", () => {
+  const { exportWishlistCsv } = window.GOGPlusTagsExportImport;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    if (!URL.createObjectURL) URL.createObjectURL = vi.fn(() => "blob:mock");
+    else vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    window.alert = vi.fn();
+  });
+
+  it("alerts instead of exporting when no wishlisted game has price history", () => {
+    state.allWishlistSlugs = ["hades"];
+    state.allHistory = {};
+    exportWishlistCsv();
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining("No wishlisted games"));
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+  });
+
+  it("builds a CSV row per priced wishlist game with title, price, and gap to the low", async () => {
+    state.allWishlistSlugs = ["stardew_valley"];
+    state.allHistory = {
+      stardew_valley: [{ d: "d1", p: 30, c: "USD" }, { d: "d2", p: 20, c: "USD" }, { d: "d3", p: 24, c: "USD" }],
+      not_on_wishlist: [{ d: "d1", p: 999, c: "USD" }],
+    };
+    exportWishlistCsv();
+    expect(URL.createObjectURL).toHaveBeenCalled();
+    const blob = URL.createObjectURL.mock.calls[0][0];
+    const text = await blob.text();
+    expect(text).toContain("slug,title,latest_price,currency,all_time_low,above_low_pct");
+    expect(text).toContain("stardew_valley");
+    expect(text).toContain("Stardew Valley");
+    expect(text).toContain("24.00");
+    expect(text).toContain("20.00");
+    expect(text).toContain("20"); // (24-20)/20 = 20% above the low
+    expect(text).not.toContain("not_on_wishlist");
+  });
+
+  it("adds the CSV export button to the wishlist-value card only when there's data to export", async () => {
+    const { renderStats } = window.GOGPlusTagsStats;
+    document.body.innerHTML = `<div id="statsPanel"></div>`;
+
+    state.allWishlistSlugs = [];
+    state.allHistory = {};
+    await renderStats();
+    expect(document.querySelector(".stat-card-action")).toBeNull();
+
+    state.allWishlistSlugs = ["hades"];
+    state.allHistory = { hades: [{ d: "d1", p: 30, c: "USD" }, { d: "d2", p: 20, c: "USD" }] };
+    await renderStats();
+    const btn = document.querySelector("#wishlistValueCard .stat-card-action");
+    expect(btn).not.toBeNull();
+
+    btn.click();
+    expect(URL.createObjectURL).toHaveBeenCalled();
   });
 });

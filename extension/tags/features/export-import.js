@@ -184,10 +184,48 @@ function exportCsv() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// Exports every wishlisted game with tracked price history as CSV — slug,
+// title, latest recorded price, its currency, the tracked all-time low, and
+// how far the latest price sits above that low. Built from the same
+// wishlistSlugs + priceHistory data the "Wishlist value" stat card uses;
+// wishlist items never visited on their own page have no price data and are
+// skipped, same as that card.
+function exportWishlistCsv() {
+  const slugs = (state.allWishlistSlugs || []).filter((slug) => state.allHistory[slug]?.length);
+  if (!slugs.length) {
+    alert("No wishlisted games with tracked price history yet — visit a few game pages first.");
+    return;
+  }
+  const rows = [["slug", "title", "latest_price", "currency", "all_time_low", "above_low_pct"]];
+  for (const slug of slugs) {
+    const hist = state.allHistory[slug];
+    const latest = hist[hist.length - 1];
+    const low = hist.reduce((a, e) => (e.p < a.p ? e : a), hist[0]);
+    const abovePct = low.p > 0 ? Math.round(((latest.p - low.p) / low.p) * 100) : 0;
+    rows.push([
+      slug,
+      `"${window.GOGPlusTagsGamesList.slugToTitle(slug).replace(/"/g, '""')}"`,
+      latest.p.toFixed(2),
+      latest.c,
+      low.p.toFixed(2),
+      String(abovePct),
+    ]);
+  }
+  const csv = rows.map((r) => r.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `gog-plus-wishlist-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
   window.GOGPlusTagsExportImport = {
     exportPack,
     importPackFromFile,
     exportSingleGame,
     exportCsv,
+    exportWishlistCsv,
   };
 })();

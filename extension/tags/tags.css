@@ -568,6 +568,26 @@ a:hover { text-decoration: underline; }
   border-color: var(--border-strong);
   transform: translateY(-1px);
 }
+#wishlistValueCard { position: relative; }
+.stat-card-action {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border-strong);
+  background: rgba(0, 0, 0, 0.15);
+  color: var(--text-tertiary);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.stat-card-action:hover {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
 .stat-label {
   font-size: 10.5px;
   text-transform: uppercase;
