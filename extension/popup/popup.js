@@ -51,6 +51,75 @@ async function load() {
 
   renderWhatsNew(s);
   renderRateStrip(s);
+  renderDeals(s);
+}
+
+const CUR_SYMBOLS = { USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽" };
+
+function slugToTitle(slug) {
+  return slug
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+// Top wishlist price drops, computed entirely from data already tracked —
+// wishlistSlugs (reported by the wishlist page visit) and priceHistory
+// (recorded on every game-page visit). No new fetches. Reuses the
+// wishlistAlerts toggle rather than adding a dedicated setting, since it's
+// the same "wishlist deals" surface the toolbar badge already represents.
+const MIN_DEAL_DROP_PCT = 10;
+const MAX_DEALS_SHOWN = 3;
+
+function computeTopWishlistDeals(s) {
+  const slugs = Array.isArray(s.wishlistSlugs) ? s.wishlistSlugs : [];
+  const history = s.priceHistory || {};
+  const deals = [];
+  for (const slug of slugs) {
+    const hist = history[slug];
+    if (!hist || hist.length < 2) continue;
+    let peak = hist[0];
+    for (const e of hist) if (e.p > peak.p) peak = e;
+    const latest = hist[hist.length - 1];
+    if (peak.p <= 0 || latest.c !== peak.c) continue;
+    const dropPct = ((peak.p - latest.p) / peak.p) * 100;
+    if (dropPct < MIN_DEAL_DROP_PCT) continue;
+    deals.push({ slug, price: latest.p, currency: latest.c, dropPct: Math.round(dropPct) });
+  }
+  deals.sort((a, b) => b.dropPct - a.dropPct);
+  return deals.slice(0, MAX_DEALS_SHOWN);
+}
+
+function renderDeals(s) {
+  const section = $("dealsSection");
+  if (!section) return;
+  const deals = s.wishlistAlerts ? computeTopWishlistDeals(s) : [];
+  if (!deals.length) {
+    section.hidden = true;
+    return;
+  }
+  const list = $("dealsList");
+  list.innerHTML = "";
+  deals.forEach((d) => {
+    const li = document.createElement("li");
+    li.className = "deals-item";
+    const link = document.createElement("a");
+    link.href = `https://www.gog.com/en/game/${encodeURIComponent(d.slug)}`;
+    link.target = "_blank";
+    link.rel = "noopener";
+    const sym = CUR_SYMBOLS[d.currency] || d.currency;
+    const name = document.createElement("span");
+    name.className = "deals-item-name";
+    name.textContent = slugToTitle(d.slug);
+    const meta = document.createElement("span");
+    meta.className = "deals-item-meta";
+    meta.textContent = `${sym}${d.price.toFixed(2)} · -${d.dropPct}%`;
+    link.appendChild(name);
+    link.appendChild(meta);
+    li.appendChild(link);
+    list.appendChild(li);
+  });
+  section.hidden = false;
 }
 
 // Shows changelog bullets for every version since the user last dismissed one

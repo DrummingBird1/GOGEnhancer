@@ -214,6 +214,63 @@ body::-webkit-scrollbar-thumb:hover {
   color: var(--accent-cyan);
 }
 
+/* Wishlist deals */
+.deals {
+  margin: 12px 18px 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 107, 157, 0.14), rgba(255, 107, 157, 0.04));
+  border: 1px solid rgba(255, 107, 157, 0.3);
+  animation: fadeUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+.deals-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.deals-icon { font-size: 13px; }
+.deals-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.deals-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.deals-item a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  transition: color 0.15s ease;
+}
+.deals-item a:hover { color: var(--text-primary); }
+.deals-item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.deals-item-meta {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-pink, #ff6b9d);
+}
+
 /* Rate strip */
 .rate-strip {
   padding: 6px 18px;
@@ -467,5 +524,5 @@ body.disabled .rate-strip { opacity: 0.4; pointer-events: none; }
   to   { opacity: 1; transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .section, .whatsnew { animation: none; }
+  .section, .whatsnew, .deals { animation: none; }
 }

@@ -36,6 +36,9 @@ function fixtureHtml() {
       <button id="whatsNewDismiss"></button>
     </div>
     <div id="rateStrip"></div>
+    <div id="dealsSection" hidden>
+      <ul id="dealsList"></ul>
+    </div>
     <select id="targetCurrency">
       <option value="none">Off</option>
       <option value="ILS">ILS</option>
@@ -227,5 +230,89 @@ describe("footer buttons", () => {
     await bootPopup();
     document.getElementById("reload").click();
     expect(chrome.tabs.query).toHaveBeenCalled();
+  });
+});
+
+describe("wishlist deals in the popup", () => {
+  it("stays hidden with no wishlist price history", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ wishlistAlerts: true }, r));
+    await bootPopup();
+    expect(document.getElementById("dealsSection").hidden).toBe(true);
+  });
+
+  it("stays hidden when wishlistAlerts is off, even with qualifying history", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ wishlistAlerts: false }, r));
+    await new Promise((r) =>
+      chrome.storage.local.set(
+        {
+          wishlistSlugs: ["hades"],
+          priceHistory: {
+            hades: [{ d: "2026-01-01", p: 100, c: "USD" }, { d: "2026-02-01", p: 70, c: "USD" }],
+          },
+        },
+        r
+      )
+    );
+    await bootPopup();
+    expect(document.getElementById("dealsSection").hidden).toBe(true);
+  });
+
+  it("shows the top deals sorted by biggest drop, capped at 3", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ wishlistAlerts: true }, r));
+    await new Promise((r) =>
+      chrome.storage.local.set(
+        {
+          wishlistSlugs: ["hades", "disco_elysium", "stardew_valley", "outer_wilds"],
+          priceHistory: {
+            hades: [{ d: "d1", p: 100, c: "USD" }, { d: "d2", p: 85, c: "USD" }], // -15%
+            disco_elysium: [{ d: "d1", p: 100, c: "USD" }, { d: "d2", p: 50, c: "USD" }], // -50%
+            stardew_valley: [{ d: "d1", p: 100, c: "USD" }, { d: "d2", p: 98, c: "USD" }], // -2%, below threshold
+            outer_wilds: [{ d: "d1", p: 100, c: "USD" }, { d: "d2", p: 70, c: "USD" }], // -30%
+          },
+        },
+        r
+      )
+    );
+    await bootPopup();
+    const section = document.getElementById("dealsSection");
+    expect(section.hidden).toBe(false);
+    const items = [...document.querySelectorAll("#dealsList .deals-item-name")].map((n) => n.textContent);
+    expect(items).toEqual(["Disco Elysium", "Outer Wilds", "Hades"]); // sorted by drop %, stardew excluded
+  });
+
+  it("skips a slug with fewer than two snapshots or mixed-currency history", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ wishlistAlerts: true }, r));
+    await new Promise((r) =>
+      chrome.storage.local.set(
+        {
+          wishlistSlugs: ["one_snapshot", "mixed_currency"],
+          priceHistory: {
+            one_snapshot: [{ d: "d1", p: 100, c: "USD" }],
+            mixed_currency: [{ d: "d1", p: 100, c: "USD" }, { d: "d2", p: 50, c: "ILS" }],
+          },
+        },
+        r
+      )
+    );
+    await bootPopup();
+    expect(document.getElementById("dealsSection").hidden).toBe(true);
+  });
+
+  it("links each deal to its GOG game page", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ wishlistAlerts: true }, r));
+    await new Promise((r) =>
+      chrome.storage.local.set(
+        {
+          wishlistSlugs: ["hades"],
+          priceHistory: { hades: [{ d: "d1", p: 100, c: "USD" }, { d: "d2", p: 60, c: "USD" }] },
+        },
+        r
+      )
+    );
+    await bootPopup();
+    const link = document.querySelector("#dealsList a");
+    expect(link.href).toBe("https://www.gog.com/en/game/hades");
+    expect(link.textContent).toContain("$60.00");
+    expect(link.textContent).toContain("-40%");
   });
 });
