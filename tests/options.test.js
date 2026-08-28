@@ -257,8 +257,7 @@ describe("rate inputs, VAT, and other simple fields", () => {
     sel.value = "he";
     sel.dispatchEvent(new Event("change"));
     await new Promise((r) => setTimeout(r, 0));
-    const s = await new Promise((r) => chrome.storage.local.get(["uiLanguage"], r));
-    // uiLanguage is a sync key per storage.js — read from sync instead
+    // uiLanguage is a sync key per storage.js
     const sy = await new Promise((r) => chrome.storage.sync.get(["uiLanguage"], r));
     expect(sy.uiLanguage).toBe("he");
   });
