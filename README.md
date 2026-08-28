@@ -1,6 +1,17 @@
-# GOG Enhancer
+<p align="center">
+  <img src="docs/assets/hero-icon.png" width="96" height="96" alt="GOG Enhancer logo" />
+</p>
 
-**Version 2.4.1** · Manifest V3 · Chromium-based browsers (Chrome, Edge, Brave, Opera)
+<h1 align="center">GOG Enhancer</h1>
+
+<p align="center">
+  <a href="https://github.com/DrummingBird1/GOGEnhancer/blob/main/extension/manifest.json"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FDrummingBird1%2FGOGEnhancer%2Fmain%2Fextension%2Fmanifest.json&query=%24.version&label=version&color=c64fff" alt="version" /></a>
+  <img src="https://img.shields.io/badge/manifest-v3-00f0ff" alt="Manifest V3" />
+  <a href="https://github.com/DrummingBird1/GOGEnhancer/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/DrummingBird1/GOGEnhancer/test.yml?branch=main&label=tests&color=7fffa6" alt="tests" /></a>
+  <a href="https://github.com/DrummingBird1/GOGEnhancer/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-ff6b9d" alt="MIT license" /></a>
+</p>
+
+<p align="center">Chromium-based browsers (Chrome, Edge, Brave, Opera)</p>
 
 תוסף third-party (לא רשמי) ל-GOG.com — מטבע חי, היסטוריית מחירים, השוואת מחירים בין חנויות, תגיות אישיות, שדרוג עיצובי מלא, עברית ו-RTL, והכל ללא Google Fonts וללא analytics.
 

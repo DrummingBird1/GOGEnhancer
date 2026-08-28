@@ -77,6 +77,18 @@ jobs:
             echo "fallback=false" >> "$GITHUB_OUTPUT"
           fi
 
+          # Optional per-release banner — generated via
+          # store/release-images/generate_release_banner.py and committed
+          # before tagging (see CLAUDE.md's "Release images" section). Only
+          # prepended if it exists for this exact tag; older releases and
+          # any release someone forgets to generate one for just don't get
+          # an image, no failure either way.
+          BANNER_PATH="store/release-images/${{ github.ref_name }}.png"
+          if [ -f "$BANNER_PATH" ]; then
+            BANNER_URL="https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/$BANNER_PATH"
+            printf '![%s banner](%s)\n\n%s\n' "${{ github.ref_name }}" "$BANNER_URL" "$(cat release-notes.md)" > release-notes.md
+          fi
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
