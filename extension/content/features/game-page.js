@@ -270,9 +270,11 @@
            At all-time low — best price since ${since}
          </div>`
       : "";
+    const worthWaiting = !isAtLow && stats.count >= 2 ? buildWorthWaitingVerdict(stats) : "";
     wrap.innerHTML = `
       <h3>Price history <span class="gog-plus-gp-since">since ${since}</span></h3>
       ${cheer}
+      ${worthWaiting}
       <div class="gog-plus-pricestat-grid">
         <div class="gog-plus-pricestat">
           <span class="gog-plus-pricestat-label">Current</span>
@@ -294,6 +296,36 @@
       ${renderSparkline(entries, stats, slug)}
     `;
     return wrap;
+  }
+
+  // "Worth waiting?" verdict — a plain-language read on where the current
+  // price sits between this game's tracked all-time low and its average,
+  // built entirely from the stats renderPriceHistorySection already
+  // computed (no new data, no new page scraping). Not shown when the game
+  // is already at its all-time low — the cheer banner covers that case.
+  function buildWorthWaitingVerdict(stats) {
+    const sym = symbolFor(stats.currency);
+    const pctAboveLow =
+      stats.min.price > 0 ? ((stats.latest.p - stats.min.price) / stats.min.price) * 100 : 0;
+    let tier, text;
+    if (pctAboveLow <= 10) {
+      tier = "good";
+      text = `Close to its all-time low of ${sym}${stats.min.price.toFixed(2)} — a reasonable time to buy.`;
+    } else if (stats.latest.p <= stats.avg) {
+      tier = "ok";
+      text = `Below its average of ${sym}${stats.avg.toFixed(2)}, but it's dropped as low as ${sym}${stats.min.price.toFixed(2)} before.`;
+    } else {
+      tier = "wait";
+      text = `Above its average of ${sym}${stats.avg.toFixed(2)} — might be worth waiting for a sale.`;
+    }
+    return `
+      <div class="gog-plus-worth-waiting gog-plus-worth-waiting--${tier}" role="status">
+        <span class="gog-plus-worth-waiting-icon" aria-hidden="true">${
+          tier === "good" ? "🟢" : tier === "ok" ? "🟡" : "🔴"
+        }</span>
+        <span>${text}</span>
+      </div>
+    `;
   }
 
   function renderSparkline(entries, stats, slug) {
@@ -679,5 +711,6 @@
     maybeRecordPriceHistory,
     maybeRecordGameGenre,
     ensureGamePagePanel,
+    buildWorthWaitingVerdict,
   };
 })();

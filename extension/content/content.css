@@ -936,6 +936,41 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
 }
 
 /* ============================================================
+   "Worth waiting?" verdict — mirrors the refund-status is-safe/
+   is-warn/is-expired 3-tier color pattern below.
+   ============================================================ */
+.gog-plus-worth-waiting {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.gog-plus-worth-waiting-icon {
+  flex: none;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.gog-plus-worth-waiting--good {
+  color: var(--gp-green);
+  background: rgba(92, 255, 157, 0.08);
+  border: 1px solid rgba(92, 255, 157, 0.25);
+}
+.gog-plus-worth-waiting--ok {
+  color: #ffd166;
+  background: rgba(255, 209, 102, 0.08);
+  border: 1px solid rgba(255, 209, 102, 0.3);
+}
+.gog-plus-worth-waiting--wait {
+  color: var(--gp-pink);
+  background: rgba(255, 107, 157, 0.08);
+  border: 1px solid rgba(255, 107, 157, 0.3);
+}
+
+/* ============================================================
    Sparkline sale-event legend dot
    ============================================================ */
 .gog-plus-spark-legend .dot.dot-sale {
