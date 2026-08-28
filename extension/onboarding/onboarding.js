@@ -146,6 +146,8 @@ document.querySelectorAll('[data-action="back"]').forEach((btn) => {
 window.GOGPlusStorage.get({ uiLanguage: "en" }).then((s) => {
   window.GOGPlusI18n?.apply(s.uiLanguage || "en");
 });
+const versionEl = document.getElementById("onboardingVersion");
+if (versionEl) versionEl.textContent = `v${chrome.runtime.getManifest().version}`;
 showStep(1);
 
 document.getElementById("closeBtn")?.addEventListener("click", () => {

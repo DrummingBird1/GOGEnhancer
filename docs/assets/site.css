@@ -171,12 +171,29 @@ nav.links a.active { color: var(--accent-cyan); }
   color: var(--text-primary);
 }
 .btn-ghost:hover { border-color: var(--accent-cyan); }
-.btn-patreon {
-  background: rgba(255, 107, 157, 0.10);
-  border-color: rgba(255, 107, 157, 0.35);
-  color: var(--accent-pink);
+
+.support-trio {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
 }
-.btn-patreon:hover { border-color: var(--accent-pink); }
+.support-trio a {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  background: rgba(255, 107, 157, 0.10);
+  border: 1px solid rgba(255, 107, 157, 0.35);
+  color: var(--accent-pink);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.support-trio a:hover {
+  border-color: var(--accent-pink);
+  transform: translateY(-2px);
+}
 
 .trust-pills {
   display: flex;

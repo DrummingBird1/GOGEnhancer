@@ -582,8 +582,10 @@ No functional behavior changes. All 34 tests pass; ESLint clean.
 
 GOG Enhancer is free, open-source, ad-free, and collects no data. If it saves
 you money or time and you'd like to support continued development, you can
-become a supporter:
+become a supporter on any of these:
 
-**→ [patreon.com/cw/MrIdan](https://www.patreon.com/cw/MrIdan)**
+- **[Ko-fi](https://ko-fi.com/idanlights)**
+- **[Buy Me a Coffee](https://buymeacoffee.com/MrIdan)**
+- **[Patreon](https://www.patreon.com/c/IdanLights)**
 
 Entirely optional — every feature stays free for everyone regardless.

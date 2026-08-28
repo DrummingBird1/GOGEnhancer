@@ -88,7 +88,6 @@
       "popup.shortcuts": "Shortcuts:",
       "popup.shortcuts.open": "open",
       "popup.shortcuts.toggle": "toggle",
-      "popup.support": "☕ Support this project",
 
       // options
       "options.hero.title": "Advanced settings",
@@ -155,8 +154,6 @@
       "popup.shortcuts": "קיצורים:",
       "popup.shortcuts.open": "פתח",
       "popup.shortcuts.toggle": "החלף",
-      "popup.support": "☕ תמכו בפרויקט",
-
       // options
       "options.hero.title": "הגדרות מתקדמות",
       "options.hero.sub": "כיוון התנהגות, ניהול הdata שלך, ושינוי מה ש-GOG Enhancer מזריק.",
@@ -222,8 +219,6 @@
       "popup.shortcuts": "Горячие клавиши:",
       "popup.shortcuts.open": "открыть",
       "popup.shortcuts.toggle": "переключить",
-      "popup.support": "☕ Поддержать проект",
-
       // options
       "options.hero.title": "Дополнительные настройки",
       "options.hero.sub": "Тонкая настройка поведения, управление данными и тем, что внедряет GOG Enhancer.",
@@ -289,8 +284,6 @@
       "popup.shortcuts": "Skróty:",
       "popup.shortcuts.open": "otwórz",
       "popup.shortcuts.toggle": "przełącz",
-      "popup.support": "☕ Wesprzyj projekt",
-
       // options
       "options.hero.title": "Ustawienia zaawansowane",
       "options.hero.sub": "Dostrajaj działanie, zarządzaj danymi i zmieniaj to, co wstrzykuje GOG Enhancer.",
@@ -356,8 +349,6 @@
       "popup.shortcuts": "Tastenkürzel:",
       "popup.shortcuts.open": "öffnen",
       "popup.shortcuts.toggle": "umschalten",
-      "popup.support": "☕ Projekt unterstützen",
-
       // options
       "options.hero.title": "Erweiterte Einstellungen",
       "options.hero.sub": "Verhalten feinabstimmen, eigene Daten verwalten und anpassen, was GOG Enhancer einfügt.",
@@ -423,8 +414,6 @@
       "popup.shortcuts": "Raccourcis :",
       "popup.shortcuts.open": "ouvrir",
       "popup.shortcuts.toggle": "basculer",
-      "popup.support": "☕ Soutenir ce projet",
-
       // options
       "options.hero.title": "Paramètres avancés",
       "options.hero.sub": "Ajustez le comportement, gérez vos données et modifiez ce que GOG Enhancer injecte.",
@@ -490,8 +479,6 @@
       "popup.shortcuts": "Atajos:",
       "popup.shortcuts.open": "abrir",
       "popup.shortcuts.toggle": "alternar",
-      "popup.support": "☕ Apoya este proyecto",
-
       // options
       "options.hero.title": "Configuración avanzada",
       "options.hero.sub": "Ajusta el comportamiento, gestiona tus datos y modifica lo que inyecta GOG Enhancer.",

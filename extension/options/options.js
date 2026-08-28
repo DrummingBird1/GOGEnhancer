@@ -491,4 +491,6 @@ document.addEventListener("DOMContentLoaded", () => {
   bindSettingsSearch();
   const heroVersion = $("heroVersion");
   if (heroVersion) heroVersion.textContent = `v${chrome.runtime.getManifest().version}`;
+  const footerVersion = $("footerVersion");
+  if (footerVersion) footerVersion.textContent = `v${chrome.runtime.getManifest().version}`;
 });

@@ -628,9 +628,14 @@ button.danger:hover {
     rgba(0, 240, 255, 0.05));
   border-color: var(--border-strong);
 }
+.support-btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
 .support-btn {
   display: inline-block;
-  margin-top: 8px;
   padding: 11px 20px;
   background: linear-gradient(135deg, var(--accent-magenta), var(--accent-cyan));
   color: var(--bg-base);
