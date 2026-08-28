@@ -19,7 +19,16 @@ const DEFAULTS = self.GOG_PLUS_DEFAULTS;
  * Shared with the Advanced Options import flow — see lib/migrations.js. */
 
 async function ensureDefaults() {
-  const existing = await self.GOGPlusStorage.get(Object.keys(DEFAULTS));
+  // Raw reads, not GOGPlusStorage.get() — that wrapper back-fills missing
+  // keys with GOG_PLUS_DEFAULTS on every read (by design, see storage.js),
+  // which would make every key here look "present" and this function a
+  // no-op. Querying storage directly is the only way to see what's
+  // genuinely missing and needs to actually be written.
+  const [syncExisting, localExisting] = await Promise.all([
+    new Promise((r) => chrome.storage.sync.get(null, r)),
+    new Promise((r) => chrome.storage.local.get(null, r)),
+  ]);
+  const existing = { ...syncExisting, ...localExisting };
   const toSet = {};
   for (const [k, v] of Object.entries(DEFAULTS)) {
     if (existing[k] === undefined) toSet[k] = v;

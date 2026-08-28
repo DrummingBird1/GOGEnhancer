@@ -1,8 +1,16 @@
 // Minimal chrome.* shim for the extension code that runs under happy-dom.
 // The real APIs are callback-based; the GOGPlusStorage wrapper promisifies.
+import { vi } from "vitest";
 
 const stores = { sync: {}, local: {} };
 const onChangedListeners = [];
+const runtimeListeners = {
+  onInstalled: [],
+  onStartup: [],
+  onMessage: [],
+};
+const alarmListeners = [];
+const commandListeners = [];
 
 const fire = (changes, area) => {
   for (const fn of onChangedListeners) fn(changes, area);
@@ -73,8 +81,43 @@ globalThis.chrome = {
   },
   runtime: {
     sendMessage: () => {},
-    onMessage: { addListener: () => {} },
+    lastError: null,
+    getURL: (p) => "chrome-extension://test-id/" + p,
+    getManifest: () => ({ version: "2.9.0" }),
+    openOptionsPage: vi.fn(),
+    onMessage: { addListener: (fn) => runtimeListeners.onMessage.push(fn) },
+    onInstalled: { addListener: (fn) => runtimeListeners.onInstalled.push(fn) },
+    onStartup: { addListener: (fn) => runtimeListeners.onStartup.push(fn) },
   },
+  alarms: {
+    create: vi.fn(),
+    onAlarm: { addListener: (fn) => alarmListeners.push(fn) },
+  },
+  action: {
+    setBadgeText: vi.fn(),
+    setBadgeBackgroundColor: vi.fn(),
+    setTitle: vi.fn(),
+  },
+  notifications: {
+    create: vi.fn(),
+  },
+  tabs: {
+    create: vi.fn(),
+    query: vi.fn((_q, cb) => cb([{ id: 1 }])),
+    reload: vi.fn(),
+  },
+  commands: {
+    onCommand: { addListener: (fn) => commandListeners.push(fn) },
+  },
+};
+
+// Exposes every listener registered by extension code via addListener, so
+// tests can fire them directly (chrome.alarms.onAlarm, runtime.onInstalled,
+// runtime.onMessage, etc.) — these never fire on their own under happy-dom.
+globalThis.__chromeListeners = {
+  alarm: alarmListeners,
+  command: commandListeners,
+  ...runtimeListeners,
 };
 
 // Test helper: reset both areas between tests
