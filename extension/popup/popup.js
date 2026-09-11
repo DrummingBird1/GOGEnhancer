@@ -257,9 +257,16 @@ function bind() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  load();
-  bind();
-  // Refresh strip every minute while popup is open
-  setInterval(load, 60000);
-});
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    load();
+    bind();
+    // Refresh strip every minute while popup is open
+    setInterval(load, 60000);
+  },
+  // See the identical comment in options.js — { once: true } stops a test
+  // harness that re-imports this module against one shared `document` from
+  // accumulating a duplicate bind() per import.
+  { once: true }
+);

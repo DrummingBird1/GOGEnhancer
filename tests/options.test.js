@@ -4,6 +4,7 @@ await import("../extension/lib/defaults.js");
 await import("../extension/lib/i18n.js");
 await import("../extension/lib/storage.js");
 await import("../extension/lib/migrations.js");
+await import("../extension/lib/game-status.js");
 
 function fixtureHtml() {
   return `
@@ -51,6 +52,7 @@ function fixtureHtml() {
       <div class="card">
         <div id="dataStats"></div>
         <button id="exportAll">export</button>
+        <button id="exportAllEncrypted">export encrypted</button>
         <button id="importAll">import</button>
         <input type="file" id="importFile" hidden>
         <button id="exportTagsCsv">export csv</button>
@@ -98,6 +100,17 @@ beforeEach(() => {
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
   window.location.reload = vi.fn();
 });
+
+// Real PBKDF2 (250k iterations) takes tens-to-low-hundreds of ms depending on
+// the machine, unlike everything else in this file — a fixed setTimeout is
+// too flaky across CI runners, so the encrypted-backup tests poll instead.
+async function waitUntil(predicate, { timeout = 3000, interval = 10 } = {}) {
+  const start = Date.now();
+  while (!predicate()) {
+    if (Date.now() - start > timeout) throw new Error("waitUntil: timed out");
+    await new Promise((r) => setTimeout(r, interval));
+  }
+}
 
 describe("load()", () => {
   it("populates rate inputs, VAT fields, and marks the active preset", async () => {
@@ -319,11 +332,99 @@ describe("export everything (JSON)", () => {
   });
 });
 
+describe("encrypted backup export/import", () => {
+  it("encrypts the export into a password-protected envelope, distinct from the plain export", async () => {
+    window.prompt = vi.fn(() => "hunter2");
+    await new Promise((r) => chrome.storage.sync.set({ vatPercent: 18 }, r));
+    await bootOptions();
+    document.getElementById("exportAllEncrypted").click();
+    await waitUntil(() => URL.createObjectURL.mock.calls.length > 0);
+    const blob = URL.createObjectURL.mock.calls[0][0];
+    const text = await blob.text();
+    const envelope = JSON.parse(text);
+    expect(envelope.format).toBe("gog-enhancer-encrypted-backup");
+    expect(envelope.salt).toBeTruthy();
+    expect(envelope.iv).toBeTruthy();
+    expect(envelope.ciphertext).toBeTruthy();
+    // The plaintext settings must not appear anywhere in the exported file
+    // (checking for the "18" value itself isn't meaningful — a random
+    // base64 ciphertext coincidentally contains that 2-digit substring more
+    // often than not).
+    expect(text).not.toContain("vatPercent");
+  });
+
+  it("does nothing when the password prompt is cancelled", async () => {
+    window.prompt = vi.fn(() => null);
+    await bootOptions();
+    document.getElementById("exportAllEncrypted").click();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+  });
+
+  it("round-trips through export and import with the correct password", async () => {
+    window.prompt = vi.fn(() => "correct horse battery staple");
+    await new Promise((r) => chrome.storage.sync.set({ vatPercent: 31 }, r));
+    await bootOptions();
+    document.getElementById("exportAllEncrypted").click();
+    await waitUntil(() => URL.createObjectURL.mock.calls.length > 0);
+    const encryptedText = await URL.createObjectURL.mock.calls[0][0].text();
+
+    await new Promise((r) => chrome.storage.sync.set({ vatPercent: 0 }, r));
+    const file = new File([encryptedText], "backup.json", { type: "application/json" });
+    const input = document.getElementById("importFile");
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    input.dispatchEvent(new Event("change"));
+    await waitUntil(() => window.alert.mock.calls.length > 0);
+
+    const s = await new Promise((r) => chrome.storage.sync.get(["vatPercent"], r));
+    expect(s.vatPercent).toBe(31);
+    expect(window.alert).toHaveBeenCalledWith("Imported successfully.");
+  });
+
+  it("shows an error instead of importing when the password is wrong", async () => {
+    window.prompt = vi.fn(() => "the-right-password");
+    await new Promise((r) => chrome.storage.sync.set({ vatPercent: 31 }, r));
+    await bootOptions();
+    document.getElementById("exportAllEncrypted").click();
+    await waitUntil(() => URL.createObjectURL.mock.calls.length > 0);
+    const encryptedText = await URL.createObjectURL.mock.calls[0][0].text();
+
+    window.prompt = vi.fn(() => "a-wrong-password");
+    const file = new File([encryptedText], "backup.json", { type: "application/json" });
+    const input = document.getElementById("importFile");
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    input.dispatchEvent(new Event("change"));
+    await waitUntil(() => window.alert.mock.calls.length > 0);
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining("Wrong password"));
+  });
+
+  it("does nothing when the decrypt password prompt is cancelled", async () => {
+    window.prompt = vi.fn(() => "some-password");
+    await bootOptions();
+    document.getElementById("exportAllEncrypted").click();
+    await waitUntil(() => URL.createObjectURL.mock.calls.length > 0);
+    const encryptedText = await URL.createObjectURL.mock.calls[0][0].text();
+
+    window.prompt = vi.fn(() => null);
+    window.alert.mockClear();
+    const file = new File([encryptedText], "backup.json", { type: "application/json" });
+    const input = document.getElementById("importFile");
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    input.dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 100));
+    expect(window.alert).not.toHaveBeenCalled();
+  });
+});
+
 describe("tags CSV export/import", () => {
-  it("exports tags and notes as CSV rows", async () => {
+  it("exports tags, notes, and play status as CSV rows", async () => {
     await new Promise((r) =>
       chrome.storage.local.set(
-        { tags: { hades: ["roguelike", "fun"] }, notes: { hades: 'has "quotes"' } },
+        {
+          tags: { hades: ["roguelike", "fun"] },
+          notes: { hades: 'has "quotes"' },
+          gameStatus: { hades: "playing" },
+        },
         r
       )
     );
@@ -332,25 +433,56 @@ describe("tags CSV export/import", () => {
     await new Promise((r) => setTimeout(r, 0));
     const blob = URL.createObjectURL.mock.calls[0][0];
     const text = await blob.text();
-    expect(text).toContain("slug,tags,note");
+    expect(text).toContain("slug,tags,note,status");
     expect(text).toContain("hades");
     expect(text).toContain("roguelike; fun");
     expect(text).toContain('""quotes""');
+    expect(text).toContain("playing");
   });
 
-  it("imports a CSV file, merging tags with existing ones", async () => {
+  it("imports a CSV file, merging tags and play status with existing ones", async () => {
     await new Promise((r) => chrome.storage.local.set({ tags: { hades: ["existing"] } }, r));
     await bootOptions();
-    const csv = "slug,tags,note\nhades,\"roguelike; fun\",a note\nstardew_valley,cozy,\n";
+    const csv =
+      "slug,tags,note,status\n" +
+      'hades,"roguelike; fun",a note,playing\n' +
+      "stardew_valley,cozy,,backlog\n";
     const file = new File([csv], "tags.csv", { type: "text/csv" });
     const input = document.getElementById("importTagsCsvFile");
     Object.defineProperty(input, "files", { value: [file], configurable: true });
     input.dispatchEvent(new Event("change"));
     await new Promise((r) => setTimeout(r, 20));
-    const s = await new Promise((r) => chrome.storage.local.get(["tags", "notes"], r));
+    const s = await new Promise((r) => chrome.storage.local.get(["tags", "notes", "gameStatus"], r));
     expect(s.tags.hades.sort()).toEqual(["existing", "fun", "roguelike"]);
     expect(s.tags.stardew_valley).toEqual(["cozy"]);
     expect(s.notes.hades).toBe("a note");
+    expect(s.gameStatus.hades).toBe("playing");
+    expect(s.gameStatus.stardew_valley).toBe("backlog");
+  });
+
+  it("ignores an unrecognized status value instead of storing garbage", async () => {
+    await bootOptions();
+    const csv = "slug,tags,note,status\nhades,,,not-a-real-status\n";
+    const file = new File([csv], "tags.csv", { type: "text/csv" });
+    const input = document.getElementById("importTagsCsvFile");
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    input.dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 20));
+    const s = await new Promise((r) => chrome.storage.local.get(["gameStatus"], r));
+    expect(s.gameStatus.hades).toBeUndefined();
+  });
+
+  it("doesn't overwrite an existing play status silently", async () => {
+    await new Promise((r) => chrome.storage.local.set({ gameStatus: { hades: "finished" } }, r));
+    await bootOptions();
+    const csv = "slug,tags,note,status\nhades,,,backlog\n";
+    const file = new File([csv], "tags.csv", { type: "text/csv" });
+    const input = document.getElementById("importTagsCsvFile");
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    input.dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 20));
+    const s = await new Promise((r) => chrome.storage.local.get(["gameStatus"], r));
+    expect(s.gameStatus.hades).toBe("finished");
   });
 
   it("rejects a CSV missing the required slug column", async () => {

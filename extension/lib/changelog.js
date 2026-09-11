@@ -57,6 +57,12 @@
       "Sale-calendar panel in the tag dashboard now predicts GOG's next likely discount window, blending your own tracked history with a known seasonal calendar",
       "Wishlist value stat now also shows the total cost if every wishlisted game were simultaneously at its own all-time low",
     ],
+    "2.11.0": [
+      "🎲 \"What to play tonight\" — a one-click random pick from your Backlog in the tag dashboard, optionally narrowed by genre, plus a \"because you like X\" recommendation strip",
+      "🔒 Encrypted backup — \"Export everything\" in Advanced Options now offers a password-protected (AES-256-GCM, entirely on-device) backup alongside the existing plain JSON one",
+      "Tags CSV export/import now round-trips play status (Playing/Backlog/Finished) too, not just tags and notes",
+      "New \"Share ↓\" button in the tag dashboard exports the currently-filtered games as a single self-contained, read-only HTML page",
+    ],
   };
 
   // Dotted-numeric version compare (2.9.0 < 2.10.0, unlike string sort).

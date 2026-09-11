@@ -146,6 +146,7 @@ declare global {
     GOGPlusTagsGamesList?: GogPlusLooseApi;
     GOGPlusTagsStats?: GogPlusLooseApi;
     GOGPlusTagsExportImport?: GogPlusLooseApi;
+    GOGPlusTagsRecommendations?: GogPlusLooseApi;
   }
 }
 

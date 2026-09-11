@@ -50,7 +50,10 @@ extension:
 | Tag-dashboard density preference (comfortable / compact) | `chrome.storage.local` | Per-device UI preference — the dashboard remembers your choice between visits |
 
 You can wipe all of this at any time from the **Advanced Settings** page
-(toolbar icon → Advanced → Reset everything).
+(toolbar icon → Advanced → Reset everything). You can also back it all up to
+a file — plain JSON, or password-encrypted (AES-256-GCM, entirely on-device
+via the browser's own Web Crypto API — no server, no key ever transmitted
+anywhere) — from the same page's "Export everything" buttons.
 
 If you sign out of Chrome sync, the `chrome.storage.sync` portion is removed
 from Google's servers per Google's Chrome Sync policy, which is independent

@@ -29,6 +29,7 @@
         <span class="counts" id="counts"></span>
         <button id="densityToggle" class="ghost" type="button" title="Toggle compact / comfortable density">⇅ Density</button>
         <button id="exportCsv" class="ghost">↓ CSV</button>
+        <button id="exportStaticHtml" class="ghost" type="button" title="Export the currently-visible games as a shareable, read-only HTML page">🔗 Share ↓</button>
         <button id="exportPack" class="ghost" type="button" title="Export the currently-visible games as a shareable JSON pack">📦 Pack ↓</button>
         <button id="importPack" class="ghost" type="button" title="Import a pack JSON from another user">📦 Pack ↑</button>
         <input type="file" id="importPackFile" accept="application/json,.json" hidden />
@@ -39,6 +40,7 @@
   <section class="stats-panel" id="statsPanel" aria-label="Library statistics"></section>
   <section class="year-review" id="yearReview" aria-label="Year in review"></section>
   <section class="sale-heatmap" id="saleHeatmap" aria-label="Sale calendar heatmap"></section>
+  <section class="tonight-picker" id="tonightPicker" aria-label="What to play tonight" hidden></section>
 
   <main class="layout">
     <aside class="sidebar">
@@ -61,12 +63,14 @@
   <script src="../lib/dom-safety.js"></script>
   <script src="../lib/currency-format.js"></script>
   <script src="../lib/game-status.js"></script>
+  <script src="../lib/genres.js"></script>
   <script src="../content/toasts.js"></script>
   <script src="state.js"></script>
   <script src="features/tag-management.js"></script>
   <script src="features/games-list.js"></script>
   <script src="features/stats.js"></script>
   <script src="features/export-import.js"></script>
+  <script src="features/recommendations.js"></script>
   <script src="tags.js"></script>
 </body>
 </html>

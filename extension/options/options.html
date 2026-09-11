@@ -218,6 +218,7 @@
       <div class="data-stats" id="dataStats"></div>
       <div class="card-actions wrap">
         <button id="exportAll" class="primary">Export everything (JSON)</button>
+        <button id="exportAllEncrypted" class="ghost">Export everything (encrypted)…</button>
         <button id="importAll" class="ghost">Import from JSON…</button>
         <input type="file" id="importFile" accept="application/json,.json" hidden />
         <button id="exportTagsCsv" class="ghost">Tags → CSV</button>
@@ -337,6 +338,7 @@
   <script src="../lib/i18n.js"></script>
   <script src="../lib/storage.js"></script>
   <script src="../lib/migrations.js"></script>
+  <script src="../lib/game-status.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

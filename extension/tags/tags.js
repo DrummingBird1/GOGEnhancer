@@ -14,7 +14,8 @@ const { $ } = window.GOGPlusTagsConstants;
 const { renderSaleHeatmap, renderStats, renderYearReview } = window.GOGPlusTagsStats;
 const { renderTagList } = window.GOGPlusTagsManagement;
 const { renderGames } = window.GOGPlusTagsGamesList;
-const { exportPack, importPackFromFile, exportCsv } = window.GOGPlusTagsExportImport;
+const { exportPack, importPackFromFile, exportCsv, exportStaticHtml } = window.GOGPlusTagsExportImport;
+const { renderTonightPicker } = window.GOGPlusTagsRecommendations;
 
 async function init() {
   const data = await window.GOGPlusStorage.get({
@@ -25,6 +26,7 @@ async function init() {
     tagColors: {},
     tagOrder: [],
     gameStatus: {},
+    gameGenres: {},
     tagDashboardDensity: "comfortable",
     uiLanguage: "en",
     wishlistSlugs: [],
@@ -38,6 +40,7 @@ async function init() {
   state.tagColors = data.tagColors || {};
   state.tagOrder = Array.isArray(data.tagOrder) ? data.tagOrder : [];
   state.allStatus = data.gameStatus || {};
+  state.allGenres = data.gameGenres || {};
   state.density = data.tagDashboardDensity === "compact" ? "compact" : "comfortable";
   applyDensityClass();
   await renderStats();
@@ -45,6 +48,7 @@ async function init() {
   renderSaleHeatmap();
   renderTagList();
   renderGames();
+  renderTonightPicker();
   bind();
 }
 
@@ -67,6 +71,7 @@ function bind() {
     state.sortBy = e.target.value;
     renderGames();
   });
+  $("exportStaticHtml").addEventListener("click", exportStaticHtml);
   $("exportPack").addEventListener("click", exportPack);
   $("importPack").addEventListener("click", () => $("importPackFile").click());
   $("importPackFile").addEventListener("change", importPackFromFile);
@@ -96,4 +101,7 @@ if (typeof window !== "undefined") {
   };
 }
 
-document.addEventListener("DOMContentLoaded", init);
+// { once: true } — see the identical comment in options.js — stops a test
+// harness that re-imports this module against one shared `document` from
+// accumulating a duplicate init()/bind() per import.
+document.addEventListener("DOMContentLoaded", init, { once: true });

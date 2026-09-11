@@ -18,6 +18,87 @@ const PRESETS = {
 
 const DEFAULTS = window.GOG_PLUS_DEFAULTS;
 
+// Encrypted-backup helpers (Web Crypto — no dependency, no data ever leaves
+// the device). PBKDF2-derived AES-256-GCM key; salt + IV travel in plaintext
+// alongside the ciphertext in the exported file, which is normal — they're
+// not secret, only the password is. 250k PBKDF2 iterations is OWASP's 2023
+// baseline for PBKDF2-SHA256.
+const ENCRYPTED_BACKUP_FORMAT = "gog-enhancer-encrypted-backup";
+const PBKDF2_ITERATIONS = 250000;
+
+function bufToBase64(buf) {
+  let binary = "";
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+function base64ToBuf(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+/**
+ * @param {string} password
+ * @param {Uint8Array} salt
+ * @returns {Promise<CryptoKey>}
+ */
+async function deriveBackupKey(password, salt) {
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+/**
+ * @param {string} plaintext
+ * @param {string} password
+ * @returns {Promise<{format: string, formatVersion: number, exportedAt: string, salt: string, iv: string, ciphertext: string}>}
+ */
+async function encryptBackup(plaintext, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveBackupKey(password, salt);
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(plaintext));
+  return {
+    format: ENCRYPTED_BACKUP_FORMAT,
+    formatVersion: 1,
+    exportedAt: new Date().toISOString(),
+    salt: bufToBase64(salt),
+    iv: bufToBase64(iv),
+    ciphertext: bufToBase64(ciphertext),
+  };
+}
+
+/**
+ * @param {{ salt: string, iv: string, ciphertext: string }} envelope
+ * @param {string} password
+ * @returns {Promise<string>} the decrypted plaintext
+ */
+async function decryptBackup(envelope, password) {
+  const salt = new Uint8Array(base64ToBuf(envelope.salt));
+  const iv = new Uint8Array(base64ToBuf(envelope.iv));
+  const key = await deriveBackupKey(password, salt);
+  let plainBuf;
+  try {
+    plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, base64ToBuf(envelope.ciphertext));
+  } catch (_) {
+    throw new Error("Wrong password, or the file is corrupted.");
+  }
+  return new TextDecoder().decode(plainBuf);
+}
+
 function applyThemeClassToHtml(theme) {
   // Strip any prior gog-plus-theme--* class so themes don't compose,
   // then add the current one. "neon" is the CSS default so the class
@@ -301,14 +382,43 @@ function bind() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
 
-  // Import
+  // Export everything, password-protected. Same payload shape as exportAll
+  // above, wrapped in an AES-GCM envelope — see the encryptBackup() doc
+  // comment for why salt/IV travel in plaintext but the password never does.
+  $("exportAllEncrypted").addEventListener("click", async () => {
+    const password = prompt(
+      "Choose a password to encrypt this backup with.\n\n" +
+        "There is no way to recover a lost password — the file is useless without it."
+    );
+    if (!password) return;
+    const sync = await new Promise((r) => chrome.storage.sync.get(null, r));
+    const local = await new Promise((r) => chrome.storage.local.get(null, r));
+    const plaintext = JSON.stringify({ exportedAt: new Date().toISOString(), version: 2, sync, local });
+    const envelope = await encryptBackup(plaintext, password);
+    const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `gog-plus-export-encrypted-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  // Import — handles both the plain JSON shape above and the encrypted
+  // envelope transparently (detected via the `format` field), so there's
+  // only one Import button for the user to remember.
   $("importAll").addEventListener("click", () => $("importFile").click());
   $("importFile").addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
+      let data = JSON.parse(text);
+      if (data?.format === ENCRYPTED_BACKUP_FORMAT) {
+        const password = prompt("This backup is encrypted. Enter the password to decrypt it.");
+        if (!password) return;
+        data = JSON.parse(await decryptBackup(data, password));
+      }
       if (!data || (!data.sync && !data.local)) throw new Error("invalid format");
       if (!confirm("Import will OVERWRITE current settings. Continue?")) return;
       const setArea = (area, items) =>
@@ -348,10 +458,13 @@ function bind() {
       const slugIdx = header.indexOf("slug");
       const tagsIdx = header.indexOf("tags");
       const noteIdx = header.indexOf("note");
+      const statusIdx = header.indexOf("status");
       if (slugIdx === -1) throw new Error("CSV needs a 'slug' column.");
 
+      const validStatusIds = new Set(window.GOGPlusGameStatus.STATUSES.map((s) => s.id));
       const incomingTags = {};
       const incomingNotes = {};
+      const incomingStatus = {};
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         const slug = (row[slugIdx] || "").trim();
@@ -365,21 +478,27 @@ function bind() {
         if (noteIdx >= 0 && row[noteIdx]) {
           incomingNotes[slug] = row[noteIdx];
         }
+        if (statusIdx >= 0 && row[statusIdx]) {
+          const s = row[statusIdx].trim().toLowerCase();
+          if (validStatusIds.has(s)) incomingStatus[slug] = s;
+        }
       }
 
       const tagCount = Object.values(incomingTags).reduce((a, b) => a + b.length, 0);
       const noteCount = Object.keys(incomingNotes).length;
+      const statusCount = Object.keys(incomingStatus).length;
       const mode = confirm(
-        `Import ${tagCount} tag(s) across ${Object.keys(incomingTags).length} game(s) ` +
-          `and ${noteCount} note(s).\n\n` +
+        `Import ${tagCount} tag(s) across ${Object.keys(incomingTags).length} game(s), ` +
+          `${noteCount} note(s), and ${statusCount} play status(es).\n\n` +
           `OK = merge (add to existing without losing current).\n` +
           `Cancel = abort.`
       );
       if (!mode) return;
 
-      const { tags = {}, notes = {} } = await window.GOGPlusStorage.get({
+      const { tags = {}, notes = {}, gameStatus = {} } = await window.GOGPlusStorage.get({
         tags: {},
         notes: {},
+        gameStatus: {},
       });
       for (const [slug, arr] of Object.entries(incomingTags)) {
         tags[slug] = Array.from(new Set([...(tags[slug] || []), ...arr]));
@@ -388,7 +507,11 @@ function bind() {
         // Don't clobber existing non-empty notes silently
         if (!notes[slug]) notes[slug] = note;
       }
-      await window.GOGPlusStorage.set({ tags, notes });
+      for (const [slug, status] of Object.entries(incomingStatus)) {
+        // Don't clobber an existing status silently
+        if (!gameStatus[slug]) gameStatus[slug] = status;
+      }
+      await window.GOGPlusStorage.set({ tags, notes, gameStatus });
       flashSaved();
       load();
       alert(`Imported. Tags now span ${Object.keys(tags).length} game(s).`);
@@ -401,16 +524,18 @@ function bind() {
 
   // Tags → CSV
   $("exportTagsCsv").addEventListener("click", async () => {
-    const { tags = {}, notes = {} } = await window.GOGPlusStorage.get({
+    const { tags = {}, notes = {}, gameStatus = {} } = await window.GOGPlusStorage.get({
       tags: {},
       notes: {},
+      gameStatus: {},
     });
-    const rows = [["slug", "tags", "note"]];
-    const slugs = new Set([...Object.keys(tags), ...Object.keys(notes)]);
+    const rows = [["slug", "tags", "note", "status"]];
+    const slugs = new Set([...Object.keys(tags), ...Object.keys(notes), ...Object.keys(gameStatus)]);
     for (const slug of slugs) {
       const t = (tags[slug] || []).join("; ");
       const n = (notes[slug] || "").replace(/"/g, '""').replace(/\r?\n/g, " ");
-      rows.push([slug, `"${t.replace(/"/g, '""')}"`, `"${n}"`]);
+      const s = gameStatus[slug] || "";
+      rows.push([slug, `"${t.replace(/"/g, '""')}"`, `"${n}"`, s]);
     }
     const csv = rows.map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -485,12 +610,26 @@ function bindSettingsSearch() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  load();
-  bind();
-  bindSettingsSearch();
-  const heroVersion = $("heroVersion");
-  if (heroVersion) heroVersion.textContent = `v${chrome.runtime.getManifest().version}`;
-  const footerVersion = $("footerVersion");
-  if (footerVersion) footerVersion.textContent = `v${chrome.runtime.getManifest().version}`;
-});
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    load();
+    bind();
+    bindSettingsSearch();
+    const heroVersion = $("heroVersion");
+    if (heroVersion) heroVersion.textContent = `v${chrome.runtime.getManifest().version}`;
+    const footerVersion = $("footerVersion");
+    if (footerVersion) footerVersion.textContent = `v${chrome.runtime.getManifest().version}`;
+  },
+  // { once: true } isn't just tidiness — without it, a test harness that
+  // re-imports this module against the same long-lived `document` (as
+  // options.test.js's bootOptions() does via vi.resetModules()) accumulates
+  // one listener per import. Every later DOMContentLoaded dispatch then
+  // re-runs *every* earlier test's bind(), attaching duplicate click/change
+  // listeners to the current test's fresh elements — silently harmless for
+  // loose `toHaveBeenCalled()` assertions, but it multiplies real side
+  // effects (multiple alerts, multiple decrypt attempts) once a test checks
+  // something stricter. DOMContentLoaded only ever fires once on a real
+  // page anyway, so this changes nothing about production behavior.
+  { once: true }
+);

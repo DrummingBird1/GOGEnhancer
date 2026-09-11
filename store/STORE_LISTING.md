@@ -82,6 +82,20 @@ code.
   watch advantage (current vs. peak across the library), refund windows
   logged. All computed from your local data.
 
+▸ "What to play tonight" + genre recommendations
+  A one-click random pick from your Backlog, optionally narrowed to a
+  genre. The dashboard also surfaces backlog games sharing a genre with
+  titles you've already tagged or marked Finished/Playing — no ML, no
+  network call, just your own local data.
+
+▸ Encrypted backup, CSV round-trips, and a shareable read-only export
+  "Export everything" in Advanced Options now offers a password-protected
+  (AES-256-GCM, on-device only) backup alongside the plain JSON one. The
+  Tags CSV export/import now round-trips play status too, not just tags
+  and notes. The dashboard can also export the currently-filtered games
+  as a single self-contained, script-free HTML page for sharing outside
+  the extension.
+
 ▸ Hebrew translations + RTL
   Optional Hebrew dictionary covering navigation, UI strings, and common
   patterns. Real RTL with logical-property CSS — not a flipped page.
@@ -161,6 +175,19 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   סטטיסטיקה שנתית: כמה משחקים נעקבו, ירידת המחיר הגדולה, המשחק
   הכי-נעקב, watch advantage (current מול peak), refund windows שנפתחו.
   הכל מחושב מנתונים מקומיים.
+
+▸ "מה לשחק הערב?" + המלצות לפי ז'אנר
+  בחירה אקראית בלחיצה אחת מה-Backlog שלך, עם אפשרות לצמצם לפי ז'אנר.
+  הלוח גם מציג משחקי Backlog שחולקים ז'אנר עם משחקים שכבר תייגת או
+  סימנת כ-Finished/Playing — בלי ML, בלי קריאת רשת, רק הנתונים
+  המקומיים שלך.
+
+▸ גיבוי מוצפן, CSV דו-כיווני, ועמוד שיתוף לקריאה בלבד
+  "Export everything" בהגדרות המתקדמות מציע עכשיו גם גיבוי מוגן
+  בסיסמה (AES-256-GCM, מקומי בלבד) לצד ה-JSON הרגיל. יבוא/יצוא ה-CSV
+  של התגיות עכשיו כולל גם סטטוס משחק, לא רק תגיות והערות. הלוח יכול
+  גם לייצא את המשחקים המסוננים כעמוד HTML עצמאי לקריאה בלבד, לשיתוף
+  מחוץ לתוסף.
 
 ▸ עברית + RTL מלא
   מילון עברית רחב, RTL אמיתי עם logical-properties CSS.

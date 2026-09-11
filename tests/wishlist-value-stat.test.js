@@ -4,12 +4,14 @@ await import("../extension/lib/defaults.js");
 await import("../extension/lib/storage.js");
 await import("../extension/lib/dom-safety.js");
 await import("../extension/lib/currency-format.js");
+await import("../extension/lib/genres.js");
 await import("../extension/lib/game-status.js");
 await import("../extension/tags/state.js");
 await import("../extension/tags/features/tag-management.js");
 await import("../extension/tags/features/games-list.js");
 await import("../extension/tags/features/stats.js");
 await import("../extension/tags/features/export-import.js");
+await import("../extension/tags/features/recommendations.js");
 await import("../extension/tags/tags.js");
 
 const state = window.GOGPlusTagsState;
@@ -106,6 +108,86 @@ describe("wishlist value stat card", () => {
     const text = card.querySelector(".stat-value").textContent;
     expect(text).toContain("100");
     expect(text).toContain("20.00");
+  });
+});
+
+describe("library CSV export", () => {
+  const { exportCsv } = window.GOGPlusTagsExportImport;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    if (!URL.createObjectURL) URL.createObjectURL = vi.fn(() => "blob:mock");
+    else vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+  });
+
+  it("includes a status column alongside slug/tags/note", async () => {
+    state.allTags = { hades: ["roguelike"] };
+    state.allNotes = {};
+    state.allStatus = { hades: "playing", stardew_valley: "backlog" };
+    exportCsv();
+    expect(URL.createObjectURL).toHaveBeenCalled();
+    const blob = URL.createObjectURL.mock.calls[0][0];
+    const text = await blob.text();
+    expect(text).toContain("slug,tags,note,status");
+    expect(text).toContain("hades");
+    expect(text).toContain("playing");
+    expect(text).toContain("stardew_valley");
+    expect(text).toContain("backlog");
+  });
+});
+
+describe("static HTML export", () => {
+  const { exportStaticHtml } = window.GOGPlusTagsExportImport;
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    if (!URL.createObjectURL) URL.createObjectURL = vi.fn(() => "blob:mock");
+    else vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    window.alert = vi.fn();
+  });
+
+  it("alerts instead of exporting when nothing matches the current filter", () => {
+    state.allTags = {};
+    state.allNotes = {};
+    state.allHistory = {};
+    state.allStatus = {};
+    exportStaticHtml();
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining("No games match"));
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+  });
+
+  it("builds a self-contained, read-only HTML page listing the matching games", async () => {
+    state.allTags = { hades: ["roguelike", "favorite"] };
+    state.allNotes = { hades: "great **game**" };
+    state.allStatus = { hades: "playing" };
+    exportStaticHtml();
+    expect(URL.createObjectURL).toHaveBeenCalled();
+    const blob = URL.createObjectURL.mock.calls[0][0];
+    expect(blob.type).toBe("text/html");
+    const html = await blob.text();
+    expect(html).toContain("<!doctype html>");
+    expect(html).toContain("Hades");
+    expect(html).toContain("roguelike");
+    expect(html).toContain("<strong>game</strong>"); // note markdown rendered
+    expect(html).toContain("playing");
+    expect(html).toContain("https://www.gog.com/en/game/hades");
+    // No <script> tags — a static, inert snapshot, not a live page.
+    expect(html).not.toContain("<script");
+  });
+
+  it("never includes tags/notes from games outside the current filter", async () => {
+    state.allTags = { hades: ["roguelike"], stardew_valley: ["cozy"] };
+    state.allNotes = {};
+    state.allStatus = {};
+    state.activeTag = "roguelike";
+    exportStaticHtml();
+    const blob = URL.createObjectURL.mock.calls[0][0];
+    const html = await blob.text();
+    expect(html).toContain("Hades");
+    expect(html).not.toContain("Stardew Valley");
+    state.activeTag = null;
   });
 });
 

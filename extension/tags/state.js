@@ -25,6 +25,7 @@
     allWishlistSlugs: [], // [slug, ...] — from the wishlist-report round-trip, see background.js
     allPurchases: {}, // { slug: "YYYY-MM-DD" }
     allStatus: {}, // { slug: "playing" | "backlog" | "finished" }
+    allGenres: {}, // { slug: genre bucket } — confirmed from a real visit, see lib/genres.js
     tagColors: {}, // { tagName: "#hex" }
     tagOrder: [], // explicit order of tags after drag-reorder; unordered = end
     density: "comfortable", // "comfortable" | "compact"
