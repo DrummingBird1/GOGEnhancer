@@ -68,6 +68,15 @@ function fixtureHtml() {
         <input type="checkbox" id="wishlistPriceAlerts">
         <input type="number" id="wishlistAlertPercent">
         <input type="number" id="historyMaxEntries">
+        <input type="number" id="monthlyBudgetAmount">
+        <select id="monthlyBudgetCurrency">
+          <option value="ILS">ILS</option>
+          <option value="EUR">EUR</option>
+          <option value="GBP">GBP</option>
+          <option value="RUB">RUB</option>
+          <option value="PLN">PLN</option>
+          <option value="USD">USD</option>
+        </select>
       </div>
     </main>
     <footer class="page-footer">
@@ -329,6 +338,55 @@ describe("export everything (JSON)", () => {
     const parsed = JSON.parse(text);
     expect(parsed.sync.vatPercent).toBe(18);
     expect(parsed.local.tags.hades).toEqual(["x"]);
+  });
+});
+
+describe("monthly spending budget", () => {
+  it("loads a configured budget into the amount and currency fields", async () => {
+    await new Promise((r) =>
+      chrome.storage.sync.set({ monthlyBudget: { amount: 75, currency: "EUR" } }, r)
+    );
+    await bootOptions();
+    expect(document.getElementById("monthlyBudgetAmount").value).toBe("75");
+    expect(document.getElementById("monthlyBudgetCurrency").value).toBe("EUR");
+  });
+
+  it("defaults to 0/ILS when no budget is set", async () => {
+    await bootOptions();
+    expect(document.getElementById("monthlyBudgetAmount").value).toBe("0");
+    expect(document.getElementById("monthlyBudgetCurrency").value).toBe("ILS");
+  });
+
+  it("saves a positive amount as {amount, currency}", async () => {
+    await bootOptions();
+    document.getElementById("monthlyBudgetCurrency").value = "GBP";
+    document.getElementById("monthlyBudgetAmount").value = "40";
+    document.getElementById("monthlyBudgetAmount").dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 0));
+    const s = await new Promise((r) => chrome.storage.sync.get(["monthlyBudget"], r));
+    expect(s.monthlyBudget).toEqual({ amount: 40, currency: "GBP" });
+  });
+
+  it("saves null (budget off) when the amount is 0", async () => {
+    await new Promise((r) =>
+      chrome.storage.sync.set({ monthlyBudget: { amount: 40, currency: "GBP" } }, r)
+    );
+    await bootOptions();
+    document.getElementById("monthlyBudgetAmount").value = "0";
+    document.getElementById("monthlyBudgetAmount").dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 0));
+    const s = await new Promise((r) => chrome.storage.sync.get(["monthlyBudget"], r));
+    expect(s.monthlyBudget).toBeNull();
+  });
+
+  it("clamps a negative or non-numeric amount to 0", async () => {
+    await bootOptions();
+    document.getElementById("monthlyBudgetAmount").value = "-5";
+    document.getElementById("monthlyBudgetAmount").dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.getElementById("monthlyBudgetAmount").value).toBe("0");
+    const s = await new Promise((r) => chrome.storage.sync.get(["monthlyBudget"], r));
+    expect(s.monthlyBudget).toBeNull();
   });
 });
 

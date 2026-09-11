@@ -96,6 +96,14 @@ code.
   as a single self-contained, script-free HTML page for sharing outside
   the extension.
 
+▸ Real charts, genre distribution, and a spending tracker
+  Expand any tracked game's card in the dashboard to see its full price
+  chart. A genre-distribution chart shows which genres your library
+  actually leans toward. Log a price alongside a purchase date on the
+  game page's Refund window section and the dashboard totals your
+  spending, with an optional monthly budget comparison. Year-in-review
+  now also surfaces your "most patient purchase" and a multi-year trend.
+
 ▸ Hebrew translations + RTL
   Optional Hebrew dictionary covering navigation, UI strings, and common
   patterns. Real RTL with logical-property CSS — not a flipped page.
@@ -188,6 +196,13 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   של התגיות עכשיו כולל גם סטטוס משחק, לא רק תגיות והערות. הלוח יכול
   גם לייצא את המשחקים המסוננים כעמוד HTML עצמאי לקריאה בלבד, לשיתוף
   מחוץ לתוסף.
+
+▸ גרפים אמיתיים, פילוג ז'אנרים, ומעקב הוצאות
+  הרחבת כרטיס כל משחק נעקב בלוח מציגה את הגרף המלא שלו. גרף פילוג
+  ז'אנרים מראה לאילו ז'אנרים הספרייה שלך נוטה בפועל. תיעוד מחיר לצד
+  תאריך רכישה בסקציית Refund window בעמוד המשחק גורם ללוח לסכם את
+  ההוצאות שלך, עם השוואה אופציונלית לתקציב חודשי. ה-Year-in-review
+  מציג עכשיו גם את "הרכישה הכי סבלנית" שלך ומגמה רב-שנתית.
 
 ▸ עברית + RTL מלא
   מילון עברית רחב, RTL אמיתי עם logical-properties CSS.

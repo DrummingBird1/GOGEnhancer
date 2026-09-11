@@ -138,6 +138,7 @@ declare global {
     GOGPlusGamePage?: GogPlusLooseApi;
     GOGPlusCommandPalette?: GogPlusLooseApi;
     GOGPlusPriceCompare?: GogPlusLooseApi;
+    GOGPlusPurchases?: GogPlusLooseApi;
 
     GOGPlusTagsState?: GogPlusLooseApi;
     GOGPlusTagsConstants?: GogPlusLooseApi;

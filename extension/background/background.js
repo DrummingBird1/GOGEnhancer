@@ -12,6 +12,7 @@
 import "../lib/defaults.js";
 import "../lib/storage.js";
 import "../lib/migrations.js";
+import "../lib/purchases.js";
 
 const DEFAULTS = self.GOG_PLUS_DEFAULTS;
 
@@ -220,7 +221,8 @@ async function checkRefundWindowExpirations() {
 
   const now = Date.now();
   let touched = false;
-  for (const [slug, dateStr] of Object.entries(purchaseLog)) {
+  for (const [slug, rawEntry] of Object.entries(purchaseLog)) {
+    const dateStr = self.GOGPlusPurchases.purchaseDateOf(rawEntry);
     if (!dateStr) continue;
     const purchasedAt = new Date(dateStr + "T00:00:00").getTime();
     if (!Number.isFinite(purchasedAt)) continue;

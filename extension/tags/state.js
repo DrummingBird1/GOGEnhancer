@@ -26,6 +26,7 @@
     allPurchases: {}, // { slug: "YYYY-MM-DD" }
     allStatus: {}, // { slug: "playing" | "backlog" | "finished" }
     allGenres: {}, // { slug: genre bucket } — confirmed from a real visit, see lib/genres.js
+    monthlyBudget: null, // { amount: number, currency: string } | null, set in Advanced Options
     tagColors: {}, // { tagName: "#hex" }
     tagOrder: [], // explicit order of tags after drag-reorder; unordered = end
     density: "comfortable", // "comfortable" | "compact"

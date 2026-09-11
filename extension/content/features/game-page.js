@@ -494,7 +494,14 @@
 
   async function renderRefundSection(slug) {
     const { purchaseLog = {} } = await window.GOGPlusStorage.get({ purchaseLog: {} });
-    const purchased = purchaseLog[slug] || "";
+    const entry = window.GOGPlusPurchases.normalizePurchaseEntry(purchaseLog[slug]);
+    const purchased = entry?.date || "";
+    const purchasedCur =
+      entry?.currency ||
+      (state.settings.targetCurrency && state.settings.targetCurrency !== "none"
+        ? state.settings.targetCurrency
+        : state.pageCurrency.code || "USD");
+    const sym = symbolFor(purchasedCur);
     const today = new Date().toISOString().slice(0, 10);
     const wrap = document.createElement("section");
     wrap.className = "gog-plus-gp-section";
@@ -508,11 +515,18 @@
         <input type="date" id="gog-plus-purchase-date" max="${today}" value="${escapeHtml(purchased)}" />
         <button type="button" class="gog-plus-refund-clear" id="gog-plus-refund-clear" title="Clear date">×</button>
       </div>
+      <div class="gog-plus-refund-row">
+        <label for="gog-plus-purchase-price">Price paid <span class="gog-plus-gp-muted">(optional)</span></label>
+        <span class="gog-plus-alert-sym">${sym}</span>
+        <input type="number" id="gog-plus-purchase-price" step="0.01" min="0"
+          value="${entry?.price !== undefined ? entry.price : ""}" placeholder="0.00" />
+      </div>
       <div id="gog-plus-refund-status" class="gog-plus-refund-status" role="status"></div>
     `;
 
     setTimeout(() => {
       const input = /** @type {HTMLInputElement} */ (wrap.querySelector("#gog-plus-purchase-date"));
+      const priceInput = /** @type {HTMLInputElement} */ (wrap.querySelector("#gog-plus-purchase-price"));
       const status = wrap.querySelector("#gog-plus-refund-status");
       const clearBtn = wrap.querySelector("#gog-plus-refund-clear");
 
@@ -547,18 +561,33 @@
 
       renderStatus(purchased);
 
-      const save = async (val) => {
+      // Reads both fields' CURRENT values and writes the whole entry —
+      // simpler than threading per-field values through, and correct either
+      // way since both inputs share one "change" handler.
+      const save = async () => {
+        const dateVal = input.value;
         const { purchaseLog: cur = {} } = await window.GOGPlusStorage.get({ purchaseLog: {} });
-        if (val) cur[slug] = val;
-        else delete cur[slug];
+        if (!dateVal) {
+          delete cur[slug];
+        } else {
+          const priceVal = parseFloat(priceInput.value);
+          const next = { date: dateVal };
+          if (Number.isFinite(priceVal) && priceVal >= 0) {
+            next.price = priceVal;
+            next.currency = purchasedCur;
+          }
+          cur[slug] = next;
+        }
         await window.GOGPlusStorage.set({ purchaseLog: cur });
-        renderStatus(val);
+        renderStatus(dateVal);
       };
 
-      input.addEventListener("change", () => save(input.value));
+      input.addEventListener("change", save);
+      priceInput.addEventListener("change", save);
       clearBtn.addEventListener("click", () => {
         input.value = "";
-        save("");
+        priceInput.value = "";
+        save();
       });
     }, 0);
 

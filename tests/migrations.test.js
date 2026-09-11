@@ -4,7 +4,7 @@ await import("../extension/lib/defaults.js");
 await import("../extension/lib/storage.js");
 await import("../extension/lib/migrations.js");
 
-const CURRENT_VERSION = window.GOG_PLUS_SETTINGS_VERSION; // 2
+const CURRENT_VERSION = window.GOG_PLUS_SETTINGS_VERSION; // 3
 
 beforeEach(() => globalThis.__resetChromeStores());
 
@@ -95,5 +95,78 @@ describe("GOGPlusMigrations.run — v1→v2 (tags/notes: sync → local)", () =>
     expect(local.tags).toEqual({ imported: ["old"] });
     expect(sync.settingsVersion).toBe(CURRENT_VERSION);
     expect(sync.targetCurrency).toBe("ILS"); // untouched, unrelated key
+  });
+});
+
+describe("GOGPlusMigrations.run — v2→v3 (purchaseLog: string → {date, price?, currency?})", () => {
+  it("wraps every bare-string purchaseLog entry into { date }", async () => {
+    await new Promise((r) =>
+      chrome.storage.sync.set({ settingsVersion: 2 }, r)
+    );
+    await new Promise((r) =>
+      chrome.storage.local.set(
+        { purchaseLog: { hades: "2026-01-10", celeste: "2026-02-20" } },
+        r
+      )
+    );
+
+    await window.GOGPlusMigrations.run();
+
+    const local = await new Promise((r) => chrome.storage.local.get(["purchaseLog"], r));
+    expect(local.purchaseLog.hades).toEqual({ date: "2026-01-10" });
+    expect(local.purchaseLog.celeste).toEqual({ date: "2026-02-20" });
+    const sync = await new Promise((r) => chrome.storage.sync.get(["settingsVersion"], r));
+    expect(sync.settingsVersion).toBe(CURRENT_VERSION);
+  });
+
+  it("leaves an already-upgraded entry (object shape) untouched", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ settingsVersion: 2 }, r));
+    const already = { date: "2026-01-10", price: 19.99, currency: "USD" };
+    await new Promise((r) => chrome.storage.local.set({ purchaseLog: { hades: already } }, r));
+
+    await window.GOGPlusMigrations.run();
+
+    const local = await new Promise((r) => chrome.storage.local.get(["purchaseLog"], r));
+    expect(local.purchaseLog.hades).toEqual(already);
+  });
+
+  it("handles a mix of legacy strings and already-upgraded objects in the same store", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ settingsVersion: 2 }, r));
+    await new Promise((r) =>
+      chrome.storage.local.set(
+        { purchaseLog: { hades: "2026-01-10", celeste: { date: "2026-02-20", price: 5 } } },
+        r
+      )
+    );
+
+    await window.GOGPlusMigrations.run();
+
+    const local = await new Promise((r) => chrome.storage.local.get(["purchaseLog"], r));
+    expect(local.purchaseLog.hades).toEqual({ date: "2026-01-10" });
+    expect(local.purchaseLog.celeste).toEqual({ date: "2026-02-20", price: 5 });
+  });
+
+  it("is a safe no-op when purchaseLog is empty or absent", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ settingsVersion: 2 }, r));
+    await window.GOGPlusMigrations.run();
+    const local = await new Promise((r) => chrome.storage.local.get(["purchaseLog"], r));
+    expect(local.purchaseLog).toBeUndefined();
+    const sync = await new Promise((r) => chrome.storage.sync.get(["settingsVersion"], r));
+    expect(sync.settingsVersion).toBe(CURRENT_VERSION);
+  });
+
+  it("also runs the v1→v2 step first when upgrading from v1 all the way to current", async () => {
+    await new Promise((r) =>
+      chrome.storage.sync.set({ settingsVersion: 1, tags: { foo: ["bar"] } }, r)
+    );
+    await new Promise((r) => chrome.storage.local.set({ purchaseLog: { hades: "2026-01-10" } }, r));
+
+    await window.GOGPlusMigrations.run();
+
+    const local = await new Promise((r) => chrome.storage.local.get(null, r));
+    expect(local.tags).toEqual({ foo: ["bar"] }); // v1->v2
+    expect(local.purchaseLog.hades).toEqual({ date: "2026-01-10" }); // v2->v3
+    const sync = await new Promise((r) => chrome.storage.sync.get(["settingsVersion"], r));
+    expect(sync.settingsVersion).toBe(CURRENT_VERSION);
   });
 });

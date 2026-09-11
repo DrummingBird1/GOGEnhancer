@@ -5,6 +5,7 @@ await import("../extension/lib/storage.js");
 await import("../extension/lib/dom-safety.js");
 await import("../extension/lib/currency-format.js");
 await import("../extension/lib/genres.js");
+await import("../extension/lib/purchases.js");
 await import("../extension/lib/game-status.js");
 await import("../extension/tags/state.js");
 await import("../extension/tags/features/tag-management.js");
@@ -24,6 +25,7 @@ function resetState() {
   state.allWishlistSlugs = [];
   state.allPurchases = {};
   state.allStatus = {};
+  state.monthlyBudget = null;
 }
 
 function findCard(panel, label) {
@@ -134,6 +136,82 @@ describe("library CSV export", () => {
     expect(text).toContain("playing");
     expect(text).toContain("stardew_valley");
     expect(text).toContain("backlog");
+  });
+});
+
+describe("spending stat card", () => {
+  it("shows a placeholder sub-line when no purchase has a price logged", async () => {
+    state.allPurchases = { hades: "2026-01-10" }; // legacy string shape, no price
+    await renderStats();
+    const card = findCard(document.getElementById("statsPanel"), "Spending");
+    expect(card.querySelector(".stat-value").textContent.trim()).toBe("—");
+    expect(card.querySelector(".stat-sub").textContent).toContain("log a price");
+  });
+
+  it("sums logged prices across purchases, grouped by currency", async () => {
+    state.allPurchases = {
+      hades: { date: "2026-01-10", price: 19.99, currency: "USD" },
+      celeste: { date: "2026-01-15", price: 14.99, currency: "USD" },
+      disco_elysium: { date: "2026-01-20", price: 100, currency: "ILS" },
+    };
+    await renderStats();
+    const card = findCard(document.getElementById("statsPanel"), "Spending");
+    const text = card.querySelector(".stat-value").textContent;
+    expect(text).toContain("34.98"); // 19.99 + 14.99 USD
+    expect(text).toContain("100"); // ILS kept separate
+    expect(card.querySelector(".stat-sub").textContent).toContain("3 purchases with price logged");
+  });
+
+  it("understands the legacy bare-string shape has no price (excluded from the sum)", async () => {
+    state.allPurchases = { hades: "2026-01-10" };
+    await renderStats();
+    const card = findCard(document.getElementById("statsPanel"), "Spending");
+    expect(card.querySelector(".stat-value").textContent.trim()).toBe("—");
+  });
+
+  it("compares this month's spend against a configured budget in the same currency", async () => {
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    state.allPurchases = {
+      hades: { date: `${thisMonth}-05`, price: 30, currency: "USD" },
+    };
+    state.monthlyBudget = { amount: 50, currency: "USD" };
+    await renderStats();
+    const card = findCard(document.getElementById("statsPanel"), "Spending");
+    expect(card.querySelector(".stat-sub").textContent).toContain("of");
+    expect(card.querySelector(".stat-sub").textContent).toContain("budget this month");
+    expect(card.classList.contains("stat-card--over-budget")).toBe(false);
+  });
+
+  it("flags the card as over-budget when this month's spend in the budget currency exceeds it", async () => {
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    state.allPurchases = {
+      hades: { date: `${thisMonth}-05`, price: 60, currency: "USD" },
+    };
+    state.monthlyBudget = { amount: 50, currency: "USD" };
+    await renderStats();
+    const card = findCard(document.getElementById("statsPanel"), "Spending");
+    expect(card.classList.contains("stat-card--over-budget")).toBe(true);
+  });
+
+  it("ignores purchases in a different currency than the budget for the budget check", async () => {
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    state.allPurchases = {
+      hades: { date: `${thisMonth}-05`, price: 999, currency: "ILS" },
+    };
+    state.monthlyBudget = { amount: 50, currency: "USD" };
+    await renderStats();
+    const card = findCard(document.getElementById("statsPanel"), "Spending");
+    expect(card.classList.contains("stat-card--over-budget")).toBe(false);
+  });
+
+  it("excludes purchases from prior months from the budget comparison", async () => {
+    state.allPurchases = {
+      hades: { date: "2020-01-05", price: 999, currency: "USD" }, // long past, not this month
+    };
+    state.monthlyBudget = { amount: 50, currency: "USD" };
+    await renderStats();
+    const card = findCard(document.getElementById("statsPanel"), "Spending");
+    expect(card.classList.contains("stat-card--over-budget")).toBe(false);
   });
 });
 

@@ -283,6 +283,16 @@ describe("daily jobs — refund window notifications", () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(chrome.notifications.create).not.toHaveBeenCalled();
   });
+
+  it("also fires for the v2.12.0+ object shape ({date, price, currency}), not just a bare string", async () => {
+    const dateStr = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    await setSync({ desktopNotifications: true });
+    await setLocal({ purchaseLog: { hades: { date: dateStr, price: 19.99, currency: "USD" } } });
+
+    fireAlarm("gog-plus-daily");
+    await vi.waitFor(() => expect(chrome.notifications.create).toHaveBeenCalled());
+    expect(chrome.notifications.create.mock.calls[0][0]).toMatch(/^refund:hades:/);
+  });
 });
 
 describe("daily jobs — per-game price alerts", () => {

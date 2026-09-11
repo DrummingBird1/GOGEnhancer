@@ -16,7 +16,7 @@
 (() => {
   "use strict";
 
-  const SETTINGS_VERSION = 2;
+  const SETTINGS_VERSION = 3;
 
   /**
    * @typedef {Object} Settings
@@ -57,6 +57,7 @@
    * @property {string} theme
    * @property {string} uiLanguage
    * @property {boolean} priceCompareTable show a cross-store price comparison table (CheapShark) on the game page
+   * @property {{amount: number, currency: string} | null} monthlyBudget optional monthly spending target, compared against purchaseLog entries in the same currency for the tag dashboard's spending stat card
    * @property {string[]} modsList
    * @property {number} modsUpdatedAt
    * @property {{ discountedCount: number, total: number }} wishlistCache
@@ -68,7 +69,7 @@
    * @property {Record<string, "playing" | "backlog" | "finished">} gameStatus slug -> fixed-vocabulary play status, distinct from free-form tags
    * @property {Record<string, string>} notes slug -> free text
    * @property {Record<string, Array<{d: string, p: number, c: string}>>} priceHistory slug -> snapshots
-   * @property {Record<string, string>} purchaseLog slug -> "YYYY-MM-DD"
+   * @property {Record<string, {date: string, price?: number, currency?: string}>} purchaseLog slug -> purchase entry (a bare "YYYY-MM-DD" string pre-v2.12.0, upgraded by the v2->v3 migration; readers should still go through lib/purchases.js's normalizePurchaseEntry rather than assume the object shape)
    * @property {Record<string, number>} notifLog dedupe keys -> epoch ms
    * @property {Record<string, {threshold: number, currency: string, createdAt: number}>} priceAlerts
    * @property {"comfortable" | "compact"} tagDashboardDensity
@@ -120,6 +121,7 @@
     uiLanguage: "en",
     wishlistAlertPercent: 20,
     priceCompareTable: true,
+    monthlyBudget: null,
 
     // local data (caches + user data)
     modsList: [],

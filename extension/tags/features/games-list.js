@@ -14,6 +14,7 @@
   const { escapeHtml } = window.GOGPlusDomSafety;
   const { safeHexColor } = window.GOGPlusTagsManagement;
   const { STATUSES } = window.GOGPlusGameStatus;
+  const { symbolFor } = window.GOGPlusCurrencyFormat;
 
 function parseSearchQuery(input) {
   const f = {
@@ -139,6 +140,8 @@ function renderGames() {
     const note = state.allNotes[slug] || "";
     const title = slugToTitle(slug);
     const currentStatus = state.allStatus[slug] || null;
+    const history = state.allHistory[slug];
+    const hasChart = history && history.length >= 2;
     const statusButtons = STATUSES.map((s) => {
       const active = s.id === currentStatus;
       return `<button class="game-card-status-btn${active ? " active" : ""}" type="button"
@@ -148,6 +151,7 @@ function renderGames() {
     card.innerHTML = `
       <div class="game-card-header">
         <h3 class="game-card-title">${escapeHtml(title)}</h3>
+        ${hasChart ? `<button class="game-card-chart-toggle" type="button" title="Show price-history chart" aria-label="Show price-history chart for ${escapeHtml(title)}" aria-expanded="false">📈</button>` : ""}
         <button class="game-card-export" type="button" data-slug="${escapeHtml(slug)}" title="Export this game's data as JSON" aria-label="Export ${escapeHtml(title)}">↓</button>
       </div>
       <div class="game-card-status" role="group" aria-label="Play status">${statusButtons}</div>
@@ -162,6 +166,7 @@ function renderGames() {
           .join("")}
       </div>
       ${note ? `<div class="game-card-note">${renderMarkdown(note)}</div>` : ""}
+      ${hasChart ? `<div class="game-card-chart" hidden></div>` : ""}
       <a class="game-card-link" href="https://www.gog.com/en/game/${encodeURIComponent(slug)}" target="_blank" rel="noopener">
         Open on GOG →
       </a>
@@ -185,8 +190,74 @@ function renderGames() {
         renderGames();
       });
     });
+    if (hasChart) {
+      const toggleBtn = card.querySelector(".game-card-chart-toggle");
+      const chartPanel = /** @type {HTMLElement} */ (card.querySelector(".game-card-chart"));
+      let built = false;
+      toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const willShow = !!chartPanel.hidden;
+        if (willShow && !built) {
+          chartPanel.innerHTML = buildDashboardChart(history);
+          built = true;
+        }
+        chartPanel.hidden = !willShow;
+        toggleBtn.setAttribute("aria-expanded", String(willShow));
+        toggleBtn.classList.toggle("is-active", willShow);
+      });
+    }
     list.appendChild(card);
   }
+}
+
+// A compact inline-SVG line chart for one game's price history, shown when
+// a card's chart toggle is expanded. Same hand-built-SVG approach as
+// content/features/game-page.js's renderSparkline and card-badges.js's
+// buildMiniSparkline — each context builds its own, sized for its own use;
+// see CLAUDE.md's content-script load-order notes on why there's no shared
+// abstraction across the content-script/dashboard boundary.
+/**
+ * @param {Array<{d: string, p: number, c: string}>} entries
+ * @returns {string}
+ */
+function buildDashboardChart(entries) {
+  const W = 400, H = 90, PAD_X = 8, PAD_Y = 10;
+  const prices = entries.map((e) => e.p);
+  const minP = Math.min(...prices);
+  const maxP = Math.max(...prices);
+  const rangeP = maxP - minP || 1;
+  const innerW = W - PAD_X * 2;
+  const innerH = H - PAD_Y * 2;
+  const points = entries.map((e, i) => {
+    const x = PAD_X + (i / (entries.length - 1)) * innerW;
+    const y = PAD_Y + innerH - ((e.p - minP) / rangeP) * innerH;
+    return [x, y];
+  });
+  const linePath = points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const areaPath = `${linePath} L${points[points.length - 1][0].toFixed(1)},${(H - PAD_Y).toFixed(1)} L${points[0][0].toFixed(1)},${(H - PAD_Y).toFixed(1)} Z`;
+  const minIdx = prices.indexOf(minP);
+  const lastIdx = points.length - 1;
+  const sym = symbolFor(entries[lastIdx].c || "USD");
+  const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+  return `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-label="Price history chart">
+      <defs>
+        <linearGradient id="dashChartFill-${entries.length}-${minIdx}" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent-magenta)" stop-opacity="0.45"/>
+          <stop offset="100%" stop-color="var(--accent-magenta)" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="${areaPath}" fill="url(#dashChartFill-${entries.length}-${minIdx})"/>
+      <path d="${linePath}" fill="none" stroke="var(--accent-cyan)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${points[minIdx][0].toFixed(1)}" cy="${points[minIdx][1].toFixed(1)}" r="3" fill="#7fffa6" stroke="var(--bg-base)" stroke-width="1.5"/>
+      <circle cx="${points[lastIdx][0].toFixed(1)}" cy="${points[lastIdx][1].toFixed(1)}" r="3" fill="var(--accent-magenta)" stroke="var(--bg-base)" stroke-width="1.5"/>
+    </svg>
+    <div class="game-card-chart-legend">
+      <span>Low: ${sym}${minP.toFixed(2)}</span>
+      <span>Avg: ${sym}${avg.toFixed(2)}</span>
+      <span>Latest: ${sym}${entries[lastIdx].p.toFixed(2)}</span>
+    </div>
+  `;
 }
 
 function slugToTitle(slug) {
@@ -242,5 +313,6 @@ function renderMarkdown(text) {
     renderGames,
     slugToTitle,
     renderMarkdown,
+    buildDashboardChart,
   };
 })();

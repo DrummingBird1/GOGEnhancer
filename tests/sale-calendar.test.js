@@ -1,10 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 
 await import("../extension/lib/defaults.js");
 await import("../extension/lib/storage.js");
 await import("../extension/lib/dom-safety.js");
 await import("../extension/lib/currency-format.js");
 await import("../extension/lib/genres.js");
+await import("../extension/lib/purchases.js");
 await import("../extension/lib/game-status.js");
 await import("../extension/tags/state.js");
 await import("../extension/tags/features/tag-management.js");
@@ -14,7 +15,7 @@ await import("../extension/tags/features/export-import.js");
 await import("../extension/tags/features/recommendations.js");
 await import("../extension/tags/tags.js");
 
-const { nextSaleWindow, renderSaleHeatmap } = window.GOGPlusTagsStats;
+const { nextSaleWindow, renderSaleHeatmap, renderGenreDistribution } = window.GOGPlusTagsStats;
 const state = window.GOGPlusTagsState;
 
 describe("nextSaleWindow", () => {
@@ -67,5 +68,61 @@ describe("renderSaleHeatmap", () => {
     renderSaleHeatmap();
     const panel = document.getElementById("saleHeatmap");
     expect(panel.textContent).toContain("Next likely window");
+  });
+});
+
+describe("renderGenreDistribution", () => {
+  function resetState() {
+    state.allTags = {};
+    state.allHistory = {};
+    state.allStatus = {};
+    state.allGenres = {};
+  }
+
+  beforeEach(() => {
+    resetState();
+    document.body.innerHTML = `<div id="genreDistribution"></div>`;
+  });
+
+  it("renders nothing when no known game resolves to a genre", () => {
+    state.allTags = { some_totally_unrecognized_game: ["favorite"] };
+    renderGenreDistribution();
+    expect(document.getElementById("genreDistribution").innerHTML).toBe("");
+  });
+
+  it("counts genres across tagged, tracked, and status-marked games, deduped by slug", () => {
+    state.allTags = { hades: ["favorite"] }; // indie
+    state.allHistory = { celeste: [{ d: "d1", p: 10, c: "USD" }] }; // indie
+    state.allStatus = { civilization: "backlog" }; // strategy
+    renderGenreDistribution();
+    const panel = document.getElementById("genreDistribution");
+    expect(panel.textContent).toContain("indie");
+    expect(panel.textContent).toContain("strategy");
+    expect(panel.textContent).toContain("3"); // total across both buckets
+  });
+
+  it("prefers the confirmed genre cache over the slug heuristic", () => {
+    state.allTags = { hades: ["favorite"] }; // slug heuristic says indie
+    state.allGenres = { hades: "horror" }; // confirmed cache overrides it
+    renderGenreDistribution();
+    const panel = document.getElementById("genreDistribution");
+    expect(panel.textContent).toContain("horror");
+    expect(panel.textContent).not.toContain("indie");
+  });
+
+  it("sorts bars by count, descending, and sizes the fill relative to the top bar", () => {
+    state.allTags = {
+      hades: ["a"], // indie
+      celeste: ["a"], // indie
+      civilization: ["a"], // strategy
+    };
+    renderGenreDistribution();
+    const rows = [...document.querySelectorAll(".genre-bar-row")];
+    expect(rows).toHaveLength(2);
+    expect(rows[0].querySelector(".genre-bar-label").textContent).toBe("indie");
+    expect(rows[0].querySelector(".genre-bar-count").textContent).toBe("2");
+    expect(rows[0].querySelector(".genre-bar-fill").getAttribute("style")).toContain("100.0%");
+    expect(rows[1].querySelector(".genre-bar-label").textContent).toBe("strategy");
+    expect(rows[1].querySelector(".genre-bar-fill").getAttribute("style")).toContain("50.0%");
   });
 });

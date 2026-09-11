@@ -296,6 +296,29 @@
         </div>
         <input type="number" id="historyMaxEntries" min="10" max="500" step="10" class="dev-num" />
       </div>
+
+      <div class="dev-row">
+        <div class="dev-toggle-text">
+          <span class="dev-toggle-title">Monthly spending budget</span>
+          <span class="dev-toggle-sub">
+            Optional. Powers the "Spending" stat card in the tag dashboard —
+            purchases with a price logged (on the game page's Refund window
+            section) in this same currency are compared against it. Leave
+            the amount at 0 to turn the budget check off.
+          </span>
+        </div>
+        <div class="dev-num-suffixed">
+          <input type="number" id="monthlyBudgetAmount" min="0" step="1" class="dev-num" />
+          <select id="monthlyBudgetCurrency" class="dev-select">
+            <option value="ILS">₪ ILS</option>
+            <option value="EUR">€ EUR</option>
+            <option value="GBP">£ GBP</option>
+            <option value="RUB">₽ RUB</option>
+            <option value="PLN">zł PLN</option>
+            <option value="USD">$ USD</option>
+          </select>
+        </div>
+      </div>
     </section>
 
     <!-- Support -->

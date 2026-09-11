@@ -505,6 +505,18 @@ button.danger:hover {
   color-scheme: dark;
 }
 .dev-num:focus { outline: none; border-color: var(--accent-cyan); }
+.dev-select {
+  background: rgba(244, 234, 255, 0.06);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text-primary);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color-scheme: dark;
+  cursor: pointer;
+}
+.dev-select:focus { outline: none; border-color: var(--accent-cyan); }
 .dev-num-suffixed { display: inline-flex; align-items: center; gap: 6px; flex: none; }
 .dev-num-suffix { color: var(--text-tertiary); font-family: var(--mono); font-size: 13px; }
 

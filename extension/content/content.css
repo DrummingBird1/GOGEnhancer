@@ -1058,6 +1058,22 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   outline: none;
   border-color: var(--gp-cyan);
 }
+.gog-plus-refund-row input[type="number"] {
+  flex: 1;
+  background: rgba(244, 234, 255, 0.06);
+  border: 1px solid var(--gp-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--gp-text);
+  font-family: var(--gp-mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color-scheme: dark;
+}
+.gog-plus-refund-row input[type="number"]:focus {
+  outline: none;
+  border-color: var(--gp-cyan);
+}
 .gog-plus-refund-clear {
   background: transparent;
   border: 1px solid var(--gp-border);

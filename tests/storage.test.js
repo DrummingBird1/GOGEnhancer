@@ -93,7 +93,7 @@ describe("GOGPlusStorage", () => {
 describe("GOG_PLUS_DEFAULTS", () => {
   it("exposes the canonical defaults and version", () => {
     expect(window.GOG_PLUS_DEFAULTS).toBeDefined();
-    expect(window.GOG_PLUS_SETTINGS_VERSION).toBe(2);
+    expect(window.GOG_PLUS_SETTINGS_VERSION).toBe(3);
   });
 
   it("defines enabled, targetCurrency, rates", () => {

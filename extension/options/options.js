@@ -172,6 +172,8 @@ async function load() {
   if ($("wishlistPriceAlerts")) $("wishlistPriceAlerts").checked = !!s.wishlistPriceAlerts;
   if ($("wishlistAlertPercent")) $("wishlistAlertPercent").value = s.wishlistAlertPercent ?? 20;
   if ($("historyMaxEntries")) $("historyMaxEntries").value = s.historyMaxEntries ?? 100;
+  if ($("monthlyBudgetAmount")) $("monthlyBudgetAmount").value = s.monthlyBudget?.amount ?? 0;
+  if ($("monthlyBudgetCurrency")) $("monthlyBudgetCurrency").value = s.monthlyBudget?.currency ?? "ILS";
 
   // Active theme swatch + live preview on the options page itself
   const activeTheme = s.theme || "neon";
@@ -339,6 +341,19 @@ function bind() {
     await window.GOGPlusStorage.set({ historyMaxEntries: v });
     flashSaved();
   });
+
+  const saveMonthlyBudget = async () => {
+    let amount = parseFloat($("monthlyBudgetAmount").value);
+    if (!Number.isFinite(amount) || amount < 0) amount = 0;
+    $("monthlyBudgetAmount").value = amount;
+    const currency = $("monthlyBudgetCurrency").value;
+    await window.GOGPlusStorage.set({
+      monthlyBudget: amount > 0 ? { amount, currency } : null,
+    });
+    flashSaved();
+  };
+  $("monthlyBudgetAmount").addEventListener("change", saveMonthlyBudget);
+  $("monthlyBudgetCurrency").addEventListener("change", saveMonthlyBudget);
 
   // Theme swatches — live preview on the options page, then persist.
   document.querySelectorAll(".theme-swatch").forEach((btn) => {

@@ -70,6 +70,42 @@
       }
     }
 
+    if (settingsVersion < 3) {
+      // purchaseLog values widen from a bare "YYYY-MM-DD" string to
+      // { date, price?, currency? } (v2.12.0, adds the optional price paid
+      // for the spending-tracker stat). Wrap every existing string entry;
+      // anything already an object (a re-run, or an import that already
+      // carried the new shape) is left untouched.
+      const { purchaseLog = {} } = await new Promise((r) =>
+        chrome.storage.local.get({ purchaseLog: {} }, r)
+      );
+      let changed = false;
+      const upgraded = {};
+      for (const [slug, value] of Object.entries(purchaseLog)) {
+        if (typeof value === "string") {
+          upgraded[slug] = { date: value };
+          changed = true;
+        } else {
+          upgraded[slug] = value;
+        }
+      }
+      if (changed) {
+        try {
+          await /** @type {Promise<void>} */ (
+            new Promise((resolve, reject) => {
+              chrome.storage.local.set({ purchaseLog: upgraded }, () => {
+                if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+                else resolve();
+              });
+            })
+          );
+        } catch (err) {
+          console.error("[GOG+] migration v2→v3 purchaseLog upgrade failed, aborting:", err);
+          return;
+        }
+      }
+    }
+
     await Storage.set({ settingsVersion: CURRENT_SETTINGS_VERSION });
   }
 

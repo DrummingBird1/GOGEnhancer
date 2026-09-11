@@ -56,6 +56,7 @@
     "uiLanguage",
     "wishlistAlertPercent",
     "priceCompareTable",
+    "monthlyBudget",
   ]);
 
   const LOCAL_KEYS = new Set([

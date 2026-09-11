@@ -63,6 +63,12 @@
       "Tags CSV export/import now round-trips play status (Playing/Backlog/Finished) too, not just tags and notes",
       "New \"Share ↓\" button in the tag dashboard exports the currently-filtered games as a single self-contained, read-only HTML page",
     ],
+    "2.12.0": [
+      "📈 Real price-history chart in the tag dashboard — expand any tracked game's card to see its full chart, not just the game page's sparkline",
+      "📊 Genre distribution chart — see which genres your tagged/tracked/status-marked games actually lean toward",
+      "💰 Spending tracker — log a price alongside a purchase date on the game page's Refund window section; the dashboard totals it and can compare this month's spend against an optional budget (Advanced Options)",
+      "Library year-in-review now shows your \"most patient purchase\" (longest gap between first watching a game and buying it) and a multi-year snapshot trend when you have more than one year of history",
+    ],
   };
 
   // Dotted-numeric version compare (2.9.0 < 2.10.0, unlike string sort).

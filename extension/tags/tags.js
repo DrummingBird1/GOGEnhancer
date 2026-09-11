@@ -11,7 +11,7 @@
 
 const state = window.GOGPlusTagsState;
 const { $ } = window.GOGPlusTagsConstants;
-const { renderSaleHeatmap, renderStats, renderYearReview } = window.GOGPlusTagsStats;
+const { renderSaleHeatmap, renderStats, renderYearReview, renderGenreDistribution } = window.GOGPlusTagsStats;
 const { renderTagList } = window.GOGPlusTagsManagement;
 const { renderGames } = window.GOGPlusTagsGamesList;
 const { exportPack, importPackFromFile, exportCsv, exportStaticHtml } = window.GOGPlusTagsExportImport;
@@ -30,6 +30,7 @@ async function init() {
     tagDashboardDensity: "comfortable",
     uiLanguage: "en",
     wishlistSlugs: [],
+    monthlyBudget: null,
   });
   window.GOGPlusI18n?.apply(data.uiLanguage || "en");
   state.allTags = data.tags || {};
@@ -41,11 +42,13 @@ async function init() {
   state.tagOrder = Array.isArray(data.tagOrder) ? data.tagOrder : [];
   state.allStatus = data.gameStatus || {};
   state.allGenres = data.gameGenres || {};
+  state.monthlyBudget = data.monthlyBudget || null;
   state.density = data.tagDashboardDensity === "compact" ? "compact" : "comfortable";
   applyDensityClass();
   await renderStats();
   renderYearReview();
   renderSaleHeatmap();
+  renderGenreDistribution();
   renderTagList();
   renderGames();
   renderTonightPicker();

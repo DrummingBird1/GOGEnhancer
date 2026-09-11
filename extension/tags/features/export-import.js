@@ -12,6 +12,7 @@
   const { matchingSlugs, renderGames } = window.GOGPlusTagsGamesList;
   const { renderSaleHeatmap, renderStats, renderYearReview } = window.GOGPlusTagsStats;
   const { renderTagList } = window.GOGPlusTagsManagement;
+  const { purchaseDateOf } = window.GOGPlusPurchases;
 
 function exportPack() {
   const slugs = matchingSlugs();
@@ -34,7 +35,7 @@ function exportPack() {
       slug,
       tags,
       note: state.allNotes[slug] || "",
-      purchaseDate: state.allPurchases[slug] || null,
+      purchaseDate: purchaseDateOf(state.allPurchases[slug]) || null,
     };
   });
   const usedColors = {};
@@ -106,7 +107,7 @@ async function importPackFromFile(e) {
         notesAdded++;
       }
       if (g.purchaseDate && !state.allPurchases[g.slug]) {
-        state.allPurchases[g.slug] = g.purchaseDate;
+        state.allPurchases[g.slug] = { date: g.purchaseDate };
         purchasesAdded++;
       }
     }
@@ -149,7 +150,7 @@ function exportSingleGame(slug) {
     exportedAt: new Date().toISOString(),
     tags: state.allTags[slug] || [],
     note: state.allNotes[slug] || "",
-    purchaseDate: state.allPurchases[slug] || null,
+    purchaseDate: purchaseDateOf(state.allPurchases[slug]) || null,
     priceHistory: state.allHistory[slug] || [],
     tagColors: Object.fromEntries(
       (state.allTags[slug] || []).filter((t) => state.tagColors[t]).map((t) => [t, state.tagColors[t]])

@@ -12,6 +12,8 @@
   const { escapeHtml } = window.GOGPlusDomSafety;
   const { formatPrice } = window.GOGPlusCurrencyFormat;
   const { $ } = window.GOGPlusTagsConstants;
+  const { purchaseDateOf, normalizePurchaseEntry } = window.GOGPlusPurchases;
+  const { matchGenrePattern } = window.GOGPlusGenres;
 
 // Approximate historical GOG sale windows (month/day of year, GOG's actual
 // dates shift by up to a couple weeks year to year — this is a rough
@@ -118,6 +120,63 @@ function renderSaleHeatmap() {
   `;
 }
 
+// Horizontal bar chart of genre buckets across every game the user has any
+// data for (tagged, tracked, or status-marked) — same resolution order as
+// tags/features/recommendations.js's genreFor: the confirmed per-slug cache
+// from a real visit first, falling back to the slug-pattern heuristic.
+// Duplicated in miniature here rather than importing recommendations.js,
+// since that module loads after this one in tags.html (see its own
+// script-order comment) — consistent with the rest of this codebase's
+// "each context builds its own small chart/lookup" convention.
+function renderGenreDistribution() {
+  const panel = document.getElementById("genreDistribution");
+  if (!panel) return;
+
+  const slugs = new Set([
+    ...Object.keys(state.allTags),
+    ...Object.keys(state.allHistory),
+    ...Object.keys(state.allStatus),
+  ]);
+  const counts = {};
+  for (const slug of slugs) {
+    const genre = state.allGenres[slug] || matchGenrePattern(slug);
+    if (!genre) continue;
+    counts[genre] = (counts[genre] || 0) + 1;
+  }
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) {
+    panel.innerHTML = "";
+    return;
+  }
+  const max = entries[0][1];
+  const totalWithGenre = entries.reduce((a, [, c]) => a + c, 0);
+
+  const bars = entries
+    .map(([genre, count]) => {
+      const pct = (count / max) * 100;
+      return `
+      <div class="genre-bar-row">
+        <span class="genre-bar-label">${escapeHtml(genre)}</span>
+        <div class="genre-bar-track">
+          <div class="genre-bar-fill" style="--pct:${pct.toFixed(1)}%"></div>
+        </div>
+        <span class="genre-bar-count">${count}</span>
+      </div>`;
+    })
+    .join("");
+
+  panel.innerHTML = `
+    <header class="heatmap-header">
+      <span class="heatmap-eyebrow">Your taste</span>
+      <h2>Genre distribution</h2>
+      <p class="heatmap-sub">
+        Across <strong>${totalWithGenre}</strong> tracked game${totalWithGenre === 1 ? "" : "s"} with a recognized genre.
+      </p>
+    </header>
+    <div class="genre-bars">${bars}</div>
+  `;
+}
+
 function availableReviewYears() {
   const years = new Set();
   for (const arr of Object.values(state.allHistory)) {
@@ -126,11 +185,47 @@ function availableReviewYears() {
       if (/^\d{4}$/.test(y)) years.add(y);
     }
   }
-  for (const d of Object.values(state.allPurchases)) {
-    const y = (d || "").slice(0, 4);
+  for (const raw of Object.values(state.allPurchases)) {
+    const y = purchaseDateOf(raw).slice(0, 4);
     if (/^\d{4}$/.test(y)) years.add(y);
   }
   return [...years].sort().reverse(); // newest first
+}
+
+// A compact per-year snapshot-count strip shown below the main year-review
+// grid, only when there's more than one year of data to compare — a single
+// year has nothing to trend against.
+/**
+ * @param {string[]} years descending, from availableReviewYears()
+ * @returns {string}
+ */
+function buildMultiYearTrend(years) {
+  const chronological = [...years].reverse();
+  const perYear = chronological.map((y) => {
+    let count = 0;
+    for (const arr of Object.values(state.allHistory)) {
+      count += (arr || []).filter((e) => (e.d || "").startsWith(y)).length;
+    }
+    return { year: y, count };
+  });
+  const MAX_BAR_PX = 50;
+  const max = Math.max(...perYear.map((p) => p.count), 1);
+  const bars = perYear
+    .map((p) => {
+      const px = Math.max(2, Math.round((p.count / max) * MAX_BAR_PX));
+      return `
+      <div class="yr-trend-bar" title="${p.year}: ${p.count} snapshot${p.count === 1 ? "" : "s"}">
+        <div class="yr-trend-fill" style="height:${px}px"></div>
+        <span class="yr-trend-year">${p.year}</span>
+      </div>`;
+    })
+    .join("");
+  return `
+    <div class="yr-trend">
+      <span class="yr-trend-label">Snapshots per year</span>
+      <div class="yr-trend-bars">${bars}</div>
+    </div>
+  `;
 }
 
 function renderYearReview() {
@@ -184,9 +279,29 @@ function renderYearReview() {
     }
   }
 
-  const purchasesThisYear = Object.values(state.allPurchases).filter((d) =>
-    (d || "").startsWith(yearPrefix)
+  const purchasesThisYear = Object.values(state.allPurchases).filter((raw) =>
+    purchaseDateOf(raw).startsWith(yearPrefix)
   ).length;
+
+  // "Most patient purchase" — the biggest gap, in days, between the user's
+  // FIRST tracked snapshot of a game and the day they actually bought it
+  // (only for purchases logged this year, with tracked history to compare
+  // against). A proxy for "waited the longest before buying," built
+  // entirely from data already tracked — no new storage.
+  let mostPatient = null; // { slug, days }
+  for (const [slug, raw] of Object.entries(state.allPurchases)) {
+    const entry = normalizePurchaseEntry(raw);
+    if (!entry?.date || !entry.date.startsWith(yearPrefix)) continue;
+    const hist = state.allHistory[slug];
+    if (!hist || !hist.length) continue;
+    const firstSnapshot = hist.reduce((a, e) => (e.d < a ? e.d : a), hist[0].d);
+    const days = Math.round(
+      (new Date(entry.date).getTime() - new Date(firstSnapshot).getTime()) / (24 * 60 * 60 * 1000)
+    );
+    if (days > 0 && (!mostPatient || days > mostPatient.days)) {
+      mostPatient = { slug, days };
+    }
+  }
 
   if (
     !snapshotsThisYear &&
@@ -211,6 +326,10 @@ function renderYearReview() {
     ? `<strong>${escapeHtml(window.GOGPlusTagsGamesList.slugToTitle(mostTracked.slug))}</strong> <span class="yr-detail">${mostTracked.count} snapshots</span>`
     : `<span class="yr-empty">—</span>`;
 
+  const patientLine = mostPatient
+    ? `<strong>${escapeHtml(window.GOGPlusTagsGamesList.slugToTitle(mostPatient.slug))}</strong> <span class="yr-detail">${mostPatient.days} day${mostPatient.days === 1 ? "" : "s"} of watching first</span>`
+    : `<span class="yr-empty">No priced purchase with tracked history yet</span>`;
+
   const years = availableReviewYears();
   const yearOptions = years
     .map(
@@ -218,6 +337,7 @@ function renderYearReview() {
         `<option value="${y}"${parseInt(y, 10) === year ? " selected" : ""}>${y}</option>`
     )
     .join("");
+  const trendHtml = years.length > 1 ? buildMultiYearTrend(years) : "";
 
   panel.innerHTML = `
     <header class="yr-header">
@@ -251,7 +371,12 @@ function renderYearReview() {
         <div class="yr-value">${purchasesThisYear}</div>
         <div class="yr-sub">refund-window entries this year</div>
       </div>
+      <div class="yr-card">
+        <div class="yr-label">Most patient purchase</div>
+        <div class="yr-value yr-value--small">${patientLine}</div>
+      </div>
     </div>
+    ${trendHtml}
   `;
 
   const yrSel = /** @type {HTMLSelectElement} */ (document.getElementById("yrYearSelect"));
@@ -343,11 +468,48 @@ async function renderStats() {
 
   // Active refund timers
   const today = new Date().toISOString().slice(0, 10);
-  const activeRefunds = Object.entries(state.allPurchases).filter(([, d]) => {
+  const activeRefunds = Object.entries(state.allPurchases).filter(([, raw]) => {
+    const d = purchaseDateOf(raw);
     if (!d) return false;
     const ms = new Date(today).getTime() - new Date(d).getTime();
     return ms >= 0 && ms <= 30 * 24 * 60 * 60 * 1000;
   }).length;
+
+  // Spending tracker: sums logged purchase prices, grouped by currency (same
+  // multi-currency-totals pattern as savingsByCur above). "This month" is
+  // scoped to the current calendar month for the budget comparison — budget
+  // is a single number in a single currency, and this dashboard has no live
+  // FX rates to convert other currencies into it, so purchases in a
+  // different currency count toward the "Spending" headline total but are
+  // left out of the budget check specifically.
+  const spendByCur = {};
+  const spendThisMonthByCur = {};
+  const thisMonthPrefix = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+  let purchasesWithPrice = 0;
+  for (const raw of Object.values(state.allPurchases)) {
+    const entry = normalizePurchaseEntry(raw);
+    if (!entry || typeof entry.price !== "number") continue;
+    const cur = entry.currency || "USD";
+    spendByCur[cur] = (spendByCur[cur] || 0) + entry.price;
+    purchasesWithPrice++;
+    if (entry.date && entry.date.startsWith(thisMonthPrefix)) {
+      spendThisMonthByCur[cur] = (spendThisMonthByCur[cur] || 0) + entry.price;
+    }
+  }
+  const spendParts = Object.entries(spendByCur)
+    .map(([cur, v]) => formatPrice(v, cur))
+    .join(" + ");
+  const budget = state.monthlyBudget;
+  const thisMonthInBudgetCur = budget ? spendThisMonthByCur[budget.currency] || 0 : 0;
+  const overBudget = !!budget && budget.amount > 0 && thisMonthInBudgetCur > budget.amount;
+  let spendingSub;
+  if (!purchasesWithPrice) {
+    spendingSub = "log a price on a purchase date to track";
+  } else if (budget && budget.amount > 0) {
+    spendingSub = `${formatPrice(thisMonthInBudgetCur, budget.currency)} of ${formatPrice(budget.amount, budget.currency)} budget this month`;
+  } else {
+    spendingSub = `${purchasesWithPrice} purchase${purchasesWithPrice === 1 ? "" : "s"} with price logged`;
+  }
 
   // Real storage usage via the native API — covers every key actually in
   // storage.local (not a hand-picked subset that drifts as keys get added;
@@ -376,6 +538,7 @@ async function renderStats() {
     { label: "Tracking since", value: oldest || "—", sub: oldest ? daysSince(oldest) : "no snapshots yet" },
     { label: "Watch advantage", value: savingsParts || "—", sub: "current vs. peak across tracked games" },
     { label: "Wishlist value", value: wishlistValueParts || "—", sub: wishlistSub, id: "wishlistValueCard" },
+    { label: "Spending", value: spendParts || "—", sub: spendingSub, id: "spendingCard" },
     { label: "Refunds open", value: activeRefunds, sub: activeRefunds ? "within 30-day window" : "no purchases logged" },
     { label: "Storage used", value: `${localKb} KB`, sub: storageSub },
   ];
@@ -389,6 +552,10 @@ async function renderStats() {
       </div>
     `)
     .join("");
+
+  if (overBudget) {
+    document.getElementById("spendingCard")?.classList.add("stat-card--over-budget");
+  }
 
   if (wishlistPricedCount) {
     const wlCard = document.getElementById("wishlistValueCard");
@@ -425,6 +592,7 @@ function daysSince(dateStr) {
   window.GOGPlusTagsStats = {
     renderSaleHeatmap,
     nextSaleWindow,
+    renderGenreDistribution,
     availableReviewYears,
     renderYearReview,
     renderStats,
