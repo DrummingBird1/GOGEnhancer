@@ -48,6 +48,8 @@ function fixtureHtml() {
         <button id="forceMods">force</button>
         <span id="status-wl"></span>
         <button id="forceWl">force</button>
+        <span id="status-digest"></span>
+        <button id="forceDigest">force</button>
       </div>
       <div class="card">
         <div id="dataStats"></div>

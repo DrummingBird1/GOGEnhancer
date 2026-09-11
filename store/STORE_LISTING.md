@@ -104,6 +104,13 @@ code.
   spending, with an optional monthly budget comparison. Year-in-review
   now also surfaces your "most patient purchase" and a multi-year trend.
 
+▸ Weekly digest + auto-tag suggestions
+  A new "This week" panel in the popup summarizes refund windows closing
+  soon, price-alert hits, and wishlist drops — computed regardless of the
+  desktop-notifications toggle, so it's useful even with notifications
+  off. Untagged games in the tag dashboard also show a one-click suggested
+  tag based on GOG's own genre metadata, never applied without a click.
+
 ▸ Hebrew translations + RTL
   Optional Hebrew dictionary covering navigation, UI strings, and common
   patterns. Real RTL with logical-property CSS — not a flipped page.
@@ -203,6 +210,13 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   תאריך רכישה בסקציית Refund window בעמוד המשחק גורם ללוח לסכם את
   ההוצאות שלך, עם השוואה אופציונלית לתקציב חודשי. ה-Year-in-review
   מציג עכשיו גם את "הרכישה הכי סבלנית" שלך ומגמה רב-שנתית.
+
+▸ דוח שבועי + הצעות תיוג אוטומטיות
+  פאנל "השבוע" חדש בפופאפ מסכם חלונות החזר שנסגרים בקרוב, התראות מחיר
+  שהופעלו, וירידות ברשימת המשאלות — מחושב ללא קשר ל-toggle של desktop
+  notifications, כך שהוא שימושי גם כשההתראות כבויות. משחקים ללא תגית
+  בלוח התגיות מציגים גם הצעת תגית בלחיצה אחת מבוססת מטא-דאטה של ז'אנר
+  מ-GOG עצמו, שלעולם לא מוחלת בלי לחיצה.
 
 ▸ עברית + RTL מלא
   מילון עברית רחב, RTL אמיתי עם logical-properties CSS.

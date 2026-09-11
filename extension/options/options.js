@@ -186,6 +186,7 @@ async function load() {
   $("status-fx").textContent = formatTimeSince(s.ratesUpdatedAt);
   $("status-mods").textContent = formatTimeSince(s.modsUpdatedAt);
   $("status-wl").textContent = formatTimeSince(s.wishlistCacheUpdatedAt);
+  if ($("status-digest")) $("status-digest").textContent = formatTimeSince(s.weeklyDigest?.generatedAt);
 
   // Data stats
   const tagsCount = Object.values(s.tags).reduce((a, b) => a + (b?.length || 0), 0);
@@ -379,6 +380,9 @@ function bind() {
   });
   $("forceWl").addEventListener("click", () => {
     chrome.runtime.sendMessage({ type: "force-wishlist-refresh" }, () => setTimeout(load, 400));
+  });
+  $("forceDigest").addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "force-digest-refresh" }, () => setTimeout(load, 400));
   });
 
   // Export everything

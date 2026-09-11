@@ -361,6 +361,137 @@ async function checkWishlistWideAlerts() {
   if (touched) await self.GOGPlusStorage.set({ notifLog });
 }
 
+/* ---------------- weekly digest ---------------- */
+
+const DIGEST_ALARM = "gog-plus-digest";
+const DIGEST_INTERVAL_MIN = 7 * 24 * 60;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Computes a local-only weekly summary — refund windows closing soon,
+// price-alert hits, wishlist-wide drops, and total price-drop snapshots
+// observed in the last 7 days — and stores it for the popup's "This week"
+// panel. Deliberately independent of the desktopNotifications toggle
+// (unlike checkRefundWindowExpirations/checkPriceAlerts/
+// checkWishlistWideAlerts above): its whole point is surfacing this to
+// users who leave notifications off (the default), not just duplicating
+// what opted-in users already get. It still fires one consolidated
+// notification when the toggle IS on and there's something non-empty to
+// report, using a fixed id so it replaces last week's rather than piling up.
+async function buildWeeklyDigest() {
+  const {
+    purchaseLog = {},
+    priceAlerts = {},
+    priceHistory = {},
+    wishlistPriceAlerts,
+    wishlistAlertPercent,
+    wishlistSlugs = [],
+    rates = {},
+    desktopNotifications,
+  } = await self.GOGPlusStorage.get({
+    purchaseLog: {},
+    priceAlerts: {},
+    priceHistory: {},
+    wishlistPriceAlerts: false,
+    wishlistAlertPercent: 20,
+    wishlistSlugs: [],
+    rates: {},
+    desktopNotifications: false,
+  });
+
+  const now = Date.now();
+  const weekAgo = now - WEEK_MS;
+
+  // Refund windows closing within the next 7 days.
+  const refundClosing = [];
+  for (const [slug, raw] of Object.entries(purchaseLog)) {
+    const dateStr = self.GOGPlusPurchases.purchaseDateOf(raw);
+    if (!dateStr) continue;
+    const purchasedAt = new Date(dateStr + "T00:00:00").getTime();
+    if (!Number.isFinite(purchasedAt)) continue;
+    const daysLeft = Math.ceil((purchasedAt + REFUND_WINDOW_MS - now) / (24 * 60 * 60 * 1000));
+    if (daysLeft > 0 && daysLeft <= 7) refundClosing.push({ slug, daysLeft });
+  }
+  refundClosing.sort((a, b) => a.daysLeft - b.daysLeft);
+
+  // Price-alert hits currently past their threshold — same matching logic
+  // as checkPriceAlerts, but a read-only snapshot: doesn't touch notifLog.
+  const priceAlertHits = [];
+  for (const [slug, alert] of Object.entries(priceAlerts)) {
+    if (!alert || !Number.isFinite(alert.threshold)) continue;
+    const hist = priceHistory[slug];
+    if (!hist?.length) continue;
+    const latest = hist[hist.length - 1];
+    let priceInAlertCur = latest.p;
+    if (latest.c !== alert.currency) {
+      const srcRate = latest.c === "USD" ? 1 : rates[latest.c];
+      const tgtRate = alert.currency === "USD" ? 1 : rates[alert.currency];
+      if (!srcRate || !tgtRate) continue;
+      priceInAlertCur = (latest.p / srcRate) * tgtRate;
+    }
+    if (priceInAlertCur > alert.threshold) continue;
+    priceAlertHits.push({ slug, price: priceInAlertCur, currency: alert.currency, threshold: alert.threshold });
+  }
+
+  // Wishlist-wide drops currently past the configured threshold — same
+  // matching logic as checkWishlistWideAlerts, read-only.
+  const wishlistDrops = [];
+  if (wishlistPriceAlerts && wishlistSlugs.length) {
+    const pct = Math.min(90, Math.max(1, Number(wishlistAlertPercent) || 20));
+    for (const slug of wishlistSlugs) {
+      const hist = priceHistory[slug];
+      if (!hist || hist.length < 2) continue;
+      let peak = hist[0];
+      for (const e of hist) if (e.p > peak.p) peak = e;
+      const latest = hist[hist.length - 1];
+      if (peak.p <= 0 || latest.c !== peak.c) continue;
+      const dropPct = ((peak.p - latest.p) / peak.p) * 100;
+      if (dropPct < pct) continue;
+      wishlistDrops.push({ slug, price: latest.p, currency: latest.c, dropPct: Math.round(dropPct) });
+    }
+    wishlistDrops.sort((a, b) => b.dropPct - a.dropPct);
+  }
+
+  // Total price-drop snapshots across every tracked game in the last 7 days.
+  let dropsThisWeek = 0;
+  for (const hist of Object.values(priceHistory)) {
+    if (!hist || hist.length < 2) continue;
+    for (let i = 1; i < hist.length; i++) {
+      const ts = new Date(`${hist[i].d}T00:00:00`).getTime();
+      if (!Number.isFinite(ts) || ts < weekAgo) continue;
+      if (hist[i].p < hist[i - 1].p) dropsThisWeek++;
+    }
+  }
+
+  const digest = {
+    generatedAt: now,
+    dropsThisWeek,
+    refundClosing: refundClosing.slice(0, 10),
+    priceAlertHits: priceAlertHits.slice(0, 10),
+    wishlistDrops: wishlistDrops.slice(0, 10),
+  };
+  await self.GOGPlusStorage.set({ weeklyDigest: digest });
+
+  const totalHighlights = refundClosing.length + priceAlertHits.length + wishlistDrops.length;
+  if (desktopNotifications && totalHighlights > 0) {
+    const parts = [];
+    if (refundClosing.length) {
+      parts.push(`${refundClosing.length} refund window${refundClosing.length === 1 ? "" : "s"} closing`);
+    }
+    if (priceAlertHits.length) {
+      parts.push(`${priceAlertHits.length} price alert${priceAlertHits.length === 1 ? "" : "s"} hit`);
+    }
+    if (wishlistDrops.length) {
+      parts.push(`${wishlistDrops.length} wishlist drop${wishlistDrops.length === 1 ? "" : "s"}`);
+    }
+    await fireNotification(
+      "weekly-digest",
+      "Your weekly GOG Enhancer digest",
+      parts.join(" · "),
+      "Click the toolbar icon for details"
+    );
+  }
+}
+
 async function maybeNotifyWishlistJump(prevCount, newCount) {
   if (newCount <= prevCount) return;
   const { desktopNotifications, notifLog = {} } = await self.GOGPlusStorage.get({
@@ -406,6 +537,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     periodInMinutes: DAILY_INTERVAL_MIN,
     when: Date.now() + 90000,
   });
+  chrome.alarms.create(DIGEST_ALARM, {
+    periodInMinutes: DIGEST_INTERVAL_MIN,
+    when: Date.now() + 120000,
+  });
 
   if (details.reason === "install") {
     chrome.tabs.create({
@@ -425,6 +560,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === DAILY_ALARM) {
     runDailyJobs();
   }
+  if (alarm.name === DIGEST_ALARM) buildWeeklyDigest();
 });
 
 async function runDailyJobs() {
@@ -466,6 +602,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg?.type === "force-mods-refresh") {
     refreshModsList().then(() => sendResponse({ ok: true }));
+    return true;
+  }
+  if (msg?.type === "force-digest-refresh") {
+    buildWeeklyDigest().then(() => sendResponse({ ok: true }));
     return true;
   }
   if (msg?.type === "wishlist-report") {

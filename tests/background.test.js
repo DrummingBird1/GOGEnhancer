@@ -230,14 +230,15 @@ describe("commands", () => {
 });
 
 describe("onInstalled", () => {
-  it("creates all four alarms and opens onboarding on a fresh install", async () => {
+  it("creates all five alarms and opens onboarding on a fresh install", async () => {
     await Promise.all(listeners.onInstalled.map((fn) => fn({ reason: "install" })));
-    expect(chrome.alarms.create).toHaveBeenCalledTimes(4);
+    expect(chrome.alarms.create).toHaveBeenCalledTimes(5);
     expect(chrome.alarms.create.mock.calls.map((c) => c[0])).toEqual([
       "gog-plus-fx",
       "gog-plus-mods",
       "gog-plus-wishlist",
       "gog-plus-daily",
+      "gog-plus-digest",
     ]);
     expect(chrome.tabs.create).toHaveBeenCalledWith({
       url: "chrome-extension://test-id/onboarding/onboarding.html",
@@ -415,6 +416,135 @@ describe("daily jobs — wishlist-wide price alerts", () => {
     fireAlarm("gog-plus-daily");
     await new Promise((r) => setTimeout(r, 0));
     expect(chrome.notifications.create).not.toHaveBeenCalled();
+  });
+});
+
+// Builds a local "YYYY-MM-DD" string for N days before today, using local
+// calendar fields throughout — matching exactly how the production code
+// re-parses purchaseLog dates (`new Date(dateStr + "T00:00:00")`, always
+// local time). Using `.toISOString()` here instead (UTC) would drift by a
+// calendar day whenever the test runs in a non-UTC timezone close to
+// midnight, which is exactly what made this flaky before.
+function daysAgoLocalDateStr(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+describe("weekly digest", () => {
+  it("computes refund windows closing within 7 days regardless of the desktopNotifications toggle", async () => {
+    await setSync({ desktopNotifications: false }); // off — digest still computes
+    await setLocal({ purchaseLog: { hades: { date: daysAgoLocalDateStr(27) } } }); // 3 days left
+
+    const resp = await fireMessage({ type: "force-digest-refresh" });
+    expect(resp).toEqual({ ok: true });
+
+    const { weeklyDigest } = await getLocal(["weeklyDigest"]);
+    expect(weeklyDigest.refundClosing).toHaveLength(1);
+    expect(weeklyDigest.refundClosing[0]).toMatchObject({ slug: "hades", daysLeft: 3 });
+  });
+
+  it("excludes refund windows that already closed or are more than 7 days away", async () => {
+    await setLocal({
+      purchaseLog: {
+        already_expired: { date: daysAgoLocalDateStr(40) },
+        way_off: { date: daysAgoLocalDateStr(5) }, // 25 days left
+      },
+    });
+    await fireMessage({ type: "force-digest-refresh" });
+    const { weeklyDigest } = await getLocal(["weeklyDigest"]);
+    expect(weeklyDigest.refundClosing).toEqual([]);
+  });
+
+  it("includes price-alert hits without touching notifLog (read-only, unlike checkPriceAlerts)", async () => {
+    await setLocal({
+      priceAlerts: { hades: { threshold: 15, currency: "USD", createdAt: 0 } },
+      priceHistory: { hades: [{ d: "2026-01-01", p: 10, c: "USD" }] },
+      notifLog: {},
+    });
+    await fireMessage({ type: "force-digest-refresh" });
+    const { weeklyDigest, notifLog } = await getLocal(["weeklyDigest", "notifLog"]);
+    expect(weeklyDigest.priceAlertHits).toHaveLength(1);
+    expect(weeklyDigest.priceAlertHits[0]).toMatchObject({ slug: "hades", price: 10, threshold: 15 });
+    expect(notifLog).toEqual({}); // digest never dedupes/arms the real alert
+  });
+
+  it("includes wishlist-wide drops only when wishlistPriceAlerts is on", async () => {
+    await setLocal({
+      wishlistSlugs: ["hades"],
+      priceHistory: {
+        hades: [
+          { d: "2026-01-01", p: 100, c: "USD" },
+          { d: "2026-02-01", p: 50, c: "USD" },
+        ],
+      },
+    });
+    await setSync({ wishlistPriceAlerts: false });
+    await fireMessage({ type: "force-digest-refresh" });
+    expect((await getLocal(["weeklyDigest"])).weeklyDigest.wishlistDrops).toEqual([]);
+
+    await setSync({ wishlistPriceAlerts: true, wishlistAlertPercent: 20 });
+    await fireMessage({ type: "force-digest-refresh" });
+    const { weeklyDigest } = await getLocal(["weeklyDigest"]);
+    expect(weeklyDigest.wishlistDrops).toHaveLength(1);
+    expect(weeklyDigest.wishlistDrops[0]).toMatchObject({ slug: "hades", dropPct: 50 });
+  });
+
+  it("counts price-drop snapshots from the last 7 days only", async () => {
+    const recent = daysAgoLocalDateStr(2);
+    const old = daysAgoLocalDateStr(30);
+    await setLocal({
+      priceHistory: {
+        hades: [
+          { d: old, p: 30, c: "USD" },
+          { d: recent, p: 20, c: "USD" }, // a drop within the last 7 days
+        ],
+        celeste: [
+          { d: "2020-01-01", p: 30, c: "USD" },
+          { d: "2020-01-05", p: 20, c: "USD" }, // a drop, but ancient — excluded
+        ],
+      },
+    });
+    await fireMessage({ type: "force-digest-refresh" });
+    const { weeklyDigest } = await getLocal(["weeklyDigest"]);
+    expect(weeklyDigest.dropsThisWeek).toBe(1);
+  });
+
+  it("fires one consolidated notification when desktopNotifications is on and there's something to report", async () => {
+    await setSync({ desktopNotifications: true });
+    await setLocal({ purchaseLog: { hades: { date: daysAgoLocalDateStr(29) } } });
+    await fireMessage({ type: "force-digest-refresh" });
+    expect(chrome.notifications.create).toHaveBeenCalledWith(
+      "weekly-digest",
+      expect.objectContaining({ title: "Your weekly GOG Enhancer digest" })
+    );
+  });
+
+  it("stays silent when desktopNotifications is on but there's nothing to report", async () => {
+    await setSync({ desktopNotifications: true });
+    await fireMessage({ type: "force-digest-refresh" });
+    expect(chrome.notifications.create).not.toHaveBeenCalled();
+  });
+
+  it("never notifies when desktopNotifications is off, even with highlights", async () => {
+    await setSync({ desktopNotifications: false });
+    await setLocal({ purchaseLog: { hades: { date: daysAgoLocalDateStr(29) } } });
+    await fireMessage({ type: "force-digest-refresh" });
+    expect(chrome.notifications.create).not.toHaveBeenCalled();
+    // ...but the digest itself was still computed for the popup's "This week" panel.
+    const { weeklyDigest } = await getLocal(["weeklyDigest"]);
+    expect(weeklyDigest.refundClosing).toHaveLength(1);
+  });
+
+  it("fires on the gog-plus-digest alarm too, not just the force-refresh message", async () => {
+    await setLocal({ purchaseLog: { hades: { date: daysAgoLocalDateStr(29) } } });
+    fireAlarm("gog-plus-digest");
+    await new Promise((r) => setTimeout(r, 0));
+    const { weeklyDigest } = await getLocal(["weeklyDigest"]);
+    expect(weeklyDigest.refundClosing).toHaveLength(1);
   });
 });
 

@@ -53,6 +53,7 @@ async function load() {
   renderWhatsNew(s);
   renderRateStrip(s);
   renderDeals(s);
+  renderDigest(s);
 }
 
 const CUR_SYMBOLS = { USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽" };
@@ -120,6 +121,59 @@ function renderDeals(s) {
     li.appendChild(link);
     list.appendChild(li);
   });
+  section.hidden = false;
+}
+
+// "This week" — the background service worker's weekly digest job
+// (background.js#buildWeeklyDigest, gog-plus-digest alarm) computes this
+// independently of the desktopNotifications toggle specifically so it's
+// still useful here even for users who leave notifications off (the
+// default). Hidden when there's nothing actionable to show — dropsThisWeek
+// alone (a trivia count, not something to act on) doesn't unhide it.
+function renderDigest(s) {
+  const section = $("digestSection");
+  if (!section) return;
+  const digest = s.weeklyDigest;
+  const highlightCount = digest
+    ? digest.refundClosing.length + digest.priceAlertHits.length + digest.wishlistDrops.length
+    : 0;
+  if (!highlightCount) {
+    section.hidden = true;
+    return;
+  }
+  const list = $("digestList");
+  list.innerHTML = "";
+
+  const addItem = (slug, metaText) => {
+    const li = document.createElement("li");
+    li.className = "digest-item";
+    const link = document.createElement("a");
+    link.href = `https://www.gog.com/en/game/${encodeURIComponent(slug)}`;
+    link.target = "_blank";
+    link.rel = "noopener";
+    const name = document.createElement("span");
+    name.className = "digest-item-name";
+    name.textContent = slugToTitle(slug);
+    const meta = document.createElement("span");
+    meta.className = "digest-item-meta";
+    meta.textContent = metaText;
+    link.appendChild(name);
+    link.appendChild(meta);
+    li.appendChild(link);
+    list.appendChild(li);
+  };
+
+  digest.refundClosing.forEach((r) => {
+    addItem(r.slug, `⏰ refund closes in ${r.daysLeft}d`);
+  });
+  digest.priceAlertHits.forEach((p) => {
+    const sym = CUR_SYMBOLS[p.currency] || p.currency;
+    addItem(p.slug, `🔔 ${sym}${p.price.toFixed(2)} — alert hit`);
+  });
+  digest.wishlistDrops.forEach((w) => {
+    addItem(w.slug, `📉 -${w.dropPct}% off peak`);
+  });
+
   section.hidden = false;
 }
 

@@ -511,6 +511,25 @@ a:hover { text-decoration: underline; }
   border-color: var(--tag-accent, var(--accent-magenta));
   color: var(--text-primary);
 }
+.game-card-tag-suggestion {
+  display: inline-flex;
+  align-self: flex-start;
+  margin: -6px 0 10px;
+  padding: 3px 9px;
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.game-card-tag-suggestion:hover {
+  border-style: solid;
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: rgba(0, 240, 255, 0.08);
+}
 .game-card-note {
   background: var(--bg-elevated);
   border-radius: 4px;

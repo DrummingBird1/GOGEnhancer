@@ -12,7 +12,7 @@ await import("../extension/tags/features/tag-management.js");
 await import("../extension/tags/features/games-list.js");
 
 const state = window.GOGPlusTagsState;
-const { renderGames, buildDashboardChart } = window.GOGPlusTagsGamesList;
+const { renderGames, buildDashboardChart, genreSuggestionFor } = window.GOGPlusTagsGamesList;
 
 function resetState() {
   state.allTags = {};
@@ -21,11 +21,14 @@ function resetState() {
   state.allWishlistSlugs = [];
   state.allPurchases = {};
   state.allStatus = {};
+  state.allGenres = {};
+  state.tagColors = {};
+  state.tagOrder = [];
 }
 
 beforeEach(() => {
   resetState();
-  document.body.innerHTML = `<span id="counts"></span><div id="gameList"></div>`;
+  document.body.innerHTML = `<span id="counts"></span><div id="gameList"></div><div id="tagList"></div>`;
 });
 
 describe("buildDashboardChart", () => {
@@ -96,6 +99,77 @@ describe("renderGames — chart toggle", () => {
       cardClicked = true;
     });
     card.querySelector(".game-card-chart-toggle").click();
+    expect(cardClicked).toBe(false);
+  });
+});
+
+describe("genreSuggestionFor", () => {
+  it("returns null when the game already has a tag", () => {
+    state.allTags = { hades: ["favorite"] };
+    expect(genreSuggestionFor("hades")).toBeNull();
+  });
+
+  it("returns null when no genre can be resolved", () => {
+    expect(genreSuggestionFor("some_totally_unrecognized_game")).toBeNull();
+  });
+
+  it("suggests a display-friendly name from the slug-pattern heuristic when untagged", () => {
+    expect(genreSuggestionFor("hades")).toBe("Indie"); // GENRE_PATTERNS' indie bucket
+    expect(genreSuggestionFor("civilization")).toBe("Strategy");
+  });
+
+  it("prefers the confirmed per-visit genre cache over the slug heuristic", () => {
+    state.allGenres = { hades: "horror" }; // overrides the indie heuristic
+    expect(genreSuggestionFor("hades")).toBe("Horror");
+  });
+});
+
+describe("renderGames — auto-tag suggestion", () => {
+  it("shows a suggestion chip on an untagged card with a resolvable genre", () => {
+    state.allStatus = { hades: "backlog" }; // needs SOME data to appear in matchingSlugs()
+    renderGames();
+    const card = document.querySelector(".game-card");
+    const chip = card.querySelector(".game-card-tag-suggestion");
+    expect(chip).toBeTruthy();
+    expect(chip.textContent).toContain("Indie");
+  });
+
+  it("shows no suggestion chip once the game already has a tag", () => {
+    state.allTags = { hades: ["favorite"] };
+    renderGames();
+    const card = document.querySelector(".game-card");
+    expect(card.querySelector(".game-card-tag-suggestion")).toBeNull();
+  });
+
+  it("clicking the suggestion applies it as a real tag and hides the chip on re-render", async () => {
+    state.allStatus = { hades: "backlog" };
+    renderGames();
+    const card = document.querySelector(".game-card");
+    const chip = card.querySelector(".game-card-tag-suggestion");
+    chip.click();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(state.allTags.hades).toEqual(["Indie"]);
+    const s = await new Promise((r) => chrome.storage.local.get(["tags"], r));
+    expect(s.tags.hades).toEqual(["Indie"]);
+
+    // renderGames() ran again as part of applying the suggestion — the
+    // now-tagged card should show a real chip, not the suggestion button.
+    const refreshedCard = document.querySelector(".game-card");
+    expect(refreshedCard.querySelector(".game-card-tag-suggestion")).toBeNull();
+    expect(refreshedCard.querySelector(".game-card-chip").textContent).toBe("Indie");
+  });
+
+  it("clicking the suggestion doesn't bubble up to card-level click handlers", async () => {
+    state.allStatus = { hades: "backlog" };
+    let cardClicked = false;
+    renderGames();
+    const card = document.querySelector(".game-card");
+    card.addEventListener("click", () => {
+      cardClicked = true;
+    });
+    card.querySelector(".game-card-tag-suggestion").click();
+    await new Promise((r) => setTimeout(r, 0));
     expect(cardClicked).toBe(false);
   });
 });

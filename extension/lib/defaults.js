@@ -75,6 +75,16 @@
    * @property {"comfortable" | "compact"} tagDashboardDensity
    * @property {string} lastSeenVersion last changelog version acknowledged in the popup
    * @property {Record<string, string>} gameGenres slug -> genre bucket, cached on visit
+   * @property {WeeklyDigest | null} weeklyDigest last computed weekly summary, shown in the popup's "This week" panel
+   */
+
+  /**
+   * @typedef {Object} WeeklyDigest
+   * @property {number} generatedAt epoch ms
+   * @property {number} dropsThisWeek total price-drop snapshots across all tracked games in the last 7 days
+   * @property {Array<{slug: string, daysLeft: number}>} refundClosing purchases whose 30-day refund window closes within 7 days
+   * @property {Array<{slug: string, price: number, currency: string, threshold: number}>} priceAlertHits per-game price alerts currently past their threshold
+   * @property {Array<{slug: string, price: number, currency: string, dropPct: number}>} wishlistDrops wishlisted games currently past the wishlist-wide drop threshold
    */
 
   /** @type {Settings} */
@@ -141,6 +151,7 @@
     tagDashboardDensity: "comfortable",
     lastSeenVersion: "",
     gameGenres: {},
+    weeklyDigest: null,
   };
 
   if (typeof window !== "undefined") {

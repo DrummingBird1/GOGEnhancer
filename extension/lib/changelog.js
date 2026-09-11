@@ -69,6 +69,10 @@
       "💰 Spending tracker — log a price alongside a purchase date on the game page's Refund window section; the dashboard totals it and can compare this month's spend against an optional budget (Advanced Options)",
       "Library year-in-review now shows your \"most patient purchase\" (longest gap between first watching a game and buying it) and a multi-year snapshot trend when you have more than one year of history",
     ],
+    "2.13.0": [
+      "📬 Weekly digest — a new local \"This week\" panel in the popup summarizing refund windows closing soon, price-alert hits, and wishlist drops, plus a matching background job (Advanced Options → Background sync). Computed regardless of the desktop-notifications toggle, so it's useful even with notifications off",
+      "🏷️ Auto-tag suggestions — untagged games in the tag dashboard now show a one-click suggested tag based on GOG's own genre metadata, never applied without your click",
+    ],
   };
 
   // Dotted-numeric version compare (2.9.0 < 2.10.0, unlike string sort).

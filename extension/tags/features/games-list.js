@@ -15,6 +15,33 @@
   const { safeHexColor } = window.GOGPlusTagsManagement;
   const { STATUSES } = window.GOGPlusGameStatus;
   const { symbolFor } = window.GOGPlusCurrencyFormat;
+  const { matchGenrePattern } = window.GOGPlusGenres;
+
+  // Display names for lib/genres.js's bucket ids — a couple don't
+  // capitalize cleanly on their own ("scifi", "rpg").
+  const GENRE_DISPLAY_NAMES = {
+    horror: "Horror",
+    strategy: "Strategy",
+    scifi: "Sci-Fi",
+    rpg: "RPG",
+    indie: "Indie",
+  };
+
+  // Auto-tag suggestion: only for a game with NO tags yet, and only when a
+  // genre can be resolved (the confirmed per-visit cache first, falling
+  // back to the slug-pattern heuristic — same resolution order as
+  // recommendations.js's genreFor and stats.js's renderGenreDistribution).
+  // Suggestion only — never applied without the user clicking it.
+  /**
+   * @param {string} slug
+   * @returns {string | null}
+   */
+  function genreSuggestionFor(slug) {
+    if ((state.allTags[slug] || []).length) return null;
+    const bucket = state.allGenres[slug] || matchGenrePattern(slug);
+    if (!bucket) return null;
+    return GENRE_DISPLAY_NAMES[bucket] || bucket;
+  }
 
 function parseSearchQuery(input) {
   const f = {
@@ -142,6 +169,7 @@ function renderGames() {
     const currentStatus = state.allStatus[slug] || null;
     const history = state.allHistory[slug];
     const hasChart = history && history.length >= 2;
+    const suggestion = genreSuggestionFor(slug);
     const statusButtons = STATUSES.map((s) => {
       const active = s.id === currentStatus;
       return `<button class="game-card-status-btn${active ? " active" : ""}" type="button"
@@ -165,6 +193,7 @@ function renderGames() {
           })
           .join("")}
       </div>
+      ${suggestion ? `<button class="game-card-tag-suggestion" type="button" data-suggest="${escapeHtml(suggestion)}">+ Suggested tag: ${escapeHtml(suggestion)}</button>` : ""}
       ${note ? `<div class="game-card-note">${renderMarkdown(note)}</div>` : ""}
       ${hasChart ? `<div class="game-card-chart" hidden></div>` : ""}
       <a class="game-card-link" href="https://www.gog.com/en/game/${encodeURIComponent(slug)}" target="_blank" rel="noopener">
@@ -174,6 +203,16 @@ function renderGames() {
     card.querySelector(".game-card-export").addEventListener("click", (e) => {
       e.stopPropagation();
       window.GOGPlusTagsExportImport.exportSingleGame(slug);
+    });
+    card.querySelector(".game-card-tag-suggestion")?.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const btn = /** @type {HTMLButtonElement} */ (e.currentTarget);
+      const tag = btn.dataset.suggest;
+      const cur = { ...state.allTags, [slug]: [tag] };
+      state.allTags = cur;
+      await window.GOGPlusStorage.set({ tags: cur });
+      window.GOGPlusTagsManagement.renderTagList();
+      renderGames();
     });
     card.querySelectorAll(".game-card-status-btn").forEach((btnEl) => {
       const btn = /** @type {HTMLElement} */ (btnEl);
@@ -314,5 +353,6 @@ function renderMarkdown(text) {
     slugToTitle,
     renderMarkdown,
     buildDashboardChart,
+    genreSuggestionFor,
   };
 })();

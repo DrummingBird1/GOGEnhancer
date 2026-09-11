@@ -40,6 +40,9 @@ function fixtureHtml() {
     <div id="dealsSection" hidden>
       <ul id="dealsList"></ul>
     </div>
+    <div id="digestSection" hidden>
+      <ul id="digestList"></ul>
+    </div>
     <select id="targetCurrency">
       <option value="none">Off</option>
       <option value="ILS">ILS</option>
@@ -315,5 +318,68 @@ describe("wishlist deals in the popup", () => {
     expect(link.href).toBe("https://www.gog.com/en/game/hades");
     expect(link.textContent).toContain("$60.00");
     expect(link.textContent).toContain("-40%");
+  });
+});
+
+describe("weekly digest ('This week') in the popup", () => {
+  it("stays hidden when there is no weeklyDigest yet (fresh install, alarm hasn't fired)", async () => {
+    await bootPopup();
+    expect(document.getElementById("digestSection").hidden).toBe(true);
+  });
+
+  it("stays hidden when the digest exists but has nothing actionable, even with a nonzero dropsThisWeek trivia count", async () => {
+    await new Promise((r) =>
+      chrome.storage.local.set(
+        {
+          weeklyDigest: {
+            generatedAt: Date.now(),
+            dropsThisWeek: 12,
+            refundClosing: [],
+            priceAlertHits: [],
+            wishlistDrops: [],
+          },
+        },
+        r
+      )
+    );
+    await bootPopup();
+    expect(document.getElementById("digestSection").hidden).toBe(true);
+  });
+
+  it("shows refund windows closing, price-alert hits, and wishlist drops as linked items", async () => {
+    await new Promise((r) =>
+      chrome.storage.local.set(
+        {
+          weeklyDigest: {
+            generatedAt: Date.now(),
+            dropsThisWeek: 3,
+            refundClosing: [{ slug: "hades", daysLeft: 2 }],
+            priceAlertHits: [{ slug: "celeste", price: 9.99, currency: "USD", threshold: 15 }],
+            wishlistDrops: [{ slug: "disco_elysium", price: 20, currency: "USD", dropPct: 50 }],
+          },
+        },
+        r
+      )
+    );
+    await bootPopup();
+    const section = document.getElementById("digestSection");
+    expect(section.hidden).toBe(false);
+    const items = [...document.querySelectorAll("#digestList .digest-item")];
+    expect(items).toHaveLength(3);
+
+    const names = items.map((li) => li.querySelector(".digest-item-name").textContent);
+    expect(names).toEqual(["Hades", "Celeste", "Disco Elysium"]);
+
+    const metas = items.map((li) => li.querySelector(".digest-item-meta").textContent);
+    expect(metas[0]).toContain("2d");
+    expect(metas[1]).toContain("$9.99");
+    expect(metas[2]).toContain("-50%");
+
+    const links = items.map((li) => li.querySelector("a").href);
+    expect(links).toEqual([
+      "https://www.gog.com/en/game/hades",
+      "https://www.gog.com/en/game/celeste",
+      "https://www.gog.com/en/game/disco_elysium",
+    ]);
   });
 });

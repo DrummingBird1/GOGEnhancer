@@ -77,6 +77,7 @@
     "tagDashboardDensity",
     "lastSeenVersion",
     "gameGenres",
+    "weeklyDigest",
   ]);
 
   /**
