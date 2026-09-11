@@ -639,6 +639,48 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   box-shadow: 0 0 16px rgba(0, 240, 255, 0.2);
 }
 
+/* Cross-store price comparison (CheapShark) */
+.gog-plus-compare-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gog-plus-compare-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--gp-border);
+  text-decoration: none;
+  color: var(--gp-text);
+  font-size: 12.5px;
+  transition: all 0.15s ease;
+}
+.gog-plus-compare-row:hover {
+  border-color: var(--gp-cyan);
+  background: rgba(0, 240, 255, 0.06);
+}
+.gog-plus-compare-store {
+  flex: 1;
+  font-weight: 600;
+}
+.gog-plus-compare-price {
+  font-family: var(--gp-mono);
+  color: var(--gp-text-dim);
+}
+.gog-plus-compare-price.is-sale {
+  color: var(--gp-green);
+}
+.gog-plus-compare-savings {
+  font-family: var(--gp-mono);
+  font-size: 11px;
+  color: var(--gp-magenta);
+  background: rgba(198, 79, 255, 0.12);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
 /* Play status — Playing / Backlog / Finished, a fixed 3-state toggle group
    distinct from free-form tags. Clicking the active one clears it (see
    renderTagsSection). Shares its class-naming/behavior pattern with the tag
@@ -968,6 +1010,14 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   color: var(--gp-pink);
   background: rgba(255, 107, 157, 0.08);
   border: 1px solid rgba(255, 107, 157, 0.3);
+}
+.gog-plus-deal-score {
+  margin-left: auto;
+  flex: none;
+  font-family: var(--gp-mono);
+  font-size: 10.5px;
+  opacity: 0.75;
+  white-space: nowrap;
 }
 
 /* ============================================================

@@ -609,6 +609,11 @@ a:hover { text-decoration: underline; }
   color: var(--text-secondary);
   line-height: 1.4;
 }
+.stat-sub-secondary {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
 
 /* ============================================================
    Year-in-review

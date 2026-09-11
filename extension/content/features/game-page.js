@@ -205,6 +205,10 @@
     if (state.settings.priceHistoryTracking) {
       body.appendChild(await renderPriceHistorySection(slug));
     }
+    if (state.settings.priceCompareTable) {
+      const cmp = renderPriceCompareSection(slug);
+      if (cmp) body.appendChild(cmp);
+    }
     if (state.settings.refundTimer) {
       body.appendChild(await renderRefundSection(slug));
     }
@@ -318,14 +322,93 @@
       tier = "wait";
       text = `Above its average of ${sym}${stats.avg.toFixed(2)} — might be worth waiting for a sale.`;
     }
+    const score = computeDealScore(stats);
     return `
       <div class="gog-plus-worth-waiting gog-plus-worth-waiting--${tier}" role="status">
         <span class="gog-plus-worth-waiting-icon" aria-hidden="true">${
           tier === "good" ? "🟢" : tier === "ok" ? "🟡" : "🔴"
         }</span>
         <span>${text}</span>
+        <span class="gog-plus-deal-score" title="Deal score — 100 means it's at its tracked all-time low">${score}/100</span>
       </div>
     `;
+  }
+
+  // Numeric 0-100 companion to the 3-tier verdict above. Penalizes distance
+  // above the tracked all-time low (up to 60 points) and, separately, being
+  // above the tracked average (up to another 40 points) — so two games both
+  // "above average" still separate by how far above. Guards div-by-zero the
+  // same way pctAboveLow above does: a 0 tracked low/avg contributes no
+  // penalty rather than producing Infinity/NaN.
+  /**
+   * @param {{ latest: { p: number }, min: { price: number }, avg: number }} stats
+   * @returns {number}
+   */
+  function computeDealScore(stats) {
+    const distFromLow =
+      stats.min.price > 0 ? (stats.latest.p - stats.min.price) / stats.min.price : 0;
+    const distFromAvg = stats.avg > 0 ? (stats.latest.p - stats.avg) / stats.avg : 0;
+    let score = 100;
+    score -= Math.min(60, Math.max(0, distFromLow * 100));
+    score -= Math.min(40, Math.max(0, distFromAvg * 100 * 0.4));
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  // Cross-store comparison table (CheapShark) — renders synchronously with a
+  // "checking…" placeholder, then fills in once the fetch resolves. Returns
+  // null (nothing appended) only when there's no usable game title to search
+  // for; a failed/empty fetch still renders the section with a friendly
+  // no-results message rather than disappearing.
+  /**
+   * @param {string} _slug reserved for parity with the other renderXSection(slug) functions
+   * @returns {HTMLElement | null}
+   */
+  function renderPriceCompareSection(_slug) {
+    const title = gameTitleFromPage();
+    if (!title) return null;
+
+    const wrap = document.createElement("section");
+    wrap.className = "gog-plus-gp-section";
+    wrap.innerHTML = `
+      <h3>Compare prices <span class="gog-plus-gp-since">via CheapShark</span></h3>
+      <p class="gog-plus-gp-muted" id="gog-plus-compare-status">Checking other stores…</p>
+      <div id="gog-plus-compare-list" class="gog-plus-compare-list"></div>
+    `;
+
+    window.GOGPlusPriceCompare.fetchDeals(title)
+      .then((deals) => {
+        const status = wrap.querySelector("#gog-plus-compare-status");
+        const list = wrap.querySelector("#gog-plus-compare-list");
+        if (!deals.length) {
+          if (status) status.textContent = "No comparable listings found right now.";
+          return;
+        }
+        status?.remove();
+        const targetCur =
+          state.settings.targetCurrency && state.settings.targetCurrency !== "none"
+            ? state.settings.targetCurrency
+            : "USD";
+        const rate = targetCur === "USD" ? 1 : state.settings.rates?.[targetCur];
+        const sym = symbolFor(rate ? targetCur : "USD");
+        list.innerHTML = deals
+          .slice(0, 6)
+          .map((d) => {
+            const shown = rate ? d.price * rate : d.price;
+            return `
+              <a class="gog-plus-compare-row" href="${d.url}" target="_blank" rel="noopener">
+                <span class="gog-plus-compare-store">${escapeHtml(d.storeName)}</span>
+                <span class="gog-plus-compare-price${d.isOnSale ? " is-sale" : ""}">${sym}${shown.toFixed(2)}</span>
+                ${d.isOnSale && d.savingsPct > 0 ? `<span class="gog-plus-compare-savings">-${d.savingsPct}%</span>` : ""}
+              </a>`;
+          })
+          .join("");
+      })
+      .catch(() => {
+        const status = wrap.querySelector("#gog-plus-compare-status");
+        if (status) status.textContent = "Couldn't reach the comparison service.";
+      });
+
+    return wrap;
   }
 
   function renderSparkline(entries, stats, slug) {
@@ -712,5 +795,7 @@
     maybeRecordGameGenre,
     ensureGamePagePanel,
     buildWorthWaitingVerdict,
+    computeDealScore,
+    renderPriceCompareSection,
   };
 })();

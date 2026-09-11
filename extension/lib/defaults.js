@@ -56,6 +56,7 @@
    * @property {string} regionPreset
    * @property {string} theme
    * @property {string} uiLanguage
+   * @property {boolean} priceCompareTable show a cross-store price comparison table (CheapShark) on the game page
    * @property {string[]} modsList
    * @property {number} modsUpdatedAt
    * @property {{ discountedCount: number, total: number }} wishlistCache
@@ -118,6 +119,7 @@
     theme: "neon",
     uiLanguage: "en",
     wishlistAlertPercent: 20,
+    priceCompareTable: true,
 
     // local data (caches + user data)
     modsList: [],

@@ -78,6 +78,7 @@ lib/dom-safety.js       → window.GOGPlusDomSafety (escapeHtml)
 lib/currency-format.js  → window.GOGPlusCurrencyFormat (symbolFor, formatPrice)
 lib/genres.js           → window.GOGPlusGenres (GENRE_PATTERNS, matchGenrePattern, mapGenreLabel)
 lib/game-status.js      → window.GOGPlusGameStatus (STATUSES, statusById) — shared with tags/ dashboard
+lib/price-compare.js    → window.GOGPlusPriceCompare (fetchDeals against cheapshark.com — see Privacy boundary)
 content/translations.js → window.GOG_PLUS_TRANSLATIONS
 content/currency-detection.js → window.GOGPlusCurrency
 content/price-history.js → window.GOGPlusPriceHistory
@@ -140,11 +141,13 @@ Don't try to make the SW scrape `/account/wishlist` directly — it won't work.
 
 ### Privacy boundary (manifest + permissions)
 
-`host_permissions` is intentionally minimal: **`https://www.gog.com/*` and `https://api.frankfurter.app/*` only**. No Google Fonts, no analytics, no remote code. Before adding a third host:
+`host_permissions` is intentionally minimal: **`https://www.gog.com/*`, `https://api.frankfurter.app/*`, and (since v2.10.0) `https://www.cheapshark.com/*`** — the last one powers the opt-out "Price comparison table" on the game page (`lib/price-compare.js`), a free keyless deal-aggregation API. No Google Fonts, no analytics, no remote code. Before adding a new host:
 
 1. Add it to `host_permissions` in `manifest.json`.
-2. Update `PRIVACY.md`'s "Data we DO NOT collect / external hosts" section.
-3. Update `STORE_LISTING.md`'s single-purpose statement if it changes scope.
+2. Update `PRIVACY.md`'s network-requests section (§3) and its permissions table.
+3. Update `STORE_LISTING.md`'s permission-justification list and, if it changes scope, its single-purpose statement.
+
+Note for `fetch()` calls to any of these hosts: `User-Agent` is a forbidden header per the Fetch spec, so a call can never send a custom one — CheapShark rejects requests with a missing/generic UA, but a real browser's own UA (which is all `fetch()` ever sends) passes fine. Verified live against the API before `lib/price-compare.js` was written.
 
 The runtime permission `notifications` is opt-in: nothing fires unless the user enables "Desktop notifications" in Advanced Options. Background uses `chrome.notifications.create` only — no network traffic. Triggers live in `background/background.js` (`checkRefundWindowExpirations`, `maybeNotifyWishlistJump`) and dedupe via the `notifLog` key in `storage.local`.
 

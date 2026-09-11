@@ -81,6 +81,20 @@ describe("wishlist value stat card", () => {
     expect(card.querySelector(".stat-sub").textContent).toContain("visit wishlisted games");
   });
 
+  it("shows a secondary line summing the cost at each game's own all-time low", async () => {
+    state.allWishlistSlugs = ["hades", "disco_elysium"];
+    state.allHistory = {
+      hades: [{ d: "d1", p: 30, c: "USD" }, { d: "d2", p: 20, c: "USD" }],
+      disco_elysium: [{ d: "d1", p: 40, c: "USD" }, { d: "d2", p: 25, c: "USD" }],
+    };
+    await renderStats();
+    const card = findCard(document.getElementById("statsPanel"), "Wishlist value");
+    const secondary = card.querySelector(".stat-sub-secondary");
+    expect(secondary).toBeTruthy();
+    expect(secondary.textContent).toContain("At all-time lows");
+    expect(secondary.textContent).toContain("45.00"); // 20 + 25, both already at their low here
+  });
+
   it("groups totals by currency rather than mixing them", async () => {
     state.allWishlistSlugs = ["hades", "disco_elysium"];
     state.allHistory = {

@@ -51,6 +51,12 @@
       "Two more stale \"v2.4\" version badges fixed (onboarding wizard, options page footer)",
       "A large pass of under-the-hood testing and type-checking work — extension-wide test coverage roughly doubled and now covers every top-level page script, closing real gaps that had zero tests before",
     ],
+    "2.10.0": [
+      "🛒 Cross-store price comparison table on the game page — Steam, Epic, Humble Store, Fanatical, and GreenManGaming prices via the free CheapShark API, with a toggle in the popup (on by default)",
+      "New 0-100 deal score next to the existing \"worth waiting?\" verdict",
+      "Sale-calendar panel in the tag dashboard now predicts GOG's next likely discount window, blending your own tracked history with a known seasonal calendar",
+      "Wishlist value stat now also shows the total cost if every wishlisted game were simultaneously at its own all-time low",
+    ],
   };
 
   // Dotted-numeric version compare (2.9.0 < 2.10.0, unlike string sort).

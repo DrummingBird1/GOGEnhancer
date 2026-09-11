@@ -19,7 +19,28 @@ await import("../extension/content/features/misc.js");
 await import("../extension/content/features/wishlist.js");
 await import("../extension/content/features/game-page.js");
 
-const { buildWorthWaitingVerdict } = window.GOGPlusGamePage;
+const { buildWorthWaitingVerdict, computeDealScore } = window.GOGPlusGamePage;
+
+describe("computeDealScore", () => {
+  it("scores 100 right at the tracked all-time low", () => {
+    expect(computeDealScore({ latest: { p: 10 }, min: { price: 10 }, avg: 15 })).toBe(100);
+  });
+
+  it("scores lower the further the price sits above the low and average", () => {
+    const near = computeDealScore({ latest: { p: 10.5 }, min: { price: 10 }, avg: 15 });
+    const mid = computeDealScore({ latest: { p: 12 }, min: { price: 5 }, avg: 15 });
+    const far = computeDealScore({ latest: { p: 20 }, min: { price: 5 }, avg: 15 });
+    expect(near).toBeGreaterThan(mid);
+    expect(mid).toBeGreaterThan(far);
+  });
+
+  it("stays within 0-100 and never throws when the tracked low or average is 0", () => {
+    expect(() => computeDealScore({ latest: { p: 5 }, min: { price: 0 }, avg: 0 })).not.toThrow();
+    const score = computeDealScore({ latest: { p: 500 }, min: { price: 1 }, avg: 1 });
+    expect(score).toBeGreaterThanOrEqual(0);
+    expect(score).toBeLessThanOrEqual(100);
+  });
+});
 
 describe("buildWorthWaitingVerdict", () => {
   it("shows the 'good' tier when the price is within 10% of the tracked low", () => {
@@ -65,6 +86,17 @@ describe("buildWorthWaitingVerdict", () => {
       currency: "ILS",
     });
     expect(html).toContain("₪15.00");
+  });
+
+  it("includes a deal-score badge alongside the tier text", () => {
+    const html = buildWorthWaitingVerdict({
+      latest: { p: 10.5 },
+      min: { price: 10 },
+      avg: 15,
+      currency: "USD",
+    });
+    expect(html).toContain("gog-plus-deal-score");
+    expect(html).toMatch(/\d+\/100/);
   });
 
   it("doesn't divide by zero when the tracked low is 0", () => {

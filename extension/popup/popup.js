@@ -22,6 +22,7 @@ const ALL_BOOLEAN_KEYS = [
   "lowestPriceBadge",
   "refundTimer",
   "itadCompare",
+  "priceCompareTable",
   "hebrewTranslations",
   "rtlLayout",
 ];

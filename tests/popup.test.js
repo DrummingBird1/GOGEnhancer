@@ -22,6 +22,7 @@ const BOOLEAN_IDS = [
   "lowestPriceBadge",
   "refundTimer",
   "itadCompare",
+  "priceCompareTable",
   "hebrewTranslations",
   "rtlLayout",
 ];

@@ -137,6 +137,7 @@ declare global {
     GOGPlusWishlistFeature?: GogPlusLooseApi;
     GOGPlusGamePage?: GogPlusLooseApi;
     GOGPlusCommandPalette?: GogPlusLooseApi;
+    GOGPlusPriceCompare?: GogPlusLooseApi;
 
     GOGPlusTagsState?: GogPlusLooseApi;
     GOGPlusTagsConstants?: GogPlusLooseApi;

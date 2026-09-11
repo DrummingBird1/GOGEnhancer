@@ -19,11 +19,13 @@ here, that is a bug — please file an issue.
 
 GOG Enhancer stores all of your data on your own device. It does not have a
 server, does not log anything, does not use analytics, does not show ads, and
-does not share your data with anyone. It makes exactly two kinds of network
-requests, both to public unauthenticated endpoints, both of which transmit
+does not share your data with anyone. It makes exactly three kinds of network
+requests, all to public unauthenticated endpoints, all of which transmit
 *no information about you*: (a) currency exchange rates from
-`api.frankfurter.app`, and (b) a periodic read of the public GOG mods page
-at `gog.com/en/mods`.
+`api.frankfurter.app`, (b) a periodic read of the public GOG mods page at
+`gog.com/en/mods`, and (c), if you leave the "Price comparison table" feature
+on, a per-game title search against `cheapshark.com`'s public deals API when
+you open a game page.
 
 ---
 
@@ -60,7 +62,8 @@ of this extension.
 
 The extension runs four background jobs on a schedule. Two make network
 requests (to two destinations only — both public, both unauthenticated);
-the other two are entirely local.
+the other two are entirely local. A fifth, non-scheduled request happens
+directly from the game-page content script itself — see 3.3 below.
 
 ### 3.1 `api.frankfurter.app` — currency exchange rates
 
@@ -78,12 +81,20 @@ the other two are entirely local.
 - **Why:** To keep the list of "★ MOD" badges accurate without your having to visit `/mods` yourself.
 - **What this could reveal:** That you visited a public page. GOG cannot tie this request to your account because we explicitly omit your cookies.
 
-### 3.3 Wishlist badge refresh — *no network request*
+### 3.3 `www.cheapshark.com` — cross-store price comparison
+
+- **What is sent:** A `GET https://www.cheapshark.com/api/1.0/deals?title=<game title>&limit=30`, sent directly from the game-page content script (not the background service worker). No cookies, no API key (CheapShark's deals endpoint is keyless), no header identifying you beyond what your browser always sends on every request (its own User-Agent string — this cannot be changed or made more unique by the extension; `fetch()` cannot override the User-Agent header).
+- **What is received:** A JSON list of that title's listings across other storefronts (Steam, Epic, Humble Store, Fanatical, GreenManGaming), used to render the "Compare prices" table on the game page.
+- **Frequency:** Once per game page you open, only while the "Price comparison table" toggle (on by default) is enabled in the popup.
+- **Why CheapShark:** A free, keyless, public deal-aggregation API — no account or paid tier required, so no shared secret ships inside the extension.
+- **What this could reveal:** Your IP address and the title of the game page you're viewing, to CheapShark's servers, the same as visiting any public website. CheapShark has no way to tie that to your GOG account or any other data this extension holds.
+
+### 3.4 Wishlist badge refresh — *no network request*
 
 - **What happens:** Every 6 hours we read the locally-cached count of discounted wishlist items (last seen when you visited `/account/wishlist`) and update the toolbar badge text. If the cache is older than 24 hours, the badge is cleared and the tooltip tells you to revisit your wishlist.
 - **Why it's not a network request:** GOG's wishlist page is an Angular app — the items only render in the live page DOM. We can't fetch it server-side meaningfully, so we don't try. The content script reports the count next time you actually visit the page.
 
-### 3.4 Daily refund-window check — *no network request*
+### 3.5 Daily refund-window check — *no network request*
 
 - **What happens:** Once a day, we walk the `purchaseLog` you've entered manually and compare each entry to today's date. If your opt-in "Desktop notifications" toggle is on AND any entry has 1–2 days left of GOG's 30-day refund window, we fire a local `chrome.notifications.create` so you know to decide on the refund. We also dedupe via the local `notifLog` so the same alert never fires twice.
 - **Why it's not a network request:** Everything happens inside the browser. `chrome.notifications` is local to your machine. No data goes anywhere.
@@ -100,6 +111,7 @@ the other two are entirely local.
 | `notifications` | **Opt-in only.** When you enable "Desktop notifications" in Advanced Options, the extension can show a system notification when a refund window has 1–2 days left or when new wishlist items go on sale. Uses `chrome.notifications`, which is local to the browser — nothing is transmitted off-device. Off by default. |
 | Host permission for `https://www.gog.com/*` | To run the content script on GOG pages and to fetch the public `/en/mods` page in the background |
 | Host permission for `https://api.frankfurter.app/*` | To fetch currency exchange rates |
+| Host permission for `https://www.cheapshark.com/*` | To fetch the cross-store price comparison table shown on game pages (opt-out toggle in the popup) |
 
 We do not request any other permissions. In particular we do not request
 `tabs` (full tab access), `webRequest` (network interception), `cookies`

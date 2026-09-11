@@ -63,6 +63,14 @@ code.
   One click on a game page opens an IsThereAnyDeal search for the same
   title across Steam, Epic, Humble, and other stores.
 
+▸ Cross-store price comparison table
+  A small table right on the game page shows what Steam, Epic, Humble
+  Store, Fanatical, and GreenManGaming currently charge for the same
+  title, via the free CheapShark API — no need to open a new tab.
+  Also adds a 0-100 "deal score" next to the existing worth-waiting
+  verdict, and a sale-calendar prediction for GOG's next likely
+  discount window in the tag dashboard.
+
 ▸ Personal tags & notes (with rename, merge, colors, drag-to-reorder)
   Add private tags and notes to any game. The dashboard lets you search,
   filter, assign per-tag colors, rename or merge tags, drag pills to
@@ -94,9 +102,11 @@ code.
 
 ▸ Privacy-first
   No analytics, no third-party tracking, no Google Fonts, no remote code.
-  All your tags, notes, and history stay on your device. Two outbound
-  requests only: exchange rates from frankfurter.app and the public GOG
-  mods catalog. Both omit cookies and identifying information. Desktop
+  All your tags, notes, and history stay on your device. Three outbound
+  destinations only: exchange rates from frankfurter.app, the public GOG
+  mods catalog, and (optionally, on by default, toggleable) game-title
+  lookups against CheapShark's keyless deals API for the price comparison
+  table. None of these send cookies or account information. Desktop
   notifications (if you enable them) use the local chrome.notifications
   API — nothing transmitted.
 
@@ -136,6 +146,12 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
 ▸ כפתור השוואה ב-IsThereAnyDeal
   לחיצה אחת פותחת חיפוש ITAD ב-Steam, Epic, Humble ועוד.
 
+▸ טבלת השוואת מחירים חוצת-חנויות
+  טבלה קטנה ישירות בעמוד המשחק מציגה כמה Steam, Epic, Humble Store,
+  Fanatical ו-GreenManGaming גובים עבור אותו כותר, דרך ה-API החינמי של
+  CheapShark — בלי לפתוח טאב חדש. גם מוסיף "ציון עסקה" 0-100 ליד
+  ה-worth-waiting verdict הקיים, ותחזית לוח שנת מבצעים בלוח התגיות.
+
 ▸ תגיות והערות מתקדמות
   תגיות והערות פרטיות לכל משחק. בלוח התגיות יש חיפוש, סינון, color
   picker לכל תג, rename / merge / delete, drag-to-reorder, ויצוא+יבוא
@@ -164,9 +180,12 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
 
 ▸ פרטיות לפני הכל
   שום analytics, שום tracking, שום Google Fonts, שום קוד מרוחק. תגיות,
-  הערות, היסטוריה — הכל נשאר אצלך. שתי בקשות חיצוניות בלבד: שערי מטבע
-  מ-frankfurter.app וקטלוג mods פומבי של GOG. desktop notifications
-  (אם מפעילים) משתמשות ב-chrome.notifications המקומי — שום מידע יוצא.
+  הערות, היסטוריה — הכל נשאר אצלך. שלושה יעדים חיצוניים בלבד: שערי מטבע
+  מ-frankfurter.app, קטלוג mods פומבי של GOG, ו(אופציונלי, ברירת מחדל
+  פעיל, ניתן לכיבוי) בדיקת שם משחק מול ה-API החינמי של CheapShark
+  לטבלת ההשוואה. אף אחד מהם לא שולח cookies או פרטי חשבון. desktop
+  notifications (אם מפעילים) משתמשות ב-chrome.notifications המקומי —
+  שום מידע יוצא.
 
 ▸ Open source ברישיון MIT. ניתן לאימות.
 
@@ -197,7 +216,10 @@ exact answers:
 > Required to run the content script that adds currency conversion, badges, tags UI, and Hebrew translations on GOG.com pages, and to fetch the public /en/mods catalog page in the background. This extension is single-purpose for GOG.com and does not interact with other domains in the user's browser.
 
 ### Host permission: `https://api.frankfurter.app/*`
-> Required to fetch USD-to-target-currency exchange rates from the Frankfurter public API. This is the sole external service the extension talks to. No user data is sent — only a public GET request for rates.
+> Required to fetch USD-to-target-currency exchange rates from the Frankfurter public API. No user data is sent — only a public GET request for rates.
+
+### Host permission: `https://www.cheapshark.com/*`
+> Required to fetch the optional cross-store price comparison table (Steam, Epic, Humble Store, Fanatical, GreenManGaming) shown on GOG game pages. CheapShark's deals API is free and keyless. Only the game's title is sent, as a public GET request; no user data, cookies, or account information. Toggleable in the popup ("Price comparison table"), on by default.
 
 ---
 

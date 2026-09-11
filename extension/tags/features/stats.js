@@ -13,6 +13,44 @@
   const { formatPrice } = window.GOGPlusCurrencyFormat;
   const { $ } = window.GOGPlusTagsConstants;
 
+// Approximate historical GOG sale windows (month/day of year, GOG's actual
+// dates shift by up to a couple weeks year to year — this is a rough
+// planning aid, not a guarantee). Blended with the user's own observed
+// price-drop heatmap in nextSaleWindow() below when there's enough data to
+// have an opinion; falls back to this fixed calendar otherwise.
+const KNOWN_SALE_WINDOWS = [
+  { month: 1, day: 2, name: "New Year Sale" },
+  { month: 3, day: 10, name: "Spring Sale" },
+  { month: 6, day: 25, name: "Summer Sale" },
+  { month: 10, day: 25, name: "Halloween Sale" },
+  { month: 11, day: 25, name: "Black Friday" },
+  { month: 12, day: 20, name: "Winter Sale" },
+];
+
+// Finds the soonest upcoming sale window. When `observedPeakMonth` (1-12) is
+// given, prefers windows in that month first (the user's own tracked data
+// says that's when GOG discounts their wishlist most) before falling back to
+// the full known calendar.
+/**
+ * @param {number | null} observedPeakMonth
+ * @param {Date} [now]
+ * @returns {{ month: number, day: number, name: string, daysAway: number, date: Date }}
+ */
+function nextSaleWindow(observedPeakMonth, now = new Date()) {
+  const candidates = observedPeakMonth
+    ? KNOWN_SALE_WINDOWS.filter((w) => w.month === observedPeakMonth)
+    : [];
+  const pool = candidates.length ? candidates : KNOWN_SALE_WINDOWS;
+  let best = null;
+  for (const w of pool) {
+    let target = new Date(now.getFullYear(), w.month - 1, w.day);
+    if (target < now) target = new Date(now.getFullYear() + 1, w.month - 1, w.day);
+    const daysAway = Math.round((target.getTime() - now.getTime()) / 86400000);
+    if (!best || daysAway < best.daysAway) best = { ...w, daysAway, date: target };
+  }
+  return best;
+}
+
 function renderSaleHeatmap() {
   const panel = document.getElementById("saleHeatmap");
   if (!panel) return;
@@ -33,15 +71,28 @@ function renderSaleHeatmap() {
     }
   }
 
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
   if (!totalDrops) {
-    panel.innerHTML = "";
+    const next = nextSaleWindow(null);
+    panel.innerHTML = `
+      <header class="heatmap-header">
+        <span class="heatmap-eyebrow">Sale calendar</span>
+        <h2>When does GOG drop prices?</h2>
+        <p class="heatmap-sub">
+          Not enough tracked history yet to build your own heatmap. Historically,
+          GOG runs a <strong>${next.name}</strong> around this time of year — the next
+          one is roughly <strong>${next.daysAway}</strong> day${next.daysAway === 1 ? "" : "s"} away.
+        </p>
+      </header>
+    `;
     return;
   }
 
   const max = Math.max(...monthCounts) || 1;
-  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const peakIdx = monthCounts.indexOf(max);
   const peakName = monthNames[peakIdx];
+  const next = nextSaleWindow(peakIdx + 1);
 
   const cells = monthCounts
     .map((c, i) => {
@@ -59,7 +110,8 @@ function renderSaleHeatmap() {
       <h2>When does GOG drop prices?</h2>
       <p class="heatmap-sub">
         Across <strong>${totalDrops}</strong> price drop${totalDrops === 1 ? "" : "s"} we've observed —
-        ${peakName} leads with <strong>${max}</strong>. Plan your shopping around the hot months.
+        ${peakName} leads with <strong>${max}</strong>. Next likely window:
+        <strong>${next.name}</strong>, ~${next.daysAway} day${next.daysAway === 1 ? "" : "s"} away.
       </p>
     </header>
     <div class="heatmap-grid">${cells}</div>
@@ -254,6 +306,11 @@ async function renderStats() {
   // never visited on its own page has no price data to sum.
   const wishlistValueByCur = {};
   const wishlistSavingsByCur = {};
+  // Cost to buy the whole tracked wishlist if every game happened to be at
+  // its own historical all-time low simultaneously — not a real achievable
+  // total (games rarely all bottom out at once), but a useful "best case"
+  // anchor next to the "buy it all today" figure above it.
+  const wishlistLowByCur = {};
   let wishlistPricedCount = 0;
   for (const slug of state.allWishlistSlugs || []) {
     const arr = state.allHistory[slug];
@@ -263,11 +320,15 @@ async function renderStats() {
     const low = arr.reduce((a, e) => (e.p < a.p ? e : a), arr[0]);
     const cur = latest.c || "USD";
     wishlistValueByCur[cur] = (wishlistValueByCur[cur] || 0) + latest.p;
+    wishlistLowByCur[low.c || "USD"] = (wishlistLowByCur[low.c || "USD"] || 0) + low.p;
     if (low.c === cur) {
       wishlistSavingsByCur[cur] = (wishlistSavingsByCur[cur] || 0) + Math.max(0, latest.p - low.p);
     }
   }
   const wishlistValueParts = Object.entries(wishlistValueByCur)
+    .map(([cur, v]) => formatPrice(v, cur))
+    .join(" + ");
+  const wishlistLowParts = Object.entries(wishlistLowByCur)
     .map(([cur, v]) => formatPrice(v, cur))
     .join(" + ");
   const wishlistSavingsParts = Object.entries(wishlistSavingsByCur)
@@ -331,6 +392,12 @@ async function renderStats() {
 
   if (wishlistPricedCount) {
     const wlCard = document.getElementById("wishlistValueCard");
+    if (wishlistLowParts) {
+      const lowLine = document.createElement("div");
+      lowLine.className = "stat-sub stat-sub-secondary";
+      lowLine.textContent = `At all-time lows: ${wishlistLowParts}`;
+      wlCard?.appendChild(lowLine);
+    }
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "stat-card-action";
@@ -357,6 +424,7 @@ function daysSince(dateStr) {
 
   window.GOGPlusTagsStats = {
     renderSaleHeatmap,
+    nextSaleWindow,
     availableReviewYears,
     renderYearReview,
     renderStats,
