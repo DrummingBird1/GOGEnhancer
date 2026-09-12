@@ -16,6 +16,7 @@
 
   const state = window.GOGPlusTagsState;
   const { $ } = window.GOGPlusTagsConstants;
+  const { escapeHtml } = window.GOGPlusDomSafety;
   const { STATUSES } = window.GOGPlusGameStatus;
   const { GENRE_DISPLAY_NAMES } = window.GOGPlusTagsGamesList;
 
@@ -26,6 +27,12 @@
     const input = /** @type {HTMLInputElement} */ ($("search"));
     if (!input) return;
     const cur = input.value.trim();
+    // Skip re-adding a token that's already present verbatim — clicking the
+    // same chip twice shouldn't pile up duplicate "genre:rpg genre:rpg".
+    if (cur && cur.split(/\s+/).includes(token)) {
+      closeFilterBuilder();
+      return;
+    }
     input.value = cur ? `${cur} ${token}` : token;
     input.dispatchEvent(new Event("input", { bubbles: true }));
     input.focus();
@@ -58,7 +65,11 @@
       .slice(0, 20)
       .map(
         (t) =>
-          `<button type="button" class="filter-builder-chip" data-token="tag:${encodeURIComponent(t)}">tag:${t}</button>`
+          // HTML-escaped, not URI-encoded — a tag containing a space or
+          // punctuation must survive round-tripping through the search box
+          // as plain text (parseSearchQuery never URI-decodes), and tag
+          // names are user-entered text that lands straight in innerHTML.
+          `<button type="button" class="filter-builder-chip" data-token="tag:${escapeHtml(t)}">tag:${escapeHtml(t)}</button>`
       );
 
     const statusChips = STATUSES.map(

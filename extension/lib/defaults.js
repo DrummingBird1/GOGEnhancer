@@ -69,7 +69,7 @@
    * @property {Record<string, "playing" | "backlog" | "finished">} gameStatus slug -> fixed-vocabulary play status, distinct from free-form tags
    * @property {Record<string, string>} notes slug -> free text
    * @property {Record<string, Array<{d: string, p: number, c: string}>>} priceHistory slug -> snapshots
-   * @property {Record<string, {date: string, price?: number, currency?: string}>} purchaseLog slug -> purchase entry (a bare "YYYY-MM-DD" string pre-v2.12.0, upgraded by the v2->v3 migration; readers should still go through lib/purchases.js's normalizePurchaseEntry rather than assume the object shape)
+   * @property {Record<string, {date: string, price?: number, currency?: string}>} purchaseLog slug -> purchase entry (a bare "YYYY-MM-DD" string before the settingsVersion 2->3 migration, upgraded by that migration; readers should still go through lib/purchases.js's normalizePurchaseEntry rather than assume the object shape)
    * @property {Record<string, number>} notifLog dedupe keys -> epoch ms
    * @property {Record<string, {threshold: number, currency: string, createdAt: number}>} priceAlerts
    * @property {"comfortable" | "compact"} tagDashboardDensity

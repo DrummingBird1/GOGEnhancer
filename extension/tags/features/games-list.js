@@ -337,6 +337,13 @@ async function hydrateAttachmentSlot(slot, slug) {
       </div>
     </div>
   `;
+  // renderGames() rebuilds the whole card grid (and re-hydrates every
+  // attachment slot) on every search/sort change — without revoking, each
+  // pass would mint a fresh, never-freed object URL for the same blob.
+  // Revoking once the <img> has actually decoded the data is safe: it only
+  // blocks *future* dereferences of the URL, not the image already painted.
+  const img = /** @type {HTMLImageElement} */ (slot.querySelector("img"));
+  img.addEventListener("load", () => URL.revokeObjectURL(url), { once: true });
   slot.querySelector(".game-card-attachment-remove")?.addEventListener("click", async (e) => {
     e.stopPropagation();
     URL.revokeObjectURL(url);
@@ -359,8 +366,15 @@ function renderAttachButton(slot, slug) {
     input.addEventListener("change", async () => {
       const file = input.files?.[0];
       if (!file) return;
-      await window.GOGPlusAttachments.saveAttachmentDownscaled(slug, file);
-      hydrateAttachmentSlot(slot, slug);
+      try {
+        await window.GOGPlusAttachments.saveAttachmentDownscaled(slug, file);
+        hydrateAttachmentSlot(slot, slug);
+      } catch (err) {
+        // A non-image file, a corrupt one, or a quota failure would
+        // otherwise fail silently — the button would just sit there with no
+        // feedback and no attachment saved.
+        window.GOGPlusToasts?.show(`Couldn't attach image: ${err.message}`, { variant: "muted" });
+      }
     });
     input.click();
   });

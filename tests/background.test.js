@@ -285,7 +285,7 @@ describe("daily jobs — refund window notifications", () => {
     expect(chrome.notifications.create).not.toHaveBeenCalled();
   });
 
-  it("also fires for the v2.12.0+ object shape ({date, price, currency}), not just a bare string", async () => {
+  it("also fires for the widened object shape ({date, price, currency}), not just a bare string", async () => {
     const dateStr = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     await setSync({ desktopNotifications: true });
     await setLocal({ purchaseLog: { hades: { date: dateStr, price: 19.99, currency: "USD" } } });

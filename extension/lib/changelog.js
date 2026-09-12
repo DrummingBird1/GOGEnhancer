@@ -51,29 +51,20 @@
       "Two more stale \"v2.4\" version badges fixed (onboarding wizard, options page footer)",
       "A large pass of under-the-hood testing and type-checking work — extension-wide test coverage roughly doubled and now covers every top-level page script, closing real gaps that had zero tests before",
     ],
-    "2.10.0": [
-      "🛒 Cross-store price comparison table on the game page — Steam, Epic, Humble Store, Fanatical, and GreenManGaming prices via the free CheapShark API, with a toggle in the popup (on by default)",
-      "New 0-100 deal score next to the existing \"worth waiting?\" verdict",
-      "Sale-calendar panel in the tag dashboard now predicts GOG's next likely discount window, blending your own tracked history with a known seasonal calendar",
-      "Wishlist value stat now also shows the total cost if every wishlisted game were simultaneously at its own all-time low",
-    ],
-    "2.11.0": [
+    "3.0.0": [
+      "🛒 Cross-store price comparison table on the game page — Steam, Epic, Humble Store, Fanatical, and GreenManGaming prices via the free CheapShark API, with a toggle in the popup (on by default), plus a 0-100 deal score next to the \"worth waiting?\" verdict",
+      "Sale-calendar panel in the tag dashboard predicts GOG's next likely discount window, blending your own tracked history with a known seasonal calendar",
+      "Wishlist value stat also shows the total cost if every wishlisted game were simultaneously at its own all-time low",
       "🎲 \"What to play tonight\" — a one-click random pick from your Backlog in the tag dashboard, optionally narrowed by genre, plus a \"because you like X\" recommendation strip",
-      "🔒 Encrypted backup — \"Export everything\" in Advanced Options now offers a password-protected (AES-256-GCM, entirely on-device) backup alongside the existing plain JSON one",
-      "Tags CSV export/import now round-trips play status (Playing/Backlog/Finished) too, not just tags and notes",
-      "New \"Share ↓\" button in the tag dashboard exports the currently-filtered games as a single self-contained, read-only HTML page",
-    ],
-    "2.12.0": [
+      "🔒 Encrypted backup — \"Export everything\" in Advanced Options offers a password-protected (AES-256-GCM, entirely on-device) backup alongside the plain JSON one",
+      "Tags CSV export/import round-trips play status (Playing/Backlog/Finished) too, not just tags and notes",
+      "\"Share ↓\" button in the tag dashboard exports the currently-filtered games as a single self-contained, read-only HTML page",
       "📈 Real price-history chart in the tag dashboard — expand any tracked game's card to see its full chart, not just the game page's sparkline",
       "📊 Genre distribution chart — see which genres your tagged/tracked/status-marked games actually lean toward",
       "💰 Spending tracker — log a price alongside a purchase date on the game page's Refund window section; the dashboard totals it and can compare this month's spend against an optional budget (Advanced Options)",
-      "Library year-in-review now shows your \"most patient purchase\" (longest gap between first watching a game and buying it) and a multi-year snapshot trend when you have more than one year of history",
-    ],
-    "2.13.0": [
-      "📬 Weekly digest — a new local \"This week\" panel in the popup summarizing refund windows closing soon, price-alert hits, and wishlist drops, plus a matching background job (Advanced Options → Background sync). Computed regardless of the desktop-notifications toggle, so it's useful even with notifications off",
-      "🏷️ Auto-tag suggestions — untagged games in the tag dashboard now show a one-click suggested tag based on GOG's own genre metadata, never applied without your click",
-    ],
-    "3.0.0": [
+      "Library year-in-review shows your \"most patient purchase\" (longest gap between first watching a game and buying it) and a multi-year snapshot trend",
+      "📬 Weekly digest — a local \"This week\" panel in the popup summarizing refund windows closing soon, price-alert hits, and wishlist drops, plus a matching background job. Computed regardless of the desktop-notifications toggle",
+      "🏷️ Auto-tag suggestions — untagged games in the tag dashboard show a one-click suggested tag based on GOG's own genre metadata, never applied without your click",
       "🎨 Custom theme editor — pick your own accent and background colors, plus a new high-contrast theme",
       "🔤 Optional dyslexia-friendly font stack across injected UI, no remote font downloads",
       "🏷️ Quick-add-tag from any card — hover a game card on any listing page and tag it on the spot",
@@ -84,7 +75,7 @@
     ],
   };
 
-  // Dotted-numeric version compare (2.9.0 < 2.10.0, unlike string sort).
+  // Dotted-numeric version compare (3.9.0 < 3.10.0, unlike string sort).
   // Returns -1 / 0 / 1 like a standard sort comparator.
   /**
    * @param {string} a

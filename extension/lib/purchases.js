@@ -1,9 +1,9 @@
 /**
  * GOG+ purchase-log entry helpers.
  *
- * `purchaseLog` (chrome.storage.local, slug -> value) stored a plain
- * "YYYY-MM-DD" string through v2.11.0. v2.12.0 widens it to an object —
- * { date: string, price?: number, currency?: string } — so the optional
+ * `purchaseLog` (chrome.storage.local, slug -> value) used to store a plain
+ * "YYYY-MM-DD" string; the settingsVersion 2→3 migration widens it to an
+ * object — { date: string, price?: number, currency?: string } — so the optional
  * price paid can power the spending-tracker stat without a separate
  * parallel storage key. lib/migrations.js upgrades stored data on
  * install/import (see its v2→v3 branch), but every reader here ALSO

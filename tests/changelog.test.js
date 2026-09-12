@@ -5,8 +5,8 @@ const { compareVersions, versionsSince } = window.GOGPlusChangelog;
 
 describe("compareVersions", () => {
   it("orders numerically, not lexicographically", () => {
-    expect(compareVersions("2.9.0", "2.10.0")).toBe(-1);
-    expect(compareVersions("2.10.0", "2.9.0")).toBe(1);
+    expect(compareVersions("3.9.0", "3.10.0")).toBe(-1);
+    expect(compareVersions("3.10.0", "3.9.0")).toBe(1);
   });
 
   it("treats equal versions as equal", () => {

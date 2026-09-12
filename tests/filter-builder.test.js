@@ -76,4 +76,36 @@ describe("filter-builder.js", () => {
     insertFilterToken("genre:indie");
     expect(document.getElementById("search").value).toBe("tag:favorite genre:indie");
   });
+
+  it("insertFilterToken doesn't duplicate a token already present", () => {
+    document.getElementById("search").value = "genre:rpg";
+    insertFilterToken("genre:rpg");
+    expect(document.getElementById("search").value).toBe("genre:rpg");
+  });
+
+  it("HTML-escapes tag names instead of URI-encoding them, so the token round-trips as plain text", () => {
+    state.tagOrder = ['co-op & "fun"'];
+    toggleFilterBuilder();
+    const pop = document.getElementById("filterBuilderPopover");
+    const chip = pop.querySelector(".filter-builder-chip");
+    // dataset access reflects the decoded attribute value, so this is what
+    // parseSearchQuery would actually see after a click — must be the exact
+    // original tag text, not a percent-encoded or HTML-broken variant.
+    expect(chip.dataset.token).toBe('tag:co-op & "fun"');
+    expect(chip.textContent).toBe('tag:co-op & "fun"');
+  });
+
+  it("a tag name that looks like HTML doesn't break the popover markup", () => {
+    state.tagOrder = ['<img src=x onerror="alert(1)">'];
+    expect(() => toggleFilterBuilder()).not.toThrow();
+    const pop = document.getElementById("filterBuilderPopover");
+    // No <img> actually got parsed into the DOM — the malicious markup must
+    // have landed as inert escaped text, not live HTML.
+    expect(pop.querySelector("img")).toBeNull();
+    const tagChips = [...pop.querySelectorAll(".filter-builder-chip")].filter((b) =>
+      b.dataset.token.startsWith("tag:")
+    );
+    expect(tagChips.length).toBe(1);
+    expect(tagChips[0].dataset.token).toBe('tag:<img src=x onerror="alert(1)">');
+  });
 });

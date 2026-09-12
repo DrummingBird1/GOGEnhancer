@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 await import("../extension/lib/defaults.js");
 await import("../extension/lib/storage.js");
@@ -8,6 +8,7 @@ await import("../extension/lib/genres.js");
 await import("../extension/lib/purchases.js");
 await import("../extension/lib/game-status.js");
 await import("../extension/lib/attachments.js");
+await import("../extension/content/toasts.js");
 await import("../extension/tags/state.js");
 await import("../extension/tags/features/tag-management.js");
 await import("../extension/tags/features/games-list.js");
@@ -242,6 +243,56 @@ describe("renderGames — note image attachment slot", () => {
     expect(card.querySelector(".game-card-attachment-remove")).toBeTruthy();
     expect(card.querySelector(".game-card-attach-btn")).toBeNull();
     await window.GOGPlusAttachments.deleteAttachment("hades");
+  });
+
+  it("revokes the object URL once the thumbnail has actually loaded, not immediately", async () => {
+    state.allStatus = { hades: "backlog" };
+    await window.GOGPlusAttachments.saveAttachment("hades", new Blob(["img"]));
+    URL.createObjectURL = () => "blob:leak-check";
+    const revokeSpy = vi.fn();
+    URL.revokeObjectURL = revokeSpy;
+    renderGames();
+    await waitFor(() => !!document.querySelector(".game-card-attachment img"));
+    const img = document.querySelector(".game-card-attachment img");
+    expect(revokeSpy).not.toHaveBeenCalled();
+    img.dispatchEvent(new Event("load"));
+    expect(revokeSpy).toHaveBeenCalledWith("blob:leak-check");
+    await window.GOGPlusAttachments.deleteAttachment("hades");
+  });
+
+  it("shows a toast and leaves the attach button in place when saving fails", async () => {
+    state.allStatus = { hades: "backlog" };
+    renderGames();
+    await waitFor(() => !!document.querySelector(".game-card-attach-btn"));
+    const showSpy = vi.spyOn(window.GOGPlusToasts, "show");
+    const saveSpy = vi
+      .spyOn(window.GOGPlusAttachments, "saveAttachmentDownscaled")
+      .mockRejectedValue(new Error("Not a readable image"));
+
+    // renderAttachButton() creates its <input type="file"> dynamically and
+    // never appends it to the document (that's how real browsers trigger a
+    // file picker from a detached element) — intercept createElement to get
+    // a handle on it instead of querying the DOM for it.
+    const origCreateElement = document.createElement.bind(document);
+    let capturedInput;
+    document.createElement = (tag) => {
+      const el = origCreateElement(tag);
+      if (tag === "input") capturedInput = el;
+      return el;
+    };
+    document.querySelector(".game-card-attach-btn").click();
+    document.createElement = origCreateElement;
+
+    Object.defineProperty(capturedInput, "files", { value: [new File(["x"], "x.png")] });
+    capturedInput.dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(showSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Not a readable image"),
+      expect.anything()
+    );
+    expect(document.querySelector(".game-card-attach-btn")).toBeTruthy();
+    saveSpy.mockRestore();
   });
 
   it("removing an attachment swaps the thumbnail back for the attach button", async () => {

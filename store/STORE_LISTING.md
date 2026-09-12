@@ -111,7 +111,7 @@ code.
   off. Untagged games in the tag dashboard also show a one-click suggested
   tag based on GOG's own genre metadata, never applied without a click.
 
-▸ Accessibility, custom themes, and smarter filtering (v3.0.0)
+▸ Accessibility, custom themes, and smarter filtering
   A high-contrast theme and an optional dyslexia-friendly font stack (no
   remote font downloads — just reordering locally-installed fonts).
   Pick your own accent colors with the new custom theme editor. Tag a game
@@ -120,7 +120,7 @@ code.
   picker plus a genre: operator, and games can now carry an attached photo
   alongside their note.
 
-▸ Achievements (v3.0.0)
+▸ Achievements
   A small, entirely local set of badges in the tag dashboard — tagging,
   tracking, note-taking, and spending milestones unlock as you use the
   extension, with a toast when a new one lands.
@@ -233,7 +233,7 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   בלוח התגיות מציגים גם הצעת תגית בלחיצה אחת מבוססת מטא-דאטה של ז'אנר
   מ-GOG עצמו, שלעולם לא מוחלת בלי לחיצה.
 
-▸ נגישות, ערכות נושא מותאמות אישית, וסינון חכם יותר (v3.0.0)
+▸ נגישות, ערכות נושא מותאמות אישית, וסינון חכם יותר
   ערכת נושא בניגודיות גבוהה ואופציית גופן ידידותי לדיסלקציה (בלי הורדת
   גופנים מרוחקים — רק שינוי סדר עדיפויות בין גופנים מותקנים מקומית).
   בחרו את הצבעים שלכם עם עורך ה-Custom theme החדש. תייגו משחק ישירות
@@ -241,7 +241,7 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   החיפוש בלוח התגיות קיבלה בורר סינון גלוי + אופרטור genre:, ומשחקים
   יכולים כעת לשאת תמונה מצורפת לצד ההערה.
 
-▸ Achievements (v3.0.0)
+▸ Achievements
   סט קטן ומקומי לגמרי של תגי הישג בלוח התגיות — אבני דרך של תיוג, מעקב,
   כתיבת הערות והוצאות נפתחות תוך כדי שימוש בתוסף, עם toast כשנפתח חדש.
 
