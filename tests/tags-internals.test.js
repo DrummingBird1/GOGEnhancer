@@ -11,12 +11,17 @@ await import("../extension/lib/currency-format.js");
 await import("../extension/lib/genres.js");
 await import("../extension/lib/purchases.js");
 await import("../extension/lib/game-status.js");
+await import("../extension/lib/attachments.js");
+await import("../extension/lib/achievements.js");
+await import("../extension/content/toasts.js");
 await import("../extension/tags/state.js");
 await import("../extension/tags/features/tag-management.js");
 await import("../extension/tags/features/games-list.js");
+await import("../extension/tags/features/filter-builder.js");
 await import("../extension/tags/features/stats.js");
 await import("../extension/tags/features/export-import.js");
 await import("../extension/tags/features/recommendations.js");
+await import("../extension/tags/features/achievements.js");
 await import("../extension/tags/tags.js");
 
 const { parseSearchQuery, slugToTitle, safeHexColor, renderMarkdown } =

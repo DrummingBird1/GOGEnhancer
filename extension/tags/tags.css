@@ -22,6 +22,62 @@
   --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "SF Mono", monospace;
 }
 
+/* ===== Themes =====
+   Bridges the dashboard into the same gog-plus-theme--* system content.js
+   and options.js already use (this stylesheet used to hardcode a single
+   fixed palette on bare :root with no theme classes at all — see tags.js's
+   applyThemeClassToHtml, added in v3.0.0 to read the shared `theme` /
+   `customThemeColors` settings the same way options.js does). Var names
+   here match options.css exactly, not content.css's --gp-* prefix. */
+html.gog-plus-theme--classic {
+  --accent-magenta: #8a2be2;
+  --accent-cyan: #b388ff;
+}
+html.gog-plus-theme--crt {
+  --accent-magenta: #00ff66;
+  --accent-cyan: #7fffa6;
+  --accent-green: #00ff66;
+  --accent-pink: #ffd166;
+}
+html.gog-plus-theme--sunset {
+  --accent-magenta: #ff7a00;
+  --accent-cyan: #ff3d8b;
+  --accent-pink: #ffd166;
+}
+html.gog-plus-theme--light {
+  --bg-base: #f8f5ff;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f3eeff;
+  --text-primary: #1a0a2a;
+  --text-secondary: rgba(26, 10, 42, 0.72);
+  --text-tertiary: rgba(26, 10, 42, 0.50);
+  --border: rgba(26, 10, 42, 0.10);
+  --border-strong: rgba(26, 10, 42, 0.22);
+  --accent-magenta: #7a1fc7;
+  --accent-cyan: #00a8b8;
+  --accent-green: #1fa05c;
+  --accent-pink: #d63a82;
+}
+html.gog-plus-theme--highcontrast {
+  --bg-base: #000000;
+  --bg-surface: #000000;
+  --bg-elevated: #111111;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --text-tertiary: #e8e8e8;
+  --border: rgba(255, 255, 255, 0.4);
+  --border-strong: rgba(255, 255, 255, 0.8);
+  --accent-magenta: #ffff00;
+  --accent-cyan: #00ffff;
+  --accent-green: #00ff00;
+  --accent-pink: #ff00ff;
+}
+html.gog-plus-dyslexia-font body {
+  font-family: "OpenDyslexic", "Comic Sans MS", Verdana, "Trebuchet MS", sans-serif;
+  letter-spacing: 0.015em;
+  line-height: 1.75;
+}
+
 * { box-sizing: border-box; }
 html, body {
   margin: 0;
@@ -78,6 +134,7 @@ a:hover { text-decoration: underline; }
 .hero-sub { color: var(--text-secondary); margin: 0 0 18px; max-width: 60ch; }
 
 .toolbar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1050,6 +1107,158 @@ a:hover { text-decoration: underline; }
 }
 
 /* ============================================================
+   Discoverable filter-chip builder — a popover next to the search box that
+   inserts tag:/status:/genre:/lowest:/since: query snippets, since the
+   query syntax itself (games-list.js's parseSearchQuery) has no other
+   affordance telling users it exists.
+   ============================================================ */
+.filter-builder-popover {
+  position: absolute;
+  z-index: 1000;
+  margin-top: 6px;
+  padding: 12px;
+  width: min(360px, calc(100vw - 48px));
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+.filter-builder-group {
+  margin-bottom: 10px;
+}
+.filter-builder-group:last-child { margin-bottom: 0; }
+.filter-builder-group-label {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.filter-builder-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.filter-builder-chip {
+  background: rgba(244, 234, 255, 0.06);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text-primary);
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-family: var(--mono);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.filter-builder-chip:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+.filter-builder-empty {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* ============================================================
+   Achievements — unlocked badges are lit, locked ones stay dim outlines so
+   the full set is always visible (what to work toward), not just what's
+   earned.
+   ============================================================ */
+.achievements-panel {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px 24px;
+}
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.achievement-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 14px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  opacity: 0.4;
+  filter: grayscale(1);
+  transition: opacity 0.2s ease, filter 0.2s ease, transform 0.2s ease;
+}
+.achievement-badge.unlocked {
+  opacity: 1;
+  filter: none;
+  border-color: rgba(198, 79, 255, 0.4);
+  background: linear-gradient(135deg, rgba(198, 79, 255, 0.12), rgba(0, 240, 255, 0.08));
+}
+.achievement-badge:hover { transform: translateY(-2px); }
+.achievement-icon { font-size: 26px; line-height: 1; }
+.achievement-title { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+.achievement-desc { font-size: 10.5px; color: var(--text-tertiary); line-height: 1.4; }
+.achievement-date { font-size: 9.5px; font-family: var(--mono); color: var(--accent-cyan); }
+
+/* ============================================================
+   Note image attachments — one downscaled photo per game, stored in
+   IndexedDB (lib/attachments.js), shown as a small thumbnail on the card.
+   ============================================================ */
+.game-card-attachment {
+  margin-bottom: 10px;
+}
+.game-card-attachment img {
+  display: block;
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.game-card-attachment-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.game-card-attach-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 3px 9px;
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.game-card-attach-btn:hover {
+  border-style: solid;
+  border-color: var(--accent-magenta);
+  color: var(--accent-magenta);
+}
+.game-card-attachment-remove {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-tertiary);
+  font-size: 10.5px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.game-card-attachment-remove:hover {
+  border-color: var(--accent-pink);
+  color: var(--accent-pink);
+}
+
+/* ============================================================
    Compact density — reduces padding/gap/font sizes across cards
    so power users with many tags fit more on-screen.
    Toggle from the dashboard toolbar.
@@ -1076,6 +1285,26 @@ body.density-compact .game-card-title { font-size: 14px; margin-bottom: 4px; }
 body.density-compact .game-card-slug { font-size: 10px; margin-bottom: 6px; }
 body.density-compact .game-card-tags { gap: 3px; margin-bottom: 6px; }
 body.density-compact .game-card-note { font-size: 11px; max-height: 90px; padding: 6px 8px; }
+
+/* Compact coverage for panels added in later phases — a gap-fill, not a
+   rebuild of the density system itself (see the plan's Phase 5 note on
+   verifying tagDashboardDensity before extending it). */
+body.density-compact .sale-heatmap,
+body.density-compact .genre-distribution,
+body.density-compact .tonight-picker,
+body.density-compact .achievements-panel { padding-bottom: 14px; }
+body.density-compact .heatmap-header h2,
+body.density-compact .tonight-header h2 { font-size: 18px; }
+body.density-compact .heatmap-cell { padding: 4px 6px; }
+body.density-compact .heatmap-count { font-size: 14px; }
+body.density-compact .genre-bar-row { gap: 6px; }
+body.density-compact .genre-bar-label { font-size: 11px; }
+body.density-compact .tonight-controls { margin-top: 8px; gap: 6px; }
+body.density-compact .achievements-grid { gap: 6px; }
+body.density-compact .achievement-badge { padding: 8px 6px; gap: 3px; }
+body.density-compact .achievement-icon { font-size: 20px; }
+body.density-compact .achievement-title { font-size: 11px; }
+body.density-compact .achievement-desc { font-size: 9.5px; }
 
 /* Toasts — window.GOGPlusToasts is shared with content.js's on-page copy,
    but this dashboard is its own page with its own stylesheet, so the
@@ -1141,5 +1370,5 @@ body.density-compact .game-card-note { font-size: 11px; max-height: 90px; paddin
 body.density-compact .game-list { gap: 8px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .gog-plus-toast { transition: none; }
+  .gog-plus-toast, .achievement-badge { transition: none; }
 }

@@ -99,7 +99,13 @@ async function decryptBackup(envelope, password) {
   return new TextDecoder().decode(plainBuf);
 }
 
-function applyThemeClassToHtml(theme) {
+// customColors, when the resolved theme is "custom": {magenta, cyan, bg}.
+// Applied as inline custom properties on <html> so no CSS class covers the
+// "custom" case — the swatch classes above only style each theme's picker
+// button, not the live page. Inline style always wins the cascade, so
+// switching AWAY from "custom" must explicitly clear these or a class-based
+// theme picked next would be silently overridden.
+function applyThemeClassToHtml(theme, customColors) {
   // Strip any prior gog-plus-theme--* class so themes don't compose,
   // then add the current one. "neon" is the CSS default so the class
   // is harmless; we still add it for consistency with content.js.
@@ -113,6 +119,15 @@ function applyThemeClassToHtml(theme) {
     resolved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "neon";
   }
   html.classList.add(`gog-plus-theme--${resolved}`);
+  if (resolved === "custom" && customColors) {
+    html.style.setProperty("--accent-magenta", customColors.magenta);
+    html.style.setProperty("--accent-cyan", customColors.cyan);
+    html.style.setProperty("--bg-base", customColors.bg);
+  } else {
+    html.style.removeProperty("--accent-magenta");
+    html.style.removeProperty("--accent-cyan");
+    html.style.removeProperty("--bg-base");
+  }
 }
 
 let saveStatusTimer = null;
@@ -177,10 +192,17 @@ async function load() {
 
   // Active theme swatch + live preview on the options page itself
   const activeTheme = s.theme || "neon";
-  applyThemeClassToHtml(activeTheme);
+  applyThemeClassToHtml(activeTheme, s.customThemeColors);
   document.querySelectorAll(".theme-swatch").forEach((b) => {
     b.classList.toggle("active", b.dataset.theme === activeTheme);
   });
+  if ($("customThemeEditor")) $("customThemeEditor").hidden = activeTheme !== "custom";
+  const cc = s.customThemeColors;
+  if ($("customColorMagenta")) $("customColorMagenta").value = cc?.magenta || "#c64fff";
+  if ($("customColorCyan")) $("customColorCyan").value = cc?.cyan || "#00f0ff";
+  if ($("customColorBg")) $("customColorBg").value = cc?.bg || "#0a0612";
+  if ($("dyslexiaFont")) $("dyslexiaFont").checked = !!s.dyslexiaFont;
+  document.documentElement.classList.toggle("gog-plus-dyslexia-font", !!s.dyslexiaFont);
 
   // Background sync statuses
   $("status-fx").textContent = formatTimeSince(s.ratesUpdatedAt);
@@ -362,11 +384,38 @@ function bind() {
       const theme = btn.dataset.theme;
       document.querySelectorAll(".theme-swatch").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      applyThemeClassToHtml(theme);
+      const { customThemeColors } = await window.GOGPlusStorage.get({ customThemeColors: null });
+      applyThemeClassToHtml(theme, customThemeColors);
+      if ($("customThemeEditor")) $("customThemeEditor").hidden = theme !== "custom";
       await window.GOGPlusStorage.set({ theme });
       flashSaved();
     });
   });
+
+  // Custom theme color pickers — persist as one object so a partial pick
+  // never leaves the other two colors undefined.
+  const saveCustomColors = async () => {
+    const colors = {
+      magenta: $("customColorMagenta").value,
+      cyan: $("customColorCyan").value,
+      bg: $("customColorBg").value,
+    };
+    applyThemeClassToHtml("custom", colors);
+    await window.GOGPlusStorage.set({ customThemeColors: colors });
+    flashSaved();
+  };
+  ["customColorMagenta", "customColorCyan", "customColorBg"].forEach((id) => {
+    if ($(id)) $(id).addEventListener("input", saveCustomColors);
+  });
+
+  if ($("dyslexiaFont")) {
+    $("dyslexiaFont").addEventListener("change", async () => {
+      const on = $("dyslexiaFont").checked;
+      document.documentElement.classList.toggle("gog-plus-dyslexia-font", on);
+      await window.GOGPlusStorage.set({ dyslexiaFont: on });
+      flashSaved();
+    });
+  }
 
   // Force jobs
   $("refreshRates").addEventListener("click", () => {
@@ -597,6 +646,16 @@ function bind() {
     if (chrome.runtime.lastError) console.error("[GOG+] reset sync.clear failed:", chrome.runtime.lastError.message);
     await new Promise((r) => chrome.storage.local.clear(r));
     if (chrome.runtime.lastError) console.error("[GOG+] reset local.clear failed:", chrome.runtime.lastError.message);
+    // Note image attachments (lib/attachments.js) live in IndexedDB, not
+    // chrome.storage — not cleared by the two calls above. Best-effort,
+    // fire-and-forget: deleteDatabase blocks until every open connection to
+    // it closes, which could be forever if e.g. the tag dashboard is open in
+    // another tab, and this reset flow shouldn't hang on that.
+    try {
+      indexedDB.deleteDatabase("gog-plus-attachments");
+    } catch (_) {
+      // Non-fatal — the rest of the reset already succeeded.
+    }
     flashSaved();
     setTimeout(() => location.reload(), 500);
   });

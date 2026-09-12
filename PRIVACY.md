@@ -48,6 +48,8 @@ extension:
 | Cached currency exchange rates and the last fetch error (if any) | `chrome.storage.sync` | So we don't refetch on every page; the error string lets the popup tell you when the rate refresh failed |
 | Onboarding completion flag and the verbose-logging toggle | `chrome.storage.sync` | So we don't show the welcome wizard twice; the debug toggle is yours to flip in Advanced Options |
 | Tag-dashboard density preference (comfortable / compact) | `chrome.storage.local` | Per-device UI preference — the dashboard remembers your choice between visits |
+| Your custom theme colors, dyslexia-friendly font choice, and unlocked achievements | `chrome.storage.sync` / `chrome.storage.local` | Same categories as above — preferences sync, personal progress stays local |
+| One optional photo you attach to a game's note in the tag dashboard | `IndexedDB` (a separate local database, not `chrome.storage`) | Images are downscaled on your device before saving; `chrome.storage`'s ~5&nbsp;MB total quota is too small for photos, so this uses its own local storage bucket instead. Still never leaves your device, and "Reset everything" deletes it too (best-effort — instantly if no other GOG Enhancer tab is open, otherwise once you close the others) |
 
 You can wipe all of this at any time from the **Advanced Settings** page
 (toolbar icon → Advanced → Reset everything). You can also back it all up to

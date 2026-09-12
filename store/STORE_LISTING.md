@@ -111,6 +111,20 @@ code.
   off. Untagged games in the tag dashboard also show a one-click suggested
   tag based on GOG's own genre metadata, never applied without a click.
 
+▸ Accessibility, custom themes, and smarter filtering (v3.0.0)
+  A high-contrast theme and an optional dyslexia-friendly font stack (no
+  remote font downloads — just reordering locally-installed fonts).
+  Pick your own accent colors with the new custom theme editor. Tag a game
+  straight from its card on a listing page via a hover "+" button — no need
+  to open it. The tag dashboard's search box gained a discoverable filter
+  picker plus a genre: operator, and games can now carry an attached photo
+  alongside their note.
+
+▸ Achievements (v3.0.0)
+  A small, entirely local set of badges in the tag dashboard — tagging,
+  tracking, note-taking, and spending milestones unlock as you use the
+  extension, with a toast when a new one lands.
+
 ▸ Hebrew translations + RTL
   Optional Hebrew dictionary covering navigation, UI strings, and common
   patterns. Real RTL with logical-property CSS — not a flipped page.
@@ -122,12 +136,13 @@ code.
   notification when wishlist deals appear (opt-in).
 
 ▸ Theme picker + visual upgrade
-  Four themes: Neon (default), Classic GOG, CRT Green, Sunset. System-font
-  monospace numerals for prices, era-aware accents (CRT scan-lines for
-  classics, neon underglow for cyberpunk/witcher, genre-tuned hover
-  effects for RPG/Horror/Strategy/Sci-fi/Indie titles), gold pill on
-  "Good Old Game" markers, glassmorphism on the game-page panel with a
-  blurred hero backdrop pulled from the page's cover art.
+  Neon (default), Classic GOG, CRT Green, Sunset, Light, Auto, a new
+  High Contrast theme, and a Custom theme editor for picking your own
+  colors. System-font monospace numerals for prices, era-aware accents
+  (CRT scan-lines for classics, neon underglow for cyberpunk/witcher,
+  genre-tuned hover effects for RPG/Horror/Strategy/Sci-fi/Indie titles),
+  gold pill on "Good Old Game" markers, glassmorphism on the game-page
+  panel with a blurred hero backdrop pulled from the page's cover art.
 
 ▸ Privacy-first
   No analytics, no third-party tracking, no Google Fonts, no remote code.
@@ -218,6 +233,18 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   בלוח התגיות מציגים גם הצעת תגית בלחיצה אחת מבוססת מטא-דאטה של ז'אנר
   מ-GOG עצמו, שלעולם לא מוחלת בלי לחיצה.
 
+▸ נגישות, ערכות נושא מותאמות אישית, וסינון חכם יותר (v3.0.0)
+  ערכת נושא בניגודיות גבוהה ואופציית גופן ידידותי לדיסלקציה (בלי הורדת
+  גופנים מרוחקים — רק שינוי סדר עדיפויות בין גופנים מותקנים מקומית).
+  בחרו את הצבעים שלכם עם עורך ה-Custom theme החדש. תייגו משחק ישירות
+  מהכרטיס שלו בעמוד רשימה דרך כפתור "+" ב-hover — בלי לפתוח אותו. תיבת
+  החיפוש בלוח התגיות קיבלה בורר סינון גלוי + אופרטור genre:, ומשחקים
+  יכולים כעת לשאת תמונה מצורפת לצד ההערה.
+
+▸ Achievements (v3.0.0)
+  סט קטן ומקומי לגמרי של תגי הישג בלוח התגיות — אבני דרך של תיוג, מעקב,
+  כתיבת הערות והוצאות נפתחות תוך כדי שימוש בתוסף, עם toast כשנפתח חדש.
+
 ▸ עברית + RTL מלא
   מילון עברית רחב, RTL אמיתי עם logical-properties CSS.
 
@@ -228,9 +255,10 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   system כשמבצעים חדשים מופיעים (opt-in).
 
 ▸ Theme picker + שדרוג עיצוב
-  ארבעה themes: Neon (ברירת מחדל), Classic GOG, CRT Green, Sunset.
-  גופן monospace למחירים, accents מותאמי-עידן (סקאן-ליינס לקלאסיקות,
-  neon לקיברפאנק/וויצ'ר, hover ייעודי לפי ז'אנר), pill זהב על
+  Neon (ברירת מחדל), Classic GOG, CRT Green, Sunset, Light, Auto, ערכת
+  High Contrast חדשה, ועורך Custom theme לבחירת צבעים משלכם. גופן
+  monospace למחירים, accents מותאמי-עידן (סקאן-ליינס לקלאסיקות, neon
+  לקיברפאנק/וויצ'ר, hover ייעודי לפי ז'אנר), pill זהב על
   "Good Old Game", glassmorphism על ה-game panel עם hero blur מתוך
   ה-cover art של העמוד.
 

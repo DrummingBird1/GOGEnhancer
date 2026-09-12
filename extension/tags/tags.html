@@ -19,7 +19,9 @@
         left to filter, or search by name.
       </p>
       <div class="toolbar">
-        <input type="search" id="search" placeholder="Search… or use tag:X, lowest:<10, since:2026, snapshots:>5" autocomplete="off" title="Advanced filters: tag:rpg lowest:<10 lowest:>5 snapshots:>3 since:2026 — combine freely with plain text" />
+        <input type="search" id="search" placeholder="Search… or use tag:X, status:playing, genre:rpg, lowest:<10, since:2026, snapshots:>5" autocomplete="off" title="Advanced filters: tag:rpg status:playing genre:rpg lowest:<10 lowest:>5 snapshots:>3 since:2026 — combine freely with plain text" />
+        <button id="filterBuilderBtn" class="ghost" type="button" title="Browse available search filters">⚙ Filters</button>
+        <div id="filterBuilderPopover" class="filter-builder-popover" hidden></div>
         <select id="sortBy" class="toolbar-select" title="Sort games by…">
           <option value="name">Name</option>
           <option value="lastVisit">Last visit</option>
@@ -42,6 +44,7 @@
   <section class="sale-heatmap" id="saleHeatmap" aria-label="Sale calendar heatmap"></section>
   <section class="genre-distribution" id="genreDistribution" aria-label="Genre distribution"></section>
   <section class="tonight-picker" id="tonightPicker" aria-label="What to play tonight" hidden></section>
+  <section class="achievements-panel" id="achievementsPanel" aria-label="Achievements"></section>
 
   <main class="layout">
     <aside class="sidebar">
@@ -58,6 +61,7 @@
     </section>
   </main>
 
+  <script src="../lib/browser-compat.js"></script>
   <script src="../lib/defaults.js"></script>
   <script src="../lib/i18n.js"></script>
   <script src="../lib/storage.js"></script>
@@ -66,13 +70,17 @@
   <script src="../lib/game-status.js"></script>
   <script src="../lib/genres.js"></script>
   <script src="../lib/purchases.js"></script>
+  <script src="../lib/attachments.js"></script>
+  <script src="../lib/achievements.js"></script>
   <script src="../content/toasts.js"></script>
   <script src="state.js"></script>
   <script src="features/tag-management.js"></script>
   <script src="features/games-list.js"></script>
+  <script src="features/filter-builder.js"></script>
   <script src="features/stats.js"></script>
   <script src="features/export-import.js"></script>
   <script src="features/recommendations.js"></script>
+  <script src="features/achievements.js"></script>
   <script src="tags.js"></script>
 </body>
 </html>

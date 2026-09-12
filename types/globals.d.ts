@@ -148,6 +148,10 @@ declare global {
     GOGPlusTagsStats?: GogPlusLooseApi;
     GOGPlusTagsExportImport?: GogPlusLooseApi;
     GOGPlusTagsRecommendations?: GogPlusLooseApi;
+    GOGPlusTagsFilterBuilder?: GogPlusLooseApi;
+    GOGPlusTagsAchievements?: GogPlusLooseApi;
+    GOGPlusAttachments?: GogPlusLooseApi;
+    GOGPlusAchievements?: GogPlusLooseApi;
   }
 }
 

@@ -1,6 +1,11 @@
 // Minimal chrome.* shim for the extension code that runs under happy-dom.
 // The real APIs are callback-based; the GOGPlusStorage wrapper promisifies.
 import { vi } from "vitest";
+// happy-dom doesn't implement IndexedDB at all (globalThis.indexedDB is
+// undefined) — lib/attachments.js needs a real one to test its read/write
+// path against, so this polyfills the full API rather than hand-rolling a
+// partial fake.
+import "fake-indexeddb/auto";
 
 const stores = { sync: {}, local: {} };
 const onChangedListeners = [];

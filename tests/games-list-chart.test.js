@@ -7,12 +7,14 @@ await import("../extension/lib/currency-format.js");
 await import("../extension/lib/genres.js");
 await import("../extension/lib/purchases.js");
 await import("../extension/lib/game-status.js");
+await import("../extension/lib/attachments.js");
 await import("../extension/tags/state.js");
 await import("../extension/tags/features/tag-management.js");
 await import("../extension/tags/features/games-list.js");
 
 const state = window.GOGPlusTagsState;
-const { renderGames, buildDashboardChart, genreSuggestionFor } = window.GOGPlusTagsGamesList;
+const { renderGames, buildDashboardChart, genreSuggestionFor, parseSearchQuery, matchingSlugs } =
+  window.GOGPlusTagsGamesList;
 
 function resetState() {
   state.allTags = {};
@@ -24,12 +26,26 @@ function resetState() {
   state.allGenres = {};
   state.tagColors = {};
   state.tagOrder = [];
+  state.searchTerm = "";
+  state.activeTag = null;
+  state.sortBy = "name";
 }
 
 beforeEach(() => {
   resetState();
   document.body.innerHTML = `<span id="counts"></span><div id="gameList"></div><div id="tagList"></div>`;
 });
+
+// hydrateAttachmentSlot()'s first-ever IndexedDB access in a given test file
+// spans several ticks (open -> onupgradeneeded -> onsuccess -> transaction),
+// more than a single setTimeout(0) reliably covers — poll instead.
+async function waitFor(predicate, { timeout = 2000, interval = 10 } = {}) {
+  const start = Date.now();
+  while (!predicate()) {
+    if (Date.now() - start > timeout) throw new Error("waitFor: timed out");
+    await new Promise((r) => setTimeout(r, interval));
+  }
+}
 
 describe("buildDashboardChart", () => {
   it("renders an SVG with a legend showing low/avg/latest", () => {
@@ -171,5 +187,84 @@ describe("renderGames — auto-tag suggestion", () => {
     card.querySelector(".game-card-tag-suggestion").click();
     await new Promise((r) => setTimeout(r, 0));
     expect(cardClicked).toBe(false);
+  });
+});
+
+describe("genre: search filter", () => {
+  it("parseSearchQuery lowercases a genre: token", () => {
+    expect(parseSearchQuery("genre:RPG").genre).toBe("rpg");
+  });
+
+  it("matches games whose resolved genre (cache or slug heuristic) equals the filter", () => {
+    state.allStatus = { hades: "playing", civilization: "playing", the_witcher_3: "playing" };
+    state.allGenres = { the_witcher_3: "rpg" }; // confirmed cache overrides slug heuristic
+    state.searchTerm = "genre:rpg";
+    expect(matchingSlugs()).toEqual(["the_witcher_3"]);
+  });
+
+  it("falls back to the slug-pattern heuristic when no cached genre exists", () => {
+    state.allStatus = { hades: "playing", civilization: "playing" };
+    state.searchTerm = "genre:indie";
+    expect(matchingSlugs()).toEqual(["hades"]);
+  });
+
+  it("returns nothing for a genre with no matches", () => {
+    state.allStatus = { hades: "playing" };
+    state.searchTerm = "genre:horror";
+    expect(matchingSlugs()).toEqual([]);
+  });
+
+  it("combines with other filters (tag: + genre:)", () => {
+    state.allTags = { hades: ["favorite"], civilization: ["favorite"] };
+    state.searchTerm = "tag:favorite genre:strategy";
+    expect(matchingSlugs()).toEqual(["civilization"]);
+  });
+});
+
+describe("renderGames — note image attachment slot", () => {
+  it("shows an attach-image button when no attachment exists for the game", async () => {
+    state.allStatus = { hades: "backlog" };
+    renderGames();
+    await waitFor(() => !!document.querySelector(".game-card-attach-btn"));
+    const card = document.querySelector(".game-card");
+    expect(card.querySelector(".game-card-attach-btn")).toBeTruthy();
+    expect(card.querySelector(".game-card-attachment")).toBeNull();
+  });
+
+  it("shows the stored thumbnail + remove button once an attachment exists", async () => {
+    state.allStatus = { hades: "backlog" };
+    await window.GOGPlusAttachments.saveAttachment("hades", new Blob(["img"], { type: "image/jpeg" }));
+    URL.createObjectURL = () => "blob:fake";
+    renderGames();
+    await waitFor(() => !!document.querySelector(".game-card-attachment, .game-card-attach-btn"));
+    const card = document.querySelector(".game-card");
+    expect(card.querySelector(".game-card-attachment img")).toBeTruthy();
+    expect(card.querySelector(".game-card-attachment-remove")).toBeTruthy();
+    expect(card.querySelector(".game-card-attach-btn")).toBeNull();
+    await window.GOGPlusAttachments.deleteAttachment("hades");
+  });
+
+  it("removing an attachment swaps the thumbnail back for the attach button", async () => {
+    state.allStatus = { hades: "backlog" };
+    await window.GOGPlusAttachments.saveAttachment("hades", new Blob(["img"]));
+    URL.createObjectURL = () => "blob:fake";
+    URL.revokeObjectURL = () => {};
+    renderGames();
+    await waitFor(() => !!document.querySelector(".game-card-attachment-remove"));
+    const card = document.querySelector(".game-card");
+    card.querySelector(".game-card-attachment-remove").click();
+    await waitFor(() => !!document.querySelector(".game-card-attach-btn"));
+    expect(document.querySelector(".game-card-attach-btn")).toBeTruthy();
+    expect(await window.GOGPlusAttachments.getAttachment("hades")).toBeUndefined();
+  });
+
+  it("degrades to the attach button when IndexedDB is unavailable, without throwing", async () => {
+    state.allStatus = { hades: "backlog" };
+    const original = window.GOGPlusAttachments;
+    window.GOGPlusAttachments = undefined;
+    expect(() => renderGames()).not.toThrow();
+    await waitFor(() => !!document.querySelector(".game-card-attach-btn"));
+    expect(document.querySelector(".game-card-attach-btn")).toBeTruthy();
+    window.GOGPlusAttachments = original;
   });
 });

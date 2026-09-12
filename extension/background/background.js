@@ -9,6 +9,7 @@
  *   - Handle keyboard commands
  */
 
+import "../lib/browser-compat.js";
 import "../lib/defaults.js";
 import "../lib/storage.js";
 import "../lib/migrations.js";

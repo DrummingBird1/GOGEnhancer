@@ -60,6 +60,23 @@
       theme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "neon";
     }
     document.documentElement.classList.add(`gog-plus-theme--${theme}`);
+    // Custom theme colors are applied as inline vars, not a CSS class — see
+    // the identical comment in options.js's applyThemeClassToHtml. Must be
+    // explicitly cleared on every other theme or they'd keep overriding it.
+    const customColors = state.settings.customThemeColors;
+    if (theme === "custom" && customColors) {
+      document.documentElement.style.setProperty("--gp-magenta", customColors.magenta);
+      document.documentElement.style.setProperty("--gp-cyan", customColors.cyan);
+      document.documentElement.style.setProperty("--gp-bg", customColors.bg);
+    } else {
+      document.documentElement.style.removeProperty("--gp-magenta");
+      document.documentElement.style.removeProperty("--gp-cyan");
+      document.documentElement.style.removeProperty("--gp-bg");
+    }
+    document.documentElement.classList.toggle(
+      "gog-plus-dyslexia-font",
+      !!state.settings.dyslexiaFont
+    );
 
     try {
       state.pageCurrency = window.GOGPlusCurrency.detect();

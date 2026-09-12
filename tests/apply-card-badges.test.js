@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // See tests/content-internals.test.js for why the full dependency chain is
 // imported here (content.js's own bootstrap needs it).
@@ -168,5 +168,101 @@ describe("applyCardBadges — hot zone regressions", () => {
     `;
     applyCardBadges(document.body);
     expect(document.querySelector(".gog-plus-badges")).toBe(null);
+  });
+});
+
+describe("applyCardBadges — quick-add-tag (v3.0.0)", () => {
+  it("adds the quick-add button only when customTags is enabled", () => {
+    __setSettingsForTest({ ...DEFAULTS, customTags: false });
+    document.body.innerHTML = deepCardHtml("no_quickadd_slug", "host-target");
+    applyCardBadges(document.body);
+    expect(document.querySelector(".gog-plus-quickadd-btn")).toBe(null);
+  });
+
+  it("opens a popover with a text input when clicked", () => {
+    __setSettingsForTest({ ...DEFAULTS, customTags: true, tags: {} });
+    document.body.innerHTML = deepCardHtml("quickadd_slug", "host-target");
+    applyCardBadges(document.body);
+    document.querySelector(".gog-plus-quickadd-btn").click();
+    const popover = document.querySelector(".gog-plus-quickadd-popover");
+    expect(popover).toBeTruthy();
+    expect(popover.querySelector("input")).toBeTruthy();
+  });
+
+  it("adding a tag persists it, refreshes the tag dot, and closes the popover", async () => {
+    __setSettingsForTest({ ...DEFAULTS, customTags: true, tags: {}, richTooltips: false });
+    document.body.innerHTML = deepCardHtml("quickadd_persist_slug", "host-target");
+    applyCardBadges(document.body);
+    document.querySelector(".gog-plus-quickadd-btn").click();
+    const popover = document.querySelector(".gog-plus-quickadd-popover");
+    const input = popover.querySelector("input");
+    input.value = "must-play";
+    popover.querySelector("button").click();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(document.querySelector(".gog-plus-quickadd-popover")).toBe(null);
+    const host = document.getElementById("host-target");
+    expect(host.querySelector(".gog-plus-tag-dot")).toBeTruthy();
+    expect(host.classList.contains("gog-plus-cover-host--has-tagdot")).toBe(true);
+
+    const s = await new Promise((r) => chrome.storage.local.get(["tags"], r));
+    expect(s.tags.quickadd_persist_slug).toEqual(["must-play"]);
+  });
+
+  it("submitting an empty input just closes the popover without writing a tag", async () => {
+    __setSettingsForTest({ ...DEFAULTS, customTags: true, tags: {} });
+    document.body.innerHTML = deepCardHtml("quickadd_empty_slug", "host-target");
+    applyCardBadges(document.body);
+    document.querySelector(".gog-plus-quickadd-btn").click();
+    document.querySelector(".gog-plus-quickadd-popover button").click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.querySelector(".gog-plus-quickadd-popover")).toBe(null);
+    const s = await new Promise((r) => chrome.storage.local.get(["tags"], r));
+    expect(s.tags?.quickadd_empty_slug).toBeUndefined();
+  });
+
+  it("Escape closes the popover without submitting", () => {
+    __setSettingsForTest({ ...DEFAULTS, customTags: true, tags: {} });
+    document.body.innerHTML = deepCardHtml("quickadd_escape_slug", "host-target");
+    applyCardBadges(document.body);
+    document.querySelector(".gog-plus-quickadd-btn").click();
+    const input = document.querySelector(".gog-plus-quickadd-popover input");
+    input.value = "abandoned";
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(document.querySelector(".gog-plus-quickadd-popover")).toBe(null);
+  });
+
+  it("clicking outside the popover dismisses it", async () => {
+    __setSettingsForTest({ ...DEFAULTS, customTags: true, tags: {} });
+    document.body.innerHTML = deepCardHtml("quickadd_outside_slug", "host-target");
+    applyCardBadges(document.body);
+    document.querySelector(".gog-plus-quickadd-btn").click();
+    expect(document.querySelector(".gog-plus-quickadd-popover")).toBeTruthy();
+    // The outside-click listener attaches on a deferred setTimeout(0) so the
+    // opening click itself doesn't immediately count as "outside" — wait a
+    // tick for it to attach before dispatching the dismissing click.
+    await new Promise((r) => setTimeout(r, 0));
+    document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    expect(document.querySelector(".gog-plus-quickadd-popover")).toBe(null);
+  });
+
+  it("doesn't add a duplicate tag already on the game (and skips the storage write entirely)", async () => {
+    __setSettingsForTest({ ...DEFAULTS, customTags: true, richTooltips: true, tags: { quickadd_dup_slug: ["already"] } });
+    document.body.innerHTML = deepCardHtml("quickadd_dup_slug", "host-target");
+    applyCardBadges(document.body);
+    const setSpy = vi.spyOn(window.GOGPlusStorage, "set");
+    document.querySelector(".gog-plus-quickadd-btn").click();
+    const popover = document.querySelector(".gog-plus-quickadd-popover");
+    popover.querySelector("input").value = "already";
+    popover.querySelector("button").click();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(setSpy).not.toHaveBeenCalled();
+    // The tag dot's tooltip reflects the in-memory tag list — must stay
+    // exactly "already", not duplicated to "already, already".
+    const host = document.getElementById("host-target");
+    expect(host.querySelector(".gog-plus-tag-dot").dataset.gogPlusTip).toContain("already");
+    expect(host.querySelector(".gog-plus-tag-dot").dataset.gogPlusTip).not.toContain("already, already");
+    setSpy.mockRestore();
   });
 });

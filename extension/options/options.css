@@ -56,6 +56,57 @@ html.gog-plus-theme--light {
   --accent-green: #1fa05c;
   --accent-pink: #d63a82;
 }
+html.gog-plus-theme--highcontrast {
+  --bg-base: #000000;
+  --bg-surface: #000000;
+  --bg-elevated: #111111;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --text-tertiary: #e8e8e8;
+  --border: rgba(255, 255, 255, 0.4);
+  --border-strong: rgba(255, 255, 255, 0.8);
+  --accent-magenta: #ffff00;
+  --accent-cyan: #00ffff;
+  --accent-green: #00ff00;
+  --accent-pink: #ff00ff;
+}
+html.gog-plus-dyslexia-font body {
+  font-family: "OpenDyslexic", "Comic Sans MS", Verdana, "Trebuchet MS", sans-serif;
+  letter-spacing: 0.015em;
+  line-height: 1.75;
+}
+
+/* Custom theme — a 7th slot next to the fixed palettes. Colors are picked
+   live via <input type="color"> and applied as inline custom properties on
+   <html> (see options.js applyThemeClassToHtml), so no CSS class is needed
+   here beyond showing/hiding the editor row itself. */
+.custom-theme-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.custom-theme-editor-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.custom-theme-editor-field input[type="color"] {
+  width: 32px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
 
 /* Smooth color cross-fade when the theme changes. Limited to color-family
    properties so layout never animates. Disabled for reduced-motion users. */
@@ -597,6 +648,14 @@ button.danger:hover {
   position: absolute;
   inset: 0;
   background: linear-gradient(90deg, #c64fff 0%, transparent 48%, transparent 52%, #7a1fc7 100%);
+}
+.theme-swatch--highcontrast {
+  background: #000000;
+  border: 1px solid #ffff00;
+  box-shadow: inset 0 0 0 3px #000, inset 0 0 0 4px #00ffff;
+}
+.theme-swatch--custom {
+  background: conic-gradient(from 0deg, #c64fff, #00f0ff, #7fffa6, #ff6b9d, #c64fff);
 }
 
 /* UI language selector — sits in the Look & feel card under the theme picker */

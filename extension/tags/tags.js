@@ -16,6 +16,8 @@ const { renderTagList } = window.GOGPlusTagsManagement;
 const { renderGames } = window.GOGPlusTagsGamesList;
 const { exportPack, importPackFromFile, exportCsv, exportStaticHtml } = window.GOGPlusTagsExportImport;
 const { renderTonightPicker } = window.GOGPlusTagsRecommendations;
+const { toggleFilterBuilder, closeFilterBuilder } = window.GOGPlusTagsFilterBuilder;
+const { evaluateAndPersist, renderAchievements } = window.GOGPlusTagsAchievements;
 
 async function init() {
   const data = await window.GOGPlusStorage.get({
@@ -31,6 +33,10 @@ async function init() {
     uiLanguage: "en",
     wishlistSlugs: [],
     monthlyBudget: null,
+    theme: "neon",
+    customThemeColors: null,
+    dyslexiaFont: false,
+    achievements: {},
   });
   window.GOGPlusI18n?.apply(data.uiLanguage || "en");
   state.allTags = data.tags || {};
@@ -43,8 +49,11 @@ async function init() {
   state.allStatus = data.gameStatus || {};
   state.allGenres = data.gameGenres || {};
   state.monthlyBudget = data.monthlyBudget || null;
+  state.achievements = data.achievements || {};
   state.density = data.tagDashboardDensity === "compact" ? "compact" : "comfortable";
   applyDensityClass();
+  applyThemeClassToHtml(data.theme, data.customThemeColors);
+  document.documentElement.classList.toggle("gog-plus-dyslexia-font", !!data.dyslexiaFont);
   await renderStats();
   renderYearReview();
   renderSaleHeatmap();
@@ -52,11 +61,39 @@ async function init() {
   renderTagList();
   renderGames();
   renderTonightPicker();
+  await evaluateAndPersist();
+  renderAchievements();
   bind();
 }
 
 function applyDensityClass() {
   document.body.classList.toggle("density-compact", state.density === "compact");
+}
+
+// Bridges the dashboard into the same gog-plus-theme--* system content.js
+// and options.js use — see tags.css's own "Themes" section comment for why
+// this page needed it added rather than inheriting it. Small local copy
+// rather than a shared helper: same call, different CSS var namespace than
+// content.js's version (bare --accent-*/--bg-base here vs. --gp-* there).
+function applyThemeClassToHtml(theme, customColors) {
+  const html = document.documentElement;
+  [...html.classList]
+    .filter((c) => c.startsWith("gog-plus-theme--"))
+    .forEach((c) => html.classList.remove(c));
+  let resolved = theme || "neon";
+  if (resolved === "auto") {
+    resolved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "neon";
+  }
+  html.classList.add(`gog-plus-theme--${resolved}`);
+  if (resolved === "custom" && customColors) {
+    html.style.setProperty("--accent-magenta", customColors.magenta);
+    html.style.setProperty("--accent-cyan", customColors.cyan);
+    html.style.setProperty("--bg-base", customColors.bg);
+  } else {
+    html.style.removeProperty("--accent-magenta");
+    html.style.removeProperty("--accent-cyan");
+    html.style.removeProperty("--bg-base");
+  }
 }
 
 function bind() {
@@ -78,6 +115,10 @@ function bind() {
   $("exportPack").addEventListener("click", exportPack);
   $("importPack").addEventListener("click", () => $("importPackFile").click());
   $("importPackFile").addEventListener("change", importPackFromFile);
+  $("filterBuilderBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleFilterBuilder();
+  });
   document.addEventListener("click", (e) => {
     const target = /** @type {Element} */ (e.target);
     const picker = document.getElementById("tagColorPicker");
@@ -87,6 +128,10 @@ function bind() {
     const menu = document.getElementById("tagActionMenu");
     if (menu && !menu.contains(target) && !target.closest(".tag-pill-menu")) {
       menu.remove();
+    }
+    const filterPop = $("filterBuilderPopover");
+    if (filterPop && !filterPop.hidden && !filterPop.contains(target) && target !== $("filterBuilderBtn")) {
+      closeFilterBuilder();
     }
   });
 }

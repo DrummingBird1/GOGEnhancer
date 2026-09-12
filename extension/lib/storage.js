@@ -57,6 +57,8 @@
     "wishlistAlertPercent",
     "priceCompareTable",
     "monthlyBudget",
+    "customThemeColors",
+    "dyslexiaFont",
   ]);
 
   const LOCAL_KEYS = new Set([
@@ -78,6 +80,7 @@
     "lastSeenVersion",
     "gameGenres",
     "weeklyDigest",
+    "achievements",
   ]);
 
   /**

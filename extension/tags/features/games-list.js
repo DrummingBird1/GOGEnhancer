@@ -52,12 +52,13 @@ function parseSearchQuery(input) {
     snapshotsGt: null,
     since: null,
     status: null,
+    genre: null,
     plain: "",
   };
   if (!input) return f;
   const plain = [];
   for (const tok of input.split(/\s+/)) {
-    const m = tok.match(/^(tag|lowest|snapshots|since|status):(.+)$/i);
+    const m = tok.match(/^(tag|lowest|snapshots|since|status|genre):(.+)$/i);
     if (!m) {
       plain.push(tok);
       continue;
@@ -68,6 +69,8 @@ function parseSearchQuery(input) {
     else if (key === "since" && /^\d{4}$/.test(val)) f.since = val;
     else if (key === "status" && STATUSES.some((s) => s.id === val.toLowerCase())) {
       f.status = val.toLowerCase();
+    } else if (key === "genre") {
+      f.genre = val.toLowerCase();
     } else if (key === "lowest" || key === "snapshots") {
       const cmp = val[0];
       const num = parseFloat(val.slice(1));
@@ -102,6 +105,10 @@ function matchingSlugs() {
     // Advanced filters
     if (f.tag && !tags.map((t) => t.toLowerCase()).includes(f.tag)) continue;
     if (f.status && status !== f.status) continue;
+    if (f.genre) {
+      const bucket = state.allGenres[slug] || matchGenrePattern(slug);
+      if ((bucket || "").toLowerCase() !== f.genre) continue;
+    }
     if (f.since && !hist.some((e) => (e.d || "").startsWith(f.since))) continue;
     if (f.lowestLt !== null || f.lowestGt !== null) {
       if (!hist.length) continue;
@@ -194,6 +201,7 @@ function renderGames() {
           .join("")}
       </div>
       ${suggestion ? `<button class="game-card-tag-suggestion" type="button" data-suggest="${escapeHtml(suggestion)}">+ Suggested tag: ${escapeHtml(suggestion)}</button>` : ""}
+      <div class="game-card-attachment-slot"></div>
       ${note ? `<div class="game-card-note">${renderMarkdown(note)}</div>` : ""}
       ${hasChart ? `<div class="game-card-chart" hidden></div>` : ""}
       <a class="game-card-link" href="https://www.gog.com/en/game/${encodeURIComponent(slug)}" target="_blank" rel="noopener">
@@ -229,6 +237,7 @@ function renderGames() {
         renderGames();
       });
     });
+    hydrateAttachmentSlot(card.querySelector(".game-card-attachment-slot"), slug);
     if (hasChart) {
       const toggleBtn = card.querySelector(".game-card-chart-toggle");
       const chartPanel = /** @type {HTMLElement} */ (card.querySelector(".game-card-chart"));
@@ -299,6 +308,64 @@ function buildDashboardChart(entries) {
   `;
 }
 
+// One downscaled image per game, stored in IndexedDB via lib/attachments.js
+// (never chrome.storage.local — see that module's own doc comment on why).
+// Rendered as its own async hydration step per card rather than inline in
+// renderGames()'s synchronous loop, since IndexedDB reads are promise-based.
+/**
+ * @param {Element | null} slot
+ * @param {string} slug
+ */
+async function hydrateAttachmentSlot(slot, slug) {
+  if (!slot) return;
+  let record;
+  try {
+    record = await window.GOGPlusAttachments.getAttachment(slug);
+  } catch (_) {
+    record = undefined;
+  }
+  if (!record) {
+    renderAttachButton(slot, slug);
+    return;
+  }
+  const url = URL.createObjectURL(record.blob);
+  slot.innerHTML = `
+    <div class="game-card-attachment">
+      <img src="${url}" alt="Attached image for ${escapeHtml(slug)}" />
+      <div class="game-card-attachment-actions">
+        <button type="button" class="game-card-attachment-remove">Remove image</button>
+      </div>
+    </div>
+  `;
+  slot.querySelector(".game-card-attachment-remove")?.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    URL.revokeObjectURL(url);
+    await window.GOGPlusAttachments.deleteAttachment(slug);
+    renderAttachButton(slot, slug);
+  });
+}
+
+/**
+ * @param {Element} slot
+ * @param {string} slug
+ */
+function renderAttachButton(slot, slug) {
+  slot.innerHTML = `<button type="button" class="game-card-attach-btn">📎 Attach image</button>`;
+  slot.querySelector(".game-card-attach-btn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      await window.GOGPlusAttachments.saveAttachmentDownscaled(slug, file);
+      hydrateAttachmentSlot(slot, slug);
+    });
+    input.click();
+  });
+}
+
 function slugToTitle(slug) {
   return slug
     .split("_")
@@ -354,5 +421,7 @@ function renderMarkdown(text) {
     renderMarkdown,
     buildDashboardChart,
     genreSuggestionFor,
+    GENRE_DISPLAY_NAMES,
+    hydrateAttachmentSlot,
   };
 })();

@@ -557,6 +557,23 @@ async function renderStats() {
     document.getElementById("spendingCard")?.classList.add("stat-card--over-budget");
   }
 
+  // Image attachments (lib/attachments.js) live in IndexedDB, a completely
+  // separate storage bucket from chrome.storage.local's getBytesInUse above
+  // — surfaced as a secondary line on the same card so the total picture of
+  // "how much does this extension have stored" stays in one place.
+  try {
+    const attachBytes = await window.GOGPlusAttachments?.getTotalBytes();
+    // "Storage used" is always the last card in `cards` above.
+    if (attachBytes) {
+      const line = document.createElement("div");
+      line.className = "stat-sub stat-sub-secondary";
+      line.textContent = `+ ${(attachBytes / 1024).toFixed(1)} KB in note image attachments`;
+      panel.lastElementChild?.appendChild(line);
+    }
+  } catch (_) {
+    // IndexedDB unavailable is non-fatal — the rest of the stats panel still renders.
+  }
+
   if (wishlistPricedCount) {
     const wlCard = document.getElementById("wishlistValueCard");
     if (wishlistLowParts) {

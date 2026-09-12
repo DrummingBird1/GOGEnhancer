@@ -73,6 +73,15 @@
       "📬 Weekly digest — a new local \"This week\" panel in the popup summarizing refund windows closing soon, price-alert hits, and wishlist drops, plus a matching background job (Advanced Options → Background sync). Computed regardless of the desktop-notifications toggle, so it's useful even with notifications off",
       "🏷️ Auto-tag suggestions — untagged games in the tag dashboard now show a one-click suggested tag based on GOG's own genre metadata, never applied without your click",
     ],
+    "3.0.0": [
+      "🎨 Custom theme editor — pick your own accent and background colors, plus a new high-contrast theme",
+      "🔤 Optional dyslexia-friendly font stack across injected UI, no remote font downloads",
+      "🏷️ Quick-add-tag from any card — hover a game card on any listing page and tag it on the spot",
+      "🔍 Discoverable filter picker in the tag dashboard's search box, plus a new genre: search operator",
+      "📎 Note image attachments — attach one photo per game in the tag dashboard, stored locally",
+      "🏆 Achievements — local badges for tagging, tracking, and spending milestones",
+      "🦊 Firefox compatibility groundwork (experimental, unverified) — see the README's browser-support section",
+    ],
   };
 
   // Dotted-numeric version compare (2.9.0 < 2.10.0, unlike string sort).

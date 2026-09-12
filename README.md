@@ -94,6 +94,16 @@ Enabled via the "Design injection" toggle in the popup. When on:
 
 ---
 
+## 🌐 Browser support
+
+| Browser | Status |
+|---|---|
+| **Chrome** | ✅ Fully supported — this is the primary target. |
+| **Edge, Brave, Opera** (Chromium-based) | ✅ Works the same as Chrome — same engine, same "Load unpacked" steps above. |
+| **Firefox** | ⚠️ Experimental / unverified (since v3.0.0). Groundwork is in place (`lib/browser-compat.js`), but Firefox's MV3 background-page model differs from Chrome's service worker, and this hasn't been tested in an actual Firefox install. Chrome Web Store / Edge Add-ons are the supported install paths for now. |
+
+---
+
 ## ⌨️ Keyboard shortcuts
 
 | Shortcut | Action |

@@ -222,32 +222,139 @@
       // tinted with the first tag that has a colour. Removed + re-added on the
       // storage-change path (see the onChange cleanup), so it can't duplicate.
       if (state.settings.customTags && state.settings.tags) {
-        const slugTags = state.settings.tags[slug];
-        if (Array.isArray(slugTags) && slugTags.length) {
-          const dot = document.createElement("span");
-          dot.className = "gog-plus-tag-dot";
-          const colored = slugTags.find(
-            (t) =>
-              state.settings.tagColors?.[t] &&
-              /^#[0-9a-f]{3,8}$/i.test(state.settings.tagColors[t])
-          );
-          if (colored) dot.style.setProperty("--gog-plus-tag-dot", state.settings.tagColors[colored]);
-          const names = slugTags.join(", ");
-          if (state.settings.richTooltips) {
-            dot.dataset.gogPlusTip = `<strong>Your tags</strong><br>${escapeHtml(names)}`;
-          } else {
-            dot.title = `Tags: ${names}`;
-          }
-          host.appendChild(dot);
-          host.classList.add("gog-plus-cover-host--has-tagdot");
-        }
+        refreshTagDot(host, slug);
+      }
+
+      // Quick-add-tag (v3.0.0) — a small hover button in the one corner the
+      // badge strip and tag dot don't already use (bottom-start). Gated on
+      // customTags same as the dot above. Lets a user tag a game straight
+      // from a listing page without opening it — see openQuickAddTag() for
+      // the popover this opens.
+      if (state.settings.customTags) {
+        const addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "gog-plus-quickadd-btn";
+        addBtn.textContent = "+";
+        addBtn.setAttribute("aria-label", "Add a tag");
+        addBtn.title = "Add a tag";
+        addBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openQuickAddTag(host, slug);
+        });
+        host.appendChild(addBtn);
       }
     });
+  }
+
+  // Builds (or rebuilds) the tag-colour dot for one card's cover host. Split
+  // out of the main applyCardBadges loop so the quick-add-tag popover can
+  // call it again right after writing a new tag, without waiting for the
+  // next debounced processAll() pass to notice the storage change.
+  /**
+   * @param {Element} host
+   * @param {string} slug
+   */
+  function refreshTagDot(host, slug) {
+    host.querySelector(".gog-plus-tag-dot")?.remove();
+    const slugTags = state.settings.tags?.[slug];
+    if (!Array.isArray(slugTags) || !slugTags.length) {
+      host.classList.remove("gog-plus-cover-host--has-tagdot");
+      return;
+    }
+    const dot = document.createElement("span");
+    dot.className = "gog-plus-tag-dot";
+    const colored = slugTags.find(
+      (t) =>
+        state.settings.tagColors?.[t] &&
+        /^#[0-9a-f]{3,8}$/i.test(state.settings.tagColors[t])
+    );
+    if (colored) dot.style.setProperty("--gog-plus-tag-dot", state.settings.tagColors[colored]);
+    const names = slugTags.join(", ");
+    if (state.settings.richTooltips) {
+      dot.dataset.gogPlusTip = `<strong>Your tags</strong><br>${escapeHtml(names)}`;
+    } else {
+      dot.title = `Tags: ${names}`;
+    }
+    host.appendChild(dot);
+    host.classList.add("gog-plus-cover-host--has-tagdot");
+  }
+
+  // Anchored popover with a single text input, modeled after tags/features/
+  // tag-management.js's openTagMenu (outside-click dismiss) since tooltips.js
+  // is display-only and can't host an interactive control. Scoped INSIDE the
+  // cover host (not document.body) so it never needs viewport-position math —
+  // host is already the safe position:relative anchor applyCardBadges
+  // established, never the card root (see this file's top-of-file comment).
+  /**
+   * @param {Element} host
+   * @param {string} slug
+   */
+  function openQuickAddTag(host, slug) {
+    host.querySelector(".gog-plus-quickadd-popover")?.remove();
+    const pop = document.createElement("div");
+    pop.className = "gog-plus-quickadd-popover";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "New tag…";
+    input.maxLength = 40;
+    const submit = document.createElement("button");
+    submit.type = "button";
+    submit.textContent = "Add";
+
+    const close = () => {
+      pop.remove();
+      document.removeEventListener("mousedown", onOutside, true);
+    };
+    const onOutside = (e) => {
+      if (!pop.contains(/** @type {Node} */ (e.target))) close();
+    };
+
+    const commit = async () => {
+      const value = input.value.trim();
+      if (!value) {
+        close();
+        return;
+      }
+      const current = state.settings.tags?.[slug] || [];
+      if (!current.includes(value)) {
+        const next = { ...(state.settings.tags || {}), [slug]: [...current, value] };
+        state.settings.tags = next;
+        await window.GOGPlusStorage.set({ tags: next });
+        refreshTagDot(host, slug);
+        window.GOGPlusToasts?.show(`Tag added: ${value}`);
+      }
+      close();
+    };
+
+    submit.addEventListener("click", (e) => {
+      e.stopPropagation();
+      commit();
+    });
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commit();
+      } else if (e.key === "Escape") {
+        close();
+      }
+    });
+
+    pop.appendChild(input);
+    pop.appendChild(submit);
+    host.appendChild(pop);
+    input.focus();
+    // Deferred so the click that opened this popover doesn't immediately
+    // count as the "outside" click that closes it.
+    setTimeout(() => document.addEventListener("mousedown", onOutside, true), 0);
   }
 
   window.GOGPlusCardBadges = {
     buildQuickLookHtml,
     buildMiniSparkline,
     applyCardBadges,
+    refreshTagDot,
+    openQuickAddTag,
   };
 })();

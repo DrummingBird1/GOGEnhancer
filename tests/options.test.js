@@ -35,7 +35,15 @@ function fixtureHtml() {
           <button class="theme-swatch" data-theme="neon"></button>
           <button class="theme-swatch" data-theme="classic"></button>
           <button class="theme-swatch" data-theme="auto"></button>
+          <button class="theme-swatch" data-theme="highcontrast"></button>
+          <button class="theme-swatch" data-theme="custom"></button>
         </div>
+        <div class="custom-theme-editor" id="customThemeEditor" hidden>
+          <input type="color" id="customColorMagenta" value="#c64fff">
+          <input type="color" id="customColorCyan" value="#00f0ff">
+          <input type="color" id="customColorBg" value="#0a0612">
+        </div>
+        <input type="checkbox" id="dyslexiaFont">
         <select id="uiLanguage">
           <option value="en">English</option>
           <option value="he">Hebrew</option>
@@ -166,6 +174,69 @@ describe("load()", () => {
     await new Promise((r) => chrome.storage.sync.set({ theme: "auto" }, r));
     await bootOptions();
     expect(document.documentElement.classList.contains("gog-plus-theme--neon")).toBe(true);
+  });
+
+  it("applies custom theme colors as inline vars and reveals the editor", async () => {
+    await new Promise((r) =>
+      chrome.storage.sync.set(
+        { theme: "custom", customThemeColors: { magenta: "#111111", cyan: "#222222", bg: "#333333" } },
+        r
+      )
+    );
+    await bootOptions();
+    expect(document.documentElement.classList.contains("gog-plus-theme--custom")).toBe(true);
+    expect(document.documentElement.style.getPropertyValue("--accent-magenta")).toBe("#111111");
+    expect(document.documentElement.style.getPropertyValue("--accent-cyan")).toBe("#222222");
+    expect(document.documentElement.style.getPropertyValue("--bg-base")).toBe("#333333");
+    expect(document.getElementById("customThemeEditor").hidden).toBe(false);
+    expect(document.getElementById("customColorMagenta").value).toBe("#111111");
+  });
+
+  it("hides the custom theme editor and clears inline vars for a non-custom theme", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ theme: "neon" }, r));
+    await bootOptions();
+    expect(document.getElementById("customThemeEditor").hidden).toBe(true);
+    expect(document.documentElement.style.getPropertyValue("--accent-magenta")).toBe("");
+  });
+
+  it("picking a custom color persists customThemeColors and re-applies live", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ theme: "custom" }, r));
+    await bootOptions();
+    document.getElementById("customColorMagenta").value = "#abcdef";
+    document.getElementById("customColorMagenta").dispatchEvent(new Event("input"));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.documentElement.style.getPropertyValue("--accent-magenta")).toBe("#abcdef");
+    const s = await new Promise((r) => chrome.storage.sync.get(["customThemeColors"], r));
+    expect(s.customThemeColors.magenta).toBe("#abcdef");
+  });
+
+  it("switching swatches away from custom re-fetches saved colors before hiding the editor", async () => {
+    await new Promise((r) =>
+      chrome.storage.sync.set({ theme: "custom", customThemeColors: { magenta: "#000", cyan: "#000", bg: "#000" } }, r)
+    );
+    await bootOptions();
+    document.querySelector('.theme-swatch[data-theme="neon"]').click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.getElementById("customThemeEditor").hidden).toBe(true);
+    expect(document.documentElement.classList.contains("gog-plus-theme--neon")).toBe(true);
+  });
+
+  it("toggling dyslexia-friendly font persists it and applies the html class", async () => {
+    await bootOptions();
+    expect(document.documentElement.classList.contains("gog-plus-dyslexia-font")).toBe(false);
+    document.getElementById("dyslexiaFont").checked = true;
+    document.getElementById("dyslexiaFont").dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.documentElement.classList.contains("gog-plus-dyslexia-font")).toBe(true);
+    const s = await new Promise((r) => chrome.storage.sync.get(["dyslexiaFont"], r));
+    expect(s.dyslexiaFont).toBe(true);
+  });
+
+  it("loads a saved dyslexiaFont=true into the checkbox and html class on boot", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ dyslexiaFont: true }, r));
+    await bootOptions();
+    expect(document.getElementById("dyslexiaFont").checked).toBe(true);
+    expect(document.documentElement.classList.contains("gog-plus-dyslexia-font")).toBe(true);
   });
 
   it("summarizes tags/notes/price-history counts in dataStats", async () => {
@@ -641,6 +712,14 @@ describe("danger zone", () => {
     await new Promise((r) => setTimeout(r, 0));
     const s = await new Promise((r) => chrome.storage.sync.get(["vatPercent"], r));
     expect(s.vatPercent).toBeUndefined();
+  });
+
+  it("clearAll also best-effort deletes the note-attachments IndexedDB", async () => {
+    const spy = vi.spyOn(indexedDB, "deleteDatabase");
+    await bootOptions();
+    document.getElementById("clearAll").click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(spy).toHaveBeenCalledWith("gog-plus-attachments");
   });
 
   it("clearAll leaves data untouched when the typed phrase doesn't match", async () => {

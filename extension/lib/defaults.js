@@ -76,6 +76,16 @@
    * @property {string} lastSeenVersion last changelog version acknowledged in the popup
    * @property {Record<string, string>} gameGenres slug -> genre bucket, cached on visit
    * @property {WeeklyDigest | null} weeklyDigest last computed weekly summary, shown in the popup's "This week" panel
+   * @property {CustomThemeColors | null} customThemeColors user-picked colors for the "custom" theme slot; null = fall back to the neon palette baked into :root
+   * @property {boolean} dyslexiaFont swap injected UI to a more dyslexia-friendly font stack + wider letter/line spacing
+   * @property {Record<string, string>} achievements achievement id -> unlocked-at ISO date, see lib/achievements.js
+   */
+
+  /**
+   * @typedef {Object} CustomThemeColors
+   * @property {string} magenta #hex
+   * @property {string} cyan #hex
+   * @property {string} bg #hex
    */
 
   /**
@@ -132,6 +142,8 @@
     wishlistAlertPercent: 20,
     priceCompareTable: true,
     monthlyBudget: null,
+    customThemeColors: null,
+    dyslexiaFont: false,
 
     // local data (caches + user data)
     modsList: [],
@@ -152,6 +164,7 @@
     lastSeenVersion: "",
     gameGenres: {},
     weeklyDigest: null,
+    achievements: {},
   };
 
   if (typeof window !== "undefined") {

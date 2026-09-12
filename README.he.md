@@ -94,6 +94,16 @@
 
 ---
 
+## 🌐 תמיכה בדפדפנים
+
+| דפדפן | סטטוס |
+|---|---|
+| **Chrome** | ✅ נתמך במלואו — זהו היעד העיקרי. |
+| **Edge, Brave, Opera** (מבוססי Chromium) | ✅ עובד בדיוק כמו ב-Chrome — אותו מנוע, אותם צעדי "Load unpacked" שלמעלה. |
+| **Firefox** | ⚠️ ניסיוני / לא מאומת (החל מ-v3.0.0). הונחה תשתית (`lib/browser-compat.js`), אך מודל ה-background של Firefox ב-MV3 שונה מה-service worker של Chrome, וזה לא נבדק בפועל בהתקנת Firefox. Chrome Web Store / Edge Add-ons הם נתיבי ההתקנה הנתמכים כרגע. |
+
+---
+
 ## ⌨️ קיצורי מקלדת
 
 | קיצור | פעולה |
