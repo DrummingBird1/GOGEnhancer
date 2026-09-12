@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/chrome": "^0.2.6",
+    "@types/chrome": "^0.2.9",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9.18.0",
     "fake-indexeddb": "^6.2.5",
