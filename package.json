@@ -16,7 +16,7 @@
     "eslint": "^9.18.0",
     "fake-indexeddb": "^6.2.5",
     "globals": "^15.14.0",
-    "happy-dom": "^20.10.6",
+    "happy-dom": "^20.14.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   }
