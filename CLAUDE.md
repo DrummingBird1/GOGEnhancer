@@ -53,6 +53,55 @@ The extension itself is plain vanilla JS — no bundler, no framework. A Vitest 
   ```
   then commit `store/release-images/vX.Y.Z.png` in the same commit as the version bump/changelog (so it's present at the tag). `release.yml` picks it up automatically via its raw GitHub URL pinned to the tag and prepends it to the release notes — no workflow changes needed per release. If a release ships without one, nothing breaks; it's just missing that release's image on GitHub. (v2.9.0's own banner was added retroactively via `gh release edit`, pointing at `main` instead of the tag — the tag predates the file. Every future release should get the file committed **before** tagging so this workaround isn't needed again.)
 
+## Dual-agent collaboration (Grok + Claude)
+
+The same repo may be worked by **Claude Code** and **Grok** (this machine + Claude sessions) in parallel. This section is binding for both agents.
+
+### Source of truth
+
+- **`CLAUDE.md` is canonical.** Read it first; treat architecture, load order, storage, privacy, and security rules here as authoritative.
+- `AGENTS.md` is a **thin local pointer** (gitignored; per-machine Codex/Grok bootstrap). Never let it grow back into a full stale copy of layout/architecture. If you find an obsolete full `AGENTS.md` (e.g. extension at repo root), replace it with the thin pointer — do not expand it into a second CLAUDE.
+
+### Claim protocol before editing
+
+Prefer separate concerns unless the user assigns differently:
+
+- One agent owns `extension/content/features/*` (+ related tests under `tests/`).
+- The other owns `extension/tags/features/*` **or** UI pages (`extension/popup/`, `extension/options/`, `extension/onboarding/`).
+
+Before starting a chunk, **state in chat which paths you will touch**. If the other agent already claimed overlapping paths, wait or pick different files.
+
+**One agent at a time** for these serialized hotspots:
+
+- `extension/manifest.json` (content-script / resource order)
+- `extension/lib/defaults.js`, `extension/lib/storage.js`, `extension/lib/migrations.js`
+- `extension/lib/i18n.js`
+- Shared CSS: `extension/content/content.css`, `extension/content/design-injection.css`, `extension/tags/tags.css`
+- `extension/content/state.js`, `extension/tags/state.js`, `extension/content/content.js` (orchestrator)
+- `package.json` / `package-lock.json` / `eslint.config.js` / `vitest.config.js`
+- Dual docs that must stay paired: `README.md` <-> `README.he.md`, `PRIVACY.md` <-> `store/STORE_LISTING.md`, `extension/lib/changelog.js` <-> `docs/changelog.html`
+
+Do **not** hand-edit generated outputs: `dist/`, `coverage/`, `node_modules/`, or generated release banner PNGs under `store/release-images/` (use the generator in that folder).
+
+### Git / push when both agents are active
+
+- The solo **auto-push-to-`main`** convention in GitHub workflow still applies when only **one** agent is finishing a round.
+- When **both** agents are actively editing the same day/session: prefer a short-lived branch per agent (`agent/claude-...`, `agent/grok-...`), leave a clean commit for the user; **do not** both force-push or race-push to `main`. Coordinate: `git pull --rebase` before push; if a conflict lands on a hotspot file, **stop and ask the user** rather than inventing a merge.
+- Never amend or rebase commits the other agent already pushed.
+- Keep using the noreply author email override already documented under GitHub workflow.
+
+### Quality gate
+
+Before either agent declares done: run `npm test` and `npm run lint` (and `npm run typecheck` if types / `// @ts-check` modules were touched). Don't push with failing tests.
+
+### Doc consistency
+
+If privacy or host permissions change, update `CLAUDE.md` + `PRIVACY.md` + `store/STORE_LISTING.md` together (and `manifest.json`). Do not "fix" host counts from an outdated README paragraph without checking `extension/manifest.json`.
+
+### Communication
+
+Leave a brief wrap-up note: paths touched, tests/lint run, commit SHA if any — so the other agent can continue without re-discovery.
+
 ## Architecture
 
 ### Storage tiering (`lib/storage.js`)
