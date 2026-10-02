@@ -74,10 +74,11 @@
       "🦊 Firefox compatibility groundwork (experimental, unverified) — see the README's browser-support section",
     ],
     "4.0.0": [
-      "🧭 Built to survive a gog.com redesign — every lookup of the site's markup (game cards, prices, the title, where the panel goes) now runs through one adapter that tries several strategies, so a layout change degrades gracefully instead of silently switching features off",
+      "🧭 Adapted to gog.com's redesign — checked against the live home page, catalog and game pages. Every lookup of the site's markup now runs through one adapter that tries several strategies, so a layout change degrades gracefully instead of silently switching features off",
+      "🔧 Fixes things the redesign had broken: game-page prices (which GOG now prints with CSS, so they have no currency symbol in the page text) are converted again and recorded in your price history, the game's genre is read again, and cover badges appear on the new catalog tiles",
       "🩺 New \"Check this page\" in Advanced Options — reports which of those lookups still work on the gog.com page you have open, ready to paste into a bug report",
       "🎨 New Native theme — reads gog.com's own colors and font each time a page loads, so badges and panels blend in with whatever the site currently looks like",
-      "Prices written \"19,99 €\" or split across several elements are now recognized, badges appear on tiles whose cover spans the full card width, and everything keeps working when the site swaps its page content without a reload",
+      "Prices written \"19,99 €\" or split across several elements are now recognized, the DRM-free banner no longer covers the site's header (it sits at the bottom edge), and everything keeps working when the site swaps its page content without a reload",
       "☁️ Sync across devices through a folder you choose (Dropbox, OneDrive, Google Drive, Syncthing…) — merges tags, notes, status, purchases, alerts and price history, optionally encrypted with a passphrase. GOG Enhancer runs no server for this",
       "🔎 Type gog in the address bar to search your own library — a game name, tag:rpg, or status:backlog",
       "⌨️ Optional keyboard navigation on game grids — J / K to move, T to tag (off by default)",

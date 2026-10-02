@@ -134,7 +134,10 @@
     for (const el of window.GOGPlusGogDom.findPriceNodes(root).nodes) {
       if (el.closest(".gog-plus-converted, .gog-plus-banner, .gog-plus-tooltip, .gog-plus-toasts")) continue;
       if (el.querySelector(".gog-plus-converted, .gog-plus-conv-note")) continue;
-      const text = (el.textContent || "").trim();
+      // displayText() puts back a symbol the site prints with CSS (game-page
+      // prices are a bare "2.99" in the DOM), which the text-node pass can
+      // never see.
+      const text = window.GOGPlusGogDom.displayText(el);
       if (text.length > 24 || !priceOnlyRe.test(text)) continue;
       convertInto(el, text);
     }

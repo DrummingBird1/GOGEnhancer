@@ -15,6 +15,20 @@
  *   4. Class-name substrings ([class*="price"]) — the legacy guess
  *   5. Text shape ("$19.99" and nothing else) — last resort, whole-text match
  *
+ * What the live site actually looks like (inspected 2026-10-02) — and why the
+ * lookups below are shaped the way they are:
+ *
+ *   • TWO generations of markup coexist. The home page and catalog are a new
+ *     Angular app built from custom elements (<product-tile>, <product-price>,
+ *     <price-value>) with stable `selenium-id` test hooks; the game page and
+ *     account pages are still AngularJS (`ng-app`, `h1.productcard-basics__title`).
+ *   • <main> cannot be trusted: the home page has ~19 of them (hero blocks),
+ *     the catalog has none, and the game page's only one is a hidden modal.
+ *   • Game-page prices carry NO currency symbol in the DOM ("2.99"). The symbol
+ *     is printed by CSS (::before/::after content) and the currency is only
+ *     named in a class on <body>/<html> (`_prices-in-usd` / `prices-in-usd`).
+ *   • Catalog tiles are vertical: the cover spans the full tile width.
+ *
  * Every lookup that has more than one strategy reports WHICH one matched, so
  * diagnose() can tell the user (and a bug report) exactly what stopped working
  * after the next redesign instead of "the extension does nothing".
@@ -108,6 +122,17 @@
 
   /* ============== prices ============== */
 
+  // Leaf price elements as the current site renders them: test hooks and
+  // component classes that outlive CSS renames. Tried before anything fuzzy.
+  const PRICE_HOOK_SEL = [
+    '[selenium-id="ProductFinalPrice"]',
+    '[selenium-id="ProductBasePrice"]',
+    "price-value .final-value",
+    "price-value .base-value",
+    '[class*="__final-amount"]',
+    '[class*="__base-amount"]',
+  ].join(", ");
+
   const PRICE_CLASS_SEL =
     '[class*="price"], [class*="Price"], .product-tile__price, .price-text, .product-row-price';
   const PRICE_ATTR_SEL =
@@ -142,6 +167,67 @@
   }
 
   /**
+   * Is this element actually on screen? A hidden modal's <main> must not be
+   * mistaken for the page content. Where there's no layout engine to ask
+   * (checkVisibility missing — e.g. the unit-test DOM) it can't be told, so
+   * everything counts as rendered.
+   * @param {Element} el
+   */
+  function isRendered(el) {
+    if (typeof (/** @type {any} */ (el).checkVisibility) !== "function") return true;
+    if (!(/** @type {any} */ (el).checkVisibility())) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+
+  /**
+   * The currency the page says it is showing prices in, from the class the
+   * site puts on <body>/<html> (`_prices-in-usd`, `prices-in-usd`). This is
+   * the only place the game page names its currency at all, since the prices
+   * themselves are bare numbers.
+   * @returns {string | null} ISO code, upper-case
+   */
+  function currencyHint() {
+    for (const el of [document.body, document.documentElement]) {
+      const m = (el?.getAttribute("class") || "").match(/(?:^|[\s_-])prices-in-([a-z]{3})(?=\s|$)/i);
+      if (m) return m[1].toUpperCase();
+    }
+    return null;
+  }
+
+  const BARE_NUMBER_RE = /^\s*\d[\d.,]*\s*$/;
+
+  /**
+   * What the user actually SEES in a price element. The site prints the
+   * currency symbol with CSS (`::before { content: "$ " }`), leaving the DOM
+   * text a bare "2.99" — invisible to anything that reads textContent. This
+   * puts the symbol back by reading the pseudo-elements that are displayed,
+   * falling back to the page's currency hint if CSS gave nothing. Text that
+   * already carries a symbol is returned as is.
+   * @param {Element} el
+   * @returns {string}
+   */
+  function displayText(el) {
+    const text = textWithoutOurNotes(el).replace(/\s+/g, " ").trim();
+    if (!BARE_NUMBER_RE.test(text)) return text;
+
+    /** @param {"::before" | "::after"} pseudo */
+    const printed = (pseudo) => {
+      const cs = getComputedStyle(el, pseudo);
+      const c = cs.content;
+      if (cs.display === "none" || !c || c === "none" || c === "normal") return "";
+      return c.replace(/^["']|["']$/g, "");
+    };
+    const before = printed("::before");
+    const after = printed("::after");
+    if (before || after) return `${before}${text}${after}`.replace(/\s+/g, " ").trim();
+
+    const hint = currencyHint();
+    const symbol = hint && window.GOGPlusCurrency?.CODE_TO_SYMBOL?.[hint];
+    return symbol ? `${symbol}${text}` : text;
+  }
+
+  /**
    * An element's text without the "≈ ₪80" conversion notes this extension
    * appends to prices. Without this, a price is findable by its text shape
    * only until the converter has run — after that the element's text is
@@ -159,10 +245,13 @@
   /**
    * Elements that display a price, with the strategy that found them.
    * @param {ParentNode} [root]
-   * @returns {{ nodes: Element[], strategy: "class" | "attribute" | "text-shape" | "none" }}
+   * @returns {{ nodes: Element[], strategy: "site-hooks" | "class" | "attribute" | "text-shape" | "none" }}
    */
   function findPriceNodes(root = document) {
-    let nodes = Array.from(root.querySelectorAll(PRICE_CLASS_SEL)).filter(isSiteElement);
+    let nodes = Array.from(root.querySelectorAll(PRICE_HOOK_SEL)).filter(isSiteElement);
+    if (nodes.length) return { nodes, strategy: "site-hooks" };
+
+    nodes = Array.from(root.querySelectorAll(PRICE_CLASS_SEL)).filter(isSiteElement);
     if (nodes.length) return { nodes, strategy: "class" };
 
     nodes = Array.from(root.querySelectorAll(PRICE_ATTR_SEL)).filter(isSiteElement);
@@ -267,27 +356,86 @@
   function gamePageAnchor() {
     const h = findTitleHeading();
     if (h) return h;
-    const main = document.querySelector("main, [role='main']");
+    const main = visibleMains()[0];
     return main ? { el: main, strategy: "main" } : null;
+  }
+
+  /**
+   * The price actually being asked for on a game page (the discounted /
+   * final one — not the struck-through base price).
+   * @returns {Element | null}
+   */
+  function findFinalPrice() {
+    const sel = '[selenium-id="ProductFinalPrice"], [class*="product-actions-price__final-amount"]';
+    return Array.from(document.querySelectorAll(sel)).find(isSiteElement) || null;
+  }
+
+  /**
+   * The game's genre labels from the site's own genre hook, or null if the
+   * hook isn't there (callers then fall back to hunting for a "Genre:" label).
+   * @returns {string[] | null}
+   */
+  function genreLabels() {
+    const el = document.querySelector('[selenium-id="ProductGenres"]');
+    if (!el) return null;
+    const labels = Array.from(el.querySelectorAll("a")).map((a) => (a.textContent || "").trim());
+    return labels.filter(Boolean);
+  }
+
+  /**
+   * Cells of the requirements table, per tier: { "Memory:": "4 GB RAM", … }.
+   * The page renders the table twice (one hidden for small screens), so the
+   * one that is actually shown wins.
+   * @returns {{ minimum: Record<string, string>, recommended: Record<string, string> } | null}
+   */
+  function readSystemRequirements() {
+    const tables = Array.from(document.querySelectorAll(".system-requirements")).filter((t) =>
+      t.querySelector(".system-requirements__label")
+    );
+    const table = tables.find(isRendered) || tables[0];
+    if (!table) return null;
+    /** @type {Record<string, string>} */
+    const minimum = {};
+    /** @type {Record<string, string>} */
+    const recommended = {};
+    for (const row of table.querySelectorAll(".table__row")) {
+      const label = (row.querySelector(".system-requirements__label")?.textContent || "").trim();
+      if (!label) continue;
+      const min = (row.querySelector(".system-requirements__minimum")?.textContent || "").trim();
+      const rec = (row.querySelector(".system-requirements__recommended")?.textContent || "").trim();
+      if (min) minimum[label] = min;
+      if (rec) recommended[label] = rec;
+    }
+    return Object.keys(minimum).length || Object.keys(recommended).length ? { minimum, recommended } : null;
   }
 
   /** Cheap "has the game page rendered yet" probe. */
   function hasProductContent() {
-    return !!document.querySelector("h1, [class*='product'], main, [role='main']");
+    return !!document.querySelector("h1, [class*='product'], app-root") || visibleMains().length > 0;
   }
 
   /* ============== app shell ============== */
 
-  function wishlistRoot() {
-    return document.querySelector("main, [role='main'], [class*='wishlist']");
+  /** The page's visible <main>s — ignoring hidden ones such as a modal's. */
+  function visibleMains() {
+    return Array.from(document.querySelectorAll("main, [role='main']")).filter(isRendered);
   }
 
-  /** The node the MutationObserver watches. Falls back to <body>. */
+  function wishlistRoot() {
+    return visibleMains()[0] || document.querySelector("[class*='wishlist']");
+  }
+
+  /**
+   * The node the MutationObserver cares about. <main> is only trusted when
+   * exactly one is actually on screen (see the header comment: the home page
+   * has ~19, the catalog none, the game page one hidden modal). Otherwise the
+   * new app's shell (<app-root>), the old one's [ng-view], or <body>.
+   */
   function spaRoot() {
+    const mains = visibleMains();
+    if (mains.length === 1) return mains[0];
     return (
-      document.querySelector("main, [role='main']") ||
-      document.querySelector("[ng-view]") ||
-      document.body
+      document.querySelector("app-root") || document.querySelector("[ng-view]") || document.body
     );
   }
 
@@ -388,6 +536,12 @@
     findCards,
     cardCoverHost,
     findPriceNodes,
+    findFinalPrice,
+    displayText,
+    currencyHint,
+    genreLabels,
+    readSystemRequirements,
+    isRendered,
     resolveGameTitle,
     gameTitle,
     gamePageAnchor,

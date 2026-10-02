@@ -105,6 +105,37 @@ describe("applyCurrencyConversion", () => {
     expect(notes()).toHaveLength(0);
   });
 
+  it("converts a bare-number price (symbol printed by CSS) using the page's currency declaration", () => {
+    setup("USD", "$");
+    document.body.className = "productcard _prices-in-usd";
+    document.body.innerHTML = `<span class="product-actions-price__final-amount _price" selenium-id="ProductFinalPrice">2.99</span>`;
+    applyCurrencyConversion();
+    expect(notes()).toHaveLength(1);
+    expect(notes()[0].textContent).toContain("12"); // 2.99 USD x 4
+    expect(document.querySelector(".product-actions-price__final-amount").classList.contains("gog-plus-converted")).toBe(true);
+    document.body.className = "";
+  });
+
+  it("converts base and final bare prices once each, and not twice on a re-run", () => {
+    setup("USD", "$");
+    document.body.className = "_prices-in-usd";
+    document.body.innerHTML = `
+      <span class="product-actions-price__base-amount" selenium-id="ProductBasePrice">14.99</span>
+      <span class="product-actions-price__final-amount" selenium-id="ProductFinalPrice">2.99</span>`;
+    applyCurrencyConversion();
+    applyCurrencyConversion();
+    expect(notes()).toHaveLength(2);
+    document.body.className = "";
+  });
+
+  it("leaves a bare number alone when the page never says which currency it is", () => {
+    setup("USD", "$");
+    document.body.className = "";
+    document.body.innerHTML = `<span class="product-actions-price__final-amount">2.99</span>`;
+    applyCurrencyConversion();
+    expect(notes()).toHaveLength(0);
+  });
+
   it("does nothing when the page is already in the target currency", () => {
     setup("ILS", "₪");
     document.body.innerHTML = `<span class="price">₪40</span>`;

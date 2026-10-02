@@ -44,12 +44,22 @@
     if (cached && cachedFor === location.pathname) return cached;
     cached = null;
 
+    // The page's own declaration wins: game pages print prices as bare
+    // numbers (the symbol is CSS-injected) and name the currency only in a
+    // body/html class, so there is nothing else to count there.
+    const hint = window.GOGPlusGogDom.currencyHint();
+    if (hint && CODE_TO_SYMBOL[hint]) {
+      cached = { code: hint, symbol: CODE_TO_SYMBOL[hint] };
+      cachedFor = location.pathname;
+      return cached;
+    }
+
     // Probe: scan a few visible price-like nodes
     const candidates = window.GOGPlusGogDom.findPriceNodes().nodes;
 
     const counts = {};
     for (let i = 0; i < Math.min(candidates.length, 30); i++) {
-      const t = candidates[i].textContent || "";
+      const t = window.GOGPlusGogDom.displayText(candidates[i]);
       for (const [sym, code] of Object.entries(SYMBOL_TO_CODE)) {
         if (t.includes(sym)) {
           counts[code] = (counts[code] || 0) + 1;

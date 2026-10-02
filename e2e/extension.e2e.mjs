@@ -17,9 +17,15 @@ import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { storeLegacy, storeVariant, gameLegacy, gameVariant } from "./fixtures.mjs";
+import { homeReal, catalogReal, gameReal, realTile } from "./fixtures-real.mjs";
+
+// E2E_LIVE=1 runs the extension against the REAL gog.com (public pages, logged
+// out, a handful of page loads) instead of fixtures — the only way to know the
+// recorded fixtures still match the site. Manual use only.
+const LIVE = process.env.E2E_LIVE === "1";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const EXT = join(ROOT, "extension");
+const EXT = process.env.E2E_EXT || join(ROOT, "extension");
 const SHOTS = process.env.E2E_SHOTS;
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 
@@ -51,6 +57,10 @@ const PAGES = {
   "/en/games/variant": storeVariant,
   "/en/game/cool_game": gameLegacy,
   "/en/game/cool_game_variant": gameVariant,
+  "/en/": homeReal,
+  "/en": homeReal,
+  "/en/games/real": catalogReal,
+  "/en/game/gris": gameReal,
 };
 
 const userDataDir = mkdtempSync(join(tmpdir(), "gog-enhancer-e2e-"));
@@ -67,6 +77,9 @@ try {
   await context.route("**/*", (route) => {
     const url = new URL(route.request().url());
     if (!/^https?:$/.test(url.protocol)) return route.continue();
+    if (LIVE && /(^|\.)(gog\.com|gog-statics\.com|gogcdn\.net)$/.test(url.hostname)) {
+      return route.continue();
+    }
     if (url.hostname === "www.gog.com") {
       const page = PAGES[url.pathname];
       return page
@@ -114,6 +127,8 @@ try {
     return page;
   };
 
+  if (!LIVE) {
+  if (process.env.E2E_ONLY !== "real") {
   for (const [label, path] of [
     ["legacy markup", "/en/games"],
     ["variant markup (no recognisable class names)", "/en/games/variant"],
@@ -272,6 +287,135 @@ try {
     check("…and warns that class names have changed", /text shape/.test(diag));
     await options.close();
     await page.close();
+  }
+
+  } // E2E_ONLY=real skips everything above (lets the same checks run against an older build)
+
+  // ---- Markup shapes recorded from the live site (see fixtures-real.mjs) ----
+  const storageGet = (area, key) => sw.evaluate(({ area, key }) => new Promise((r) => chrome.storage[area].get(key, r)), { area, key });
+  await setSettings({ sync: { theme: "neon" }, local: { priceHistory: {}, gameGenres: {} } });
+
+  console.log("Real structure — catalog (new Angular app, vertical tiles, custom elements)");
+  {
+    const page = await open("/en/games/real");
+    await page.waitForSelector(".gog-plus-card-done", { timeout: 5000 }).catch(() => {});
+    const c = await page.evaluate(() => ({
+      stamped: document.querySelectorAll(".gog-plus-card-done").length,
+      hosts: [...document.querySelectorAll(".gog-plus-cover-host")].map((h) => h.className.split(" ").find((c) => c.startsWith("product-tile__"))),
+      notes: [...document.querySelectorAll(".gog-plus-conv-note")].map((n) => n.textContent.trim()),
+      perPriceSpan: [...document.querySelectorAll("price-value span:not(.gog-plus-conv-note)")].map((s) => s.querySelectorAll(".gog-plus-conv-note").length),
+    }));
+    check("every tile is stamped, badges on the full-width cover wrapper", c.stamped === 3 && c.hosts.length === 3 && c.hosts.every((h) => h === "product-tile__image-wrapper"), JSON.stringify(c));
+    const overlap = await page.evaluate(() => {
+      const b = document.getElementById("gog-plus-banner")?.getBoundingClientRect();
+      const h = document.querySelector("header")?.getBoundingClientRect();
+      return b && h ? !(b.bottom <= h.top || b.top >= h.bottom) : null;
+    });
+    check("the DRM-free banner doesn't cover the site's fixed header", overlap === false, String(overlap));
+    check("base and final prices are each converted exactly once", c.notes.length === 5 && c.perPriceSpan.every((n) => n === 1), JSON.stringify(c));
+    await shot(page, "real-catalog");
+    await page.close();
+  }
+
+  console.log("Real structure — home page (19 hero <main>s, tiles outside them)");
+  {
+    const page = await open("/en/");
+    await page.waitForSelector(".gog-plus-card-done", { timeout: 5000 }).catch(() => {});
+    // A tile that arrives later, in a section that is NOT inside any <main>.
+    await page.evaluate((html) => document.getElementById("slot").insertAdjacentHTML("beforeend", html), realTile("limbo", "Limbo", 90, "9.99", "1.99"));
+    const late = await page.waitForFunction(() => document.querySelector('a[href$="/limbo"].gog-plus-card-done'), null, { timeout: 4000 }).then(() => true, () => false);
+    check("tiles added later outside the hero <main>s are still picked up", late);
+    const obs = await page.evaluate(() => document.querySelectorAll("main").length);
+    check("(the page really has several <main>s, so <main> can't be the observed root)", obs === 3);
+    await page.close();
+  }
+
+  console.log("Real structure — game page (AngularJS, CSS-printed symbol, hidden <main>)");
+  {
+    const page = await open("/en/game/gris");
+    await page.waitForSelector("#gog-plus-gamepanel", { timeout: 6000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 600));
+    const g = await page.evaluate(() => ({
+      finalNote: document.querySelector(".product-actions-price__final-amount .gog-plus-conv-note")?.textContent.trim() || null,
+      baseNote: document.querySelector(".product-actions-price__base-amount .gog-plus-conv-note")?.textContent.trim() || null,
+      sysRows: [...document.querySelectorAll(".gog-plus-sysreq-row")].map((r) => r.textContent),
+    }));
+    check("the bare CSS-symbol price is converted (2.99 USD × 4 → ₪12, not read as EUR from JSON-LD)", g.finalNote === "≈ ₪12" && g.baseNote === "≈ ₪60", JSON.stringify(g));
+    check("system check reads the real requirements table (visible one, not the hidden copy)", g.sysRows.length === 2 && /Minimum: 4 GB/.test(g.sysRows[0]) && /Recommended: 16 GB/.test(g.sysRows[1]), JSON.stringify(g.sysRows));
+    const hist = (await storageGet("local", "priceHistory")).priceHistory || {};
+    const entry = (hist.gris || [])[0];
+    check("the price is recorded in the price history (final price, page's own currency)", !!entry && entry.p === 2.99 && entry.c === "USD", JSON.stringify(hist));
+    const genres = (await storageGet("local", "gameGenres")).gameGenres || {};
+    check("the genre is read from the site's genre hook", genres.gris === "rpg", JSON.stringify(genres));
+    check("no uncaught page errors", page.errors.length === 0, page.errors.join(" | "));
+    await shot(page, "real-game");
+
+    // The page's only <main> is hidden; later changes must still be processed.
+    await page.evaluate(() => {
+      const s = document.createElement("span");
+      s.id = "late-price";
+      s.className = "product-actions-price__final-amount _price";
+      s.textContent = "5.00";
+      document.getElementById("buybox").appendChild(s);
+    });
+    const lateNote = await page.waitForFunction(() => document.querySelector("#late-price .gog-plus-conv-note"), null, { timeout: 4000 }).then(() => true, () => false);
+    check("content added after load is processed even though the page's only <main> is hidden", lateNote);
+    await page.close();
+  }
+  } else {
+    console.log("LIVE mode — real gog.com, public pages, logged out");
+    // The live site prices different page types in different currencies for
+    // the same visitor (the new home/catalog showed USD where the legacy game
+    // page showed the local currency), so convert to one that is neither —
+    // otherwise "nothing to convert" would be indistinguishable from "broken".
+    await setSettings({
+      sync: { theme: "neon", targetCurrency: "EUR", rates: { ILS: 3.65, EUR: 0.9, GBP: 0.8, PLN: 4 }, taxEstimator: false },
+      local: { priceHistory: {}, gameGenres: {} },
+    });
+    const storageGet = (area, key) => sw.evaluate(({ area, key }) => new Promise((r) => chrome.storage[area].get(key, r)), { area, key });
+    const open = async (path) => {
+      const page = await context.newPage();
+      page.errors = [];
+      page.on("pageerror", (e) => page.errors.push(e.message));
+      await page.goto(`https://www.gog.com${path}`, { waitUntil: "domcontentloaded" });
+      return page;
+    };
+
+    for (const [label, path] of [["home", "/en/"], ["catalog", "/en/games"]]) {
+      const page = await open(path);
+      await page.waitForSelector(".gog-plus-card-done", { timeout: 20000 }).catch(() => {});
+      const info = await page.evaluate(() => ({
+        stamped: document.querySelectorAll(".gog-plus-card-done").length,
+        notes: document.querySelectorAll(".gog-plus-conv-note").length,
+        tileHosts: [...document.querySelectorAll("product-tile .gog-plus-cover-host")].filter((h) => h.className.includes("product-tile__image-wrapper")).length,
+        diag: null,
+      }));
+      check(`${label}: tiles are stamped`, info.stamped > 5, JSON.stringify(info));
+      check(`${label}: badges sit on the tile's cover wrapper`, info.tileHosts > 5, JSON.stringify(info));
+      check(`${label}: prices get conversion notes`, info.notes > 5, JSON.stringify(info));
+      await shot(page, `live-${label}`);
+      await page.close();
+    }
+
+    {
+      const page = await open("/en/game/gris");
+      await page.waitForSelector("#gog-plus-gamepanel", { timeout: 20000 }).catch(() => {});
+      await new Promise((r) => setTimeout(r, 1500));
+      const g = await page.evaluate(() => ({
+        panel: !!document.getElementById("gog-plus-gamepanel"),
+        finalNote: document.querySelector('[selenium-id="ProductFinalPrice"] .gog-plus-conv-note')?.textContent.trim() || null,
+        bodyClass: document.body.className.split(" ").filter((c) => /prices-in/.test(c)).join(","),
+        sysRows: [...document.querySelectorAll(".gog-plus-sysreq-row")].length,
+      }));
+      check("game page: insights panel mounts", g.panel, JSON.stringify(g));
+      check("game page: the bare-number price is converted", !!g.finalNote, JSON.stringify(g));
+      const hist = (await storageGet("local", "priceHistory")).priceHistory || {};
+      check("game page: a price is recorded in the history", (hist.gris || []).length === 1 && hist.gris[0].p > 0, JSON.stringify(hist));
+      check("game page: system check found the requirements table", g.sysRows >= 1, JSON.stringify(g));
+      check("no uncaught page errors", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
+      await shot(page, "live-game");
+      await page.close();
+    }
   }
 } finally {
   await context.close();

@@ -146,7 +146,7 @@ No permission is needed for folder sync (you grant one folder at a time, from a 
 
 ## 🛠️ Known limitations
 
-- **Redesign adaptation is groundwork, not a guarantee** — the extension's tests (including a real-Chromium end-to-end suite) run against synthetic gog.com pages in two different markup shapes, not the live site. Use *Advanced Options → Check this page* if something stops working after a gog.com update.
+- **Redesign adaptation was checked against the live site, but gog.com keeps changing** — the home page, catalog and game page were inspected and exercised end to end (logged out) on 2026-10-02; account pages (wishlist, library, cart) need a login and were only inspected structurally. The site currently mixes two generations of markup, so expect more churn. Use *Advanced Options → Check this page* if something stops working after a gog.com update.
 - **Folder sync resolves conflicts by each device's clock** — last edit wins per record, so badly skewed clocks can pick the wrong winner. It needs the File System Access API (Chrome, Edge, Brave; not Firefox), and folder access has to be re-granted from the options page now and then.
 - **Mods list scraping** — depends on `gog.com/en/mods` keeping a similar structure. If it regresses, force-refresh via Advanced Options.
 - **Wishlist badge counter** — based on a live DOM count taken when you visit `/account/wishlist` (24h TTL). If you haven't visited recently, the badge stays empty until your next visit — the extension icon's tooltip will suggest visiting.

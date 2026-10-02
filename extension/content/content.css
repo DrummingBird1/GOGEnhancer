@@ -325,23 +325,32 @@ html.gog-plus-disabled .gog-plus-toasts {
   cursor: pointer;
 }
 
-/* ===== DRM-free top banner ===== */
+/* ===== DRM-free banner =====
+   A slim bar pinned to the BOTTOM edge. It used to sit in the normal flow at
+   the top of <body>, which is fine until the site's header is position:fixed
+   (the redesigned pages): then the banner was drawn over the first 40px of the
+   header and hid its navigation links until dismissed. The bottom edge has no
+   such neighbour, whatever the header does. */
 .gog-plus-banner {
-  position: relative;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 9999;
   background:
     radial-gradient(circle at 0% 50%, rgba(198, 79, 255, 0.18), transparent 40%),
     radial-gradient(circle at 100% 50%, rgba(0, 240, 255, 0.16), transparent 45%),
     rgba(15, 8, 30, 0.98);
-  border-bottom: 1px solid rgba(198, 79, 255, 0.35);
+  border-top: 1px solid rgba(198, 79, 255, 0.35);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35);
   color: var(--gp-text);
   font-family: var(--gp-body);
   font-size: 13px;
   animation: gog-plus-banner-in 360ms cubic-bezier(0.2, 0.85, 0.3, 1);
-  transform-origin: top center;
+  transform-origin: bottom center;
 }
 @keyframes gog-plus-banner-in {
-  0%   { transform: translateY(-100%); opacity: 0; }
+  0%   { transform: translateY(100%); opacity: 0; }
   60%  { opacity: 1; }
   100% { transform: translateY(0); opacity: 1; }
 }

@@ -28,7 +28,7 @@
   // whitespace between them). The lookbehinds reject the letter-before case
   // ("VRAM", "program") and explicit video/graphics memory.
   const RAM_LABEL_RE =
-    /(?<![a-z])(?<!video\s)(?<!graphics\s)(?<!gpu\s)(?:memory|ram)[^\d\n]{0,24}(\d+(?:[.,]\d+)?)\s*(gb|mb)/i;
+    /(?<![a-z])(?<!video\s)(?<!graphics\s)(?<!gpu\s)(?:memory|ram)[^\d]{0,24}(\d+(?:[.,]\d+)?)\s*(gb|mb)/i;
   // "8 GB RAM", "8GB of RAM"
   const RAM_SUFFIX_RE = /(\d+(?:[.,]\d+)?)\s*(gb|mb)\s*(?:of\s*)?ram\b/i;
   const MAX_PLAUSIBLE_GB = 256;
@@ -78,6 +78,32 @@
   }
 
   /**
+   * Same result as parseRequirements(), but from the site's own requirements
+   * table (label → cell text, per tier — see GOGPlusGogDom.readSystemRequirements)
+   * instead of guessing at page text. Exact, so preferred when it's there.
+   * @param {{ minimum: Record<string, string>, recommended: Record<string, string> }} table
+   * @returns {Requirements | null}
+   */
+  function fromTable(table) {
+    /** @param {Record<string, string>} cells @returns {number | null} */
+    const ram = (cells) => {
+      for (const [label, text] of Object.entries(cells)) {
+        if (!/^\s*(memory|ram)\b/i.test(label)) continue;
+        const gb = parseRamGB(`${label} ${text}`);
+        if (gb !== null) return gb;
+      }
+      return null;
+    };
+    const min = ram(table.minimum);
+    const rec = ram(table.recommended);
+    if (min === null && rec === null) return null;
+    return {
+      minimum: min === null ? null : { ramGB: min },
+      recommended: rec === null ? null : { ramGB: rec },
+    };
+  }
+
+  /**
    * @param {number | null | undefined} requiredGB
    * @param {number | null | undefined} reportedGB navigator.deviceMemory
    * @returns {RamStatus}
@@ -113,7 +139,7 @@
     return rows;
   }
 
-  const api = { parseRamGB, parseRequirements, compareRam, summarize };
+  const api = { parseRamGB, parseRequirements, fromTable, compareRam, summarize };
   if (typeof window !== "undefined") window.GOGPlusSysReq = api;
   if (typeof self !== "undefined") self.GOGPlusSysReq = api;
 })();

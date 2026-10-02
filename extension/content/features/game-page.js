@@ -81,7 +81,12 @@
   // null if no label or no mappable genre is found — callers should fall
   // back to GENRE_PATTERNS (matchGenrePattern()).
   function detectGameGenreBucket() {
-    const root = document.querySelector("main") || document.body;
+    // The site's own genre hook, when it's there, is exact.
+    for (const label of window.GOGPlusGogDom.genreLabels() || []) {
+      const bucket = mapGenreLabel(label);
+      if (bucket) return bucket;
+    }
+    const root = window.GOGPlusGogDom.spaRoot();
     if (!root) return null;
     const labelRe = /^genres?:?$/i;
     const candidates = root.querySelectorAll("dt, dd, span, div, td, th, strong, b, p, li");
@@ -144,15 +149,22 @@
     // Find current price text on the page. Prefer the buy-box specific
     // containers; if the site's class names changed and none match, fall back
     // to any price-like element rather than silently recording nothing.
-    let priceContainers = Array.from(
-      document.querySelectorAll(
-        '[class*="product-actions-price"], [class*="ProductActionsPrice"], [class*="price-text"], [class*="product-price"]'
-      )
-    );
-    if (!priceContainers.length) priceContainers = window.GOGPlusGogDom.findPriceNodes().nodes;
+    const { findFinalPrice, findPriceNodes, displayText } = window.GOGPlusGogDom;
+    // The final (discounted) price is exactly what's being asked right now.
+    // Game-page prices are bare numbers with a CSS-printed symbol, so every
+    // candidate is read through displayText(), never textContent.
+    const finalEl = findFinalPrice();
+    let priceContainers = finalEl
+      ? [finalEl]
+      : Array.from(
+          document.querySelectorAll(
+            '[class*="product-actions-price"], [class*="ProductActionsPrice"], [class*="price-text"], [class*="product-price"]'
+          )
+        );
+    if (!priceContainers.length) priceContainers = findPriceNodes().nodes;
     let price = null;
     for (const el of priceContainers) {
-      const txt = el.textContent || "";
+      const txt = displayText(el);
       const p = window.GOGPlusCurrency.parsePrice(txt, state.pageCurrency.code);
       if (p && (price === null || p < price)) price = p;
     }
@@ -429,10 +441,14 @@
   // Returns null when the page has no parsable requirements block.
   /** @returns {HTMLElement | null} */
   function renderSysReqSection() {
-    const root = /** @type {HTMLElement} */ (
-      document.querySelector("main, [role='main']") || document.body
-    );
-    const req = window.GOGPlusSysReq.parseRequirements(root.innerText || root.textContent || "");
+    // The site's own requirements table is exact; fall back to reading the
+    // page text only if it isn't there.
+    const table = window.GOGPlusGogDom.readSystemRequirements();
+    let req = table ? window.GOGPlusSysReq.fromTable(table) : null;
+    if (!req) {
+      const root = /** @type {HTMLElement} */ (window.GOGPlusGogDom.spaRoot());
+      req = window.GOGPlusSysReq.parseRequirements(root.innerText || root.textContent || "");
+    }
     if (!req) return null;
     const reported = /** @type {any} */ (navigator).deviceMemory ?? null;
     const rows = window.GOGPlusSysReq.summarize(req, reported);

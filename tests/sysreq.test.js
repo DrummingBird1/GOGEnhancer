@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 await import("../extension/lib/sysreq.js");
 
-const { parseRamGB, parseRequirements, compareRam, summarize } = window.GOGPlusSysReq;
+const { parseRamGB, parseRequirements, fromTable, compareRam, summarize } = window.GOGPlusSysReq;
 
 describe("parseRamGB", () => {
   it("reads the common label shapes", () => {
@@ -35,6 +35,46 @@ describe("parseRamGB", () => {
     expect(parseRamGB("RAM: 0 GB")).toBeNull();
     expect(parseRamGB("RAM: 9999 GB")).toBeNull();
     expect(parseRamGB("")).toBeNull();
+  });
+});
+
+describe("parseRamGB — label and value on separate lines (the site's table)", () => {
+  it("reads a value that sits on the next line after its label", () => {
+    expect(parseRamGB("Memory:\n4 GB RAM")).toBe(4);
+    expect(parseRamGB("Memory:\n8 GB")).toBe(8);
+  });
+
+  it("still won't let video memory on a later line leak in", () => {
+    expect(parseRamGB("Video Memory:\n2 GB")).toBeNull();
+  });
+});
+
+describe("fromTable", () => {
+  it("takes the memory row from each tier", () => {
+    expect(
+      fromTable({
+        minimum: { "System:": "Windows 7", "Memory:": "4 GB RAM", "Graphics:": "1024 MB" },
+        recommended: { "Memory:": "8 GB RAM" },
+      })
+    ).toEqual({ minimum: { ramGB: 4 }, recommended: { ramGB: 8 } });
+  });
+
+  it("accepts a RAM label and a bare value", () => {
+    expect(fromTable({ minimum: { "RAM:": "2 GB" }, recommended: {} })).toEqual({
+      minimum: { ramGB: 2 },
+      recommended: null,
+    });
+  });
+
+  it("ignores graphics/video memory rows and non-memory labels", () => {
+    expect(
+      fromTable({ minimum: { "Graphics:": "2 GB", "Video memory:": "2 GB", "Storage:": "50 GB" }, recommended: {} })
+    ).toBeNull();
+  });
+
+  it("is null when neither tier has a usable memory row", () => {
+    expect(fromTable({ minimum: {}, recommended: {} })).toBeNull();
+    expect(fromTable({ minimum: { "Memory:": "plenty" }, recommended: {} })).toBeNull();
   });
 });
 

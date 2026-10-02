@@ -134,6 +134,7 @@
       <p class="cl-title">Built to survive a redesign — plus folder sync, an address-bar library search, and a Native theme</p>
       <h4>Resilience to site changes</h4>
       <ul>
+        <li>🔧 <strong>Fixes what the redesign had broken</strong>, found by inspecting the live site: game-page prices — which GOG now prints with CSS, leaving a bare <code>2.99</code> in the page text — are converted again and recorded in your price history (the page's currency is read from the class it puts on <code>&lt;body&gt;</code>); the game's genre is read from the site's own genre element again; cover badges appear on the new catalog's full-width tile covers; and the DRM-free banner sits at the bottom edge instead of covering the site's fixed header.</li>
         <li>🧭 <strong>One site adapter.</strong> Every lookup of gog.com's markup — game cards, prices, the game title, where the insights panel mounts — now goes through a single module that tries several strategies, most stable first (URL shape, page metadata, semantic hooks, class names, finally the text shape of a price). A layout change now degrades gracefully instead of silently switching features off.</li>
         <li>🩺 <strong>"Check this page"</strong> in Advanced Options reports which lookups still work on the gog.com page you have open and <em>which strategy</em> found each one — the page path (no query string) and public store text only. Paste it into a bug report.</li>
         <li><strong>Client-side navigation</strong> is detected explicitly (the old game's panel no longer lingers after you navigate away), and the page observer now survives the site swapping out its <code>&lt;main&gt;</code> element — previously it would have been left watching a detached tree.</li>
@@ -156,7 +157,7 @@
       </ul>
       <h4>Under the hood</h4>
       <ul>
-        <li>An end-to-end suite now loads the real extension into Chromium and drives it against synthetic gog.com pages in two deliberately different markup shapes. It caught two bugs the unit tests couldn't: badges silently vanishing on full-width covers, and prices becoming undetectable after the converter had annotated them.</li>
+        <li>An end-to-end suite now loads the real extension into Chromium and drives it against gog.com pages — synthetic ones in two deliberately different markup shapes, markup recorded from the live site, and (manually) the live public pages themselves. Run against the markup recorded from the live site, v3.0.0 failed 8 of those 11 checks (all but one for features it already had); this release passes all of them. It also caught two bugs the unit tests couldn't: badges silently vanishing on full-width covers, and prices becoming undetectable after the converter had annotated them.</li>
         <li>A new test loads each entry point's scripts in exactly the order <code>manifest.json</code> and the HTML pages list them — nothing checked that before.</li>
       </ul>
       <a class="cl-release-link" href="https://github.com/DrummingBird1/GOGEnhancer/releases/tag/v4.0.0" target="_blank" rel="noopener">View release →</a>
