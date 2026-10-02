@@ -79,6 +79,12 @@
    * @property {CustomThemeColors | null} customThemeColors user-picked colors for the "custom" theme slot; null = fall back to the neon palette baked into :root
    * @property {boolean} dyslexiaFont swap injected UI to a more dyslexia-friendly font stack + wider letter/line spacing
    * @property {Record<string, string>} achievements achievement id -> unlocked-at ISO date, see lib/achievements.js
+   * @property {boolean} keyboardNav J/K/T shortcuts on game grids (opt-in — bare letter keys are never grabbed unless the user asks)
+   * @property {boolean} sysReqCheck show the RAM-only system-requirements check on game pages
+   * @property {Record<string, {t: number, del?: boolean}>} syncMeta "<dataset>:<slug>" -> last-modified epoch ms (+ tombstone flag), stamped by the service worker so folder sync can resolve conflicts per record, see lib/sync-core.js
+   * @property {number} lastFolderSyncAt epoch ms of the last successful sync-folder run, 0 = never
+   * @property {string} syncFolderName display name of the chosen sync folder ("" = none chosen)
+   * @property {boolean} syncEncrypt encrypt the folder-sync file with a passphrase (asked for on every sync, never stored)
    */
 
   /**
@@ -144,6 +150,8 @@
     monthlyBudget: null,
     customThemeColors: null,
     dyslexiaFont: false,
+    keyboardNav: false,
+    sysReqCheck: true,
 
     // local data (caches + user data)
     modsList: [],
@@ -165,6 +173,10 @@
     gameGenres: {},
     weeklyDigest: null,
     achievements: {},
+    syncMeta: {},
+    lastFolderSyncAt: 0,
+    syncFolderName: "",
+    syncEncrypt: false,
   };
 
   if (typeof window !== "undefined") {

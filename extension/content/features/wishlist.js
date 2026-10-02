@@ -24,7 +24,7 @@
     if (!location.pathname.includes("/account/wishlist")) return;
     if (document.getElementById("gog-plus-wlfilters")) return;
 
-    const target = document.querySelector("main, [class*='wishlist']");
+    const target = window.GOGPlusGogDom.wishlistRoot();
     if (!target) return;
 
     const bar = document.createElement("div");

@@ -14,11 +14,14 @@ await import("../extension/lib/dom-safety.js");
 await import("../extension/lib/currency-format.js");
 await import("../extension/lib/genres.js");
 await import("../extension/lib/game-status.js");
+await import("../extension/lib/sysreq.js");
+await import("../extension/content/gog-dom.js");
 await import("../extension/content/translations.js");
 await import("../extension/content/currency-detection.js");
 await import("../extension/content/price-history.js");
 await import("../extension/content/tooltips.js");
 await import("../extension/content/toasts.js");
+await import("../extension/content/native-theme.js");
 await import("../extension/content/state.js");
 await import("../extension/content/utils.js");
 await import("../extension/content/features/currency.js");
@@ -26,6 +29,7 @@ await import("../extension/content/features/card-badges.js");
 await import("../extension/content/features/misc.js");
 await import("../extension/content/features/wishlist.js");
 await import("../extension/content/features/game-page.js");
+await import("../extension/content/features/keyboard-nav.js");
 await import("../extension/content/content.js");
 
 const { slugFromHref, buildMiniSparkline, convertedFromCurrency, fxFreshness } =

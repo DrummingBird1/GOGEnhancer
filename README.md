@@ -46,7 +46,8 @@ An unofficial third-party extension for GOG.com — live currency conversion, pr
 - **Unified storage layer** — preferences in `storage.sync` (lightweight, synced across devices), heavier data (tags, history, caches) in `storage.local`. Nothing spills past either quota.
 - **Settings versioning + migration** — upgrading from v1 automatically moves tags and notes from sync to local.
 - **System fonts only** — zero dependency on Google Fonts. No external network request except the currency-rate API.
-- **Focused `MutationObserver`** on `main` / `[ng-view]` with debouncing — smarter, less work.
+- **One site adapter** (`content/gog-dom.js`) — every lookup of gog.com's markup (cards, prices, title, panel position) tries several strategies, so a redesign degrades gracefully instead of silently breaking features. "Check this page" in Advanced Options shows which lookups still work.
+- **Focused `MutationObserver`** on the page content with debouncing; header churn is filtered out and a replaced `<main>` is picked up.
 
 ### Features
 - 💱 **Live currency rates** — fetched automatically from `api.frankfurter.app` every 12 hours. Editable manually.
@@ -62,6 +63,12 @@ An unofficial third-party extension for GOG.com — live currency conversion, pr
 - 🎯 **Proper RTL** — using `inline-start`/`end` instead of `left`/`right`, and `unicode-bidi: isolate` for prices.
 - ⌨️ **Keyboard shortcuts** — `Alt+G` opens the popup, `Alt+Shift+G` toggles on/off, `Alt+Shift+H` toggles Hebrew; `Ctrl/Cmd+K` opens a command palette for everything else.
 - 🧙 **Onboarding wizard** — 4 steps (currency, region, features, theme), opens automatically on first install.
+- ☁️ **Sync across devices through a folder you choose** (Dropbox, OneDrive, Google Drive, Syncthing…) — merges tags, notes, status, purchases, alerts and price history per record, optionally encrypted. Nothing of ours is in the middle. Chrome / Edge / Brave.
+- 🔎 **Address-bar library search** — type `gog` + Tab, then a game name, `tag:rpg` or `status:backlog`.
+- 🎨 **Native theme** — samples gog.com's own colors and font so injected UI blends in with whatever the site looks like.
+- ⌨️ **Keyboard navigation** (opt-in) — `J`/`K` move between games on a listing, `T` tags the focused one.
+- 📅 **Refund-deadline calendar (`.ics`)** and 📝 **Markdown export** (Obsidian, Notion…) from the tag dashboard.
+- 🖥️ **System check** on game pages — compares a game's RAM requirement with what your browser reports (RAM only; browsers can't see your CPU or GPU).
 
 ### Visual upgrade module
 Enabled via the "Design injection" toggle in the popup. When on:
@@ -71,12 +78,14 @@ Enabled via the "Design injection" toggle in the popup. When on:
 - The "Good Old Game" pill gets a metallic gold gradient instead of a flat purple.
 - Skeleton loaders with a shimmer animation instead of exposed `{{ product.title }}` placeholders.
 - Clean layout: hides expired promos from past years.
-- Six themes (Neon, Classic GOG, CRT Green, Sunset, Light, Auto) — Auto follows your system's light/dark preference.
+- Nine themes (Neon, Classic GOG, CRT Green, Sunset, Light, High contrast, Custom, Auto, Native) — Auto follows your system's light/dark preference; Native follows gog.com's own look.
 
 ### Honest privacy
-- **Only two domains** ever receive network requests:
+- **Only three domains** ever receive network requests:
   1. `www.gog.com` — to read page content and inject UI.
   2. `api.frankfurter.app` — for currency rates (no API key, no tracking).
+  3. `www.cheapshark.com` — the optional price-comparison table on game pages (free, keyless; turn it off in the popup).
+- **Folder sync makes no network request of its own** — it reads and writes one file in a folder you pick; your own cloud client does any uploading.
 - **Zero analytics, zero gtag, zero Google Fonts.**
 - **Tags, notes, and history live on your device** via `chrome.storage.local`. Nothing leaves it.
 - **Open source** — every line of code is in this repository.
@@ -112,6 +121,8 @@ Enabled via the "Design injection" toggle in the popup. When on:
 | `Alt+Shift+G` | Toggle GOG Enhancer on/off |
 | `Alt+Shift+H` | Toggle Hebrew translations |
 | `Ctrl/Cmd+K` (on gog.com) | Open the command palette |
+| `J` / `K` / `T` (on game grids, opt-in) | Previous/next game, tag the focused game |
+| `gog` + `Tab` (address bar) | Search your own library |
 
 Shortcuts can be changed at `chrome://extensions/shortcuts`.
 
@@ -127,11 +138,16 @@ Shortcuts can be changed at `chrome://extensions/shortcuts`.
 | `notifications` | Opt-in only — desktop alerts for refund windows and wishlist deals |
 | Host: `www.gog.com` | Inject UI into GOG pages |
 | Host: `api.frankfurter.app` | Fetch currency rates |
+| Host: `www.cheapshark.com` | Optional cross-store price comparison on game pages |
+
+No permission is needed for folder sync (you grant one folder at a time, from a click) or for the address-bar keyword.
 
 ---
 
 ## 🛠️ Known limitations
 
+- **Redesign adaptation is groundwork, not a guarantee** — the extension's tests (including a real-Chromium end-to-end suite) run against synthetic gog.com pages in two different markup shapes, not the live site. Use *Advanced Options → Check this page* if something stops working after a gog.com update.
+- **Folder sync resolves conflicts by each device's clock** — last edit wins per record, so badly skewed clocks can pick the wrong winner. It needs the File System Access API (Chrome, Edge, Brave; not Firefox), and folder access has to be re-granted from the options page now and then.
 - **Mods list scraping** — depends on `gog.com/en/mods` keeping a similar structure. If it regresses, force-refresh via Advanced Options.
 - **Wishlist badge counter** — based on a live DOM count taken when you visit `/account/wishlist` (24h TTL). If you haven't visited recently, the badge stays empty until your next visit — the extension icon's tooltip will suggest visiting.
 - **Refund timer relies on a manually entered date** — GOG doesn't expose a purchase date through any public DOM, so the 30-day countdown depends on a date you type into the panel. No date typed, no countdown.

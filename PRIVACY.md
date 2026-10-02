@@ -1,7 +1,7 @@
 # Privacy Policy — GOG Enhancer
 
-**Last updated:** May 18, 2026
-**Extension version:** 2.4.1+
+**Last updated:** October 2, 2026
+**Extension version:** 4.0.0+
 **Contact:** https://github.com/DrummingBird1/GOGEnhancer/issues
 
 GOG Enhancer is an unofficial third-party browser extension that enhances the
@@ -50,6 +50,12 @@ extension:
 | Tag-dashboard density preference (comfortable / compact) | `chrome.storage.local` | Per-device UI preference — the dashboard remembers your choice between visits |
 | Your custom theme colors, dyslexia-friendly font choice, and unlocked achievements | `chrome.storage.sync` / `chrome.storage.local` | Same categories as above — preferences sync, personal progress stays local |
 | One optional photo you attach to a game's note in the tag dashboard | `IndexedDB` (a separate local database, not `chrome.storage`) | Images are downscaled on your device before saving; `chrome.storage`'s ~5&nbsp;MB total quota is too small for photos, so this uses its own local storage bucket instead. Still never leaves your device, and "Reset everything" deletes it too (best-effort — instantly if no other GOG Enhancer tab is open, otherwise once you close the others) |
+| Per-record "last edited" timestamps for tags, notes, status, purchases and alerts | `chrome.storage.local` | Only used to merge changes correctly if you turn on folder sync (below); stamped locally, never sent anywhere by this extension |
+| A browser-held reference to the sync folder you picked, its display name, and when you last synced | `IndexedDB` (the reference) and `chrome.storage.local` (name, time) | So you don't have to pick the folder again each time. The reference is only usable by this extension, and only for the one folder you chose |
+
+**Folder sync (optional, off until you pick a folder).** If you choose a sync folder, the extension reads and writes one file in it, `gog-enhancer-sync.json`, containing your tags, notes, play status, purchase dates and prices, price alerts and price history. That file is **in a folder you control**: if that folder is inside Dropbox, OneDrive, Google Drive or similar, that service's own policy then applies to the file. GOG Enhancer itself makes no network request for this and never receives the file. You can encrypt it with a passphrase (AES-256-GCM, on-device; the passphrase is never stored). Without a folder chosen, nothing is written outside the browser.
+
+The **address-bar keyword** (`gog`) searches the same local data and sends it nowhere. The **calendar (.ics) and Markdown exports** are built on your device and saved as files you download.
 
 You can wipe all of this at any time from the **Advanced Settings** page
 (toolbar icon → Advanced → Reset everything). You can also back it all up to
@@ -104,6 +110,11 @@ directly from the game-page content script itself — see 3.3 below.
 - **What happens:** Once a day, we walk the `purchaseLog` you've entered manually and compare each entry to today's date. If your opt-in "Desktop notifications" toggle is on AND any entry has 1–2 days left of GOG's 30-day refund window, we fire a local `chrome.notifications.create` so you know to decide on the refund. We also dedupe via the local `notifLog` so the same alert never fires twice.
 - **Why it's not a network request:** Everything happens inside the browser. `chrome.notifications` is local to your machine. No data goes anywhere.
 
+### 3.6 Sync through a folder you choose — *no network request by us*
+
+- **What happens:** Only when you press "Sync now" on the options page, the extension reads `gog-enhancer-sync.json` from the folder you picked, merges it with your local data, and writes back whichever side changed. Folder access is granted by you through the browser's own folder picker, one folder at a time, and can be revoked in the browser or by pressing "Stop syncing".
+- **Why it's not a network request:** Everything happens against files on your own disk. If your folder is synced by a cloud client, that client — not this extension — does the uploading.
+
 ---
 
 ## 4. Permissions we request and why
@@ -117,6 +128,8 @@ directly from the game-page content script itself — see 3.3 below.
 | Host permission for `https://www.gog.com/*` | To run the content script on GOG pages and to fetch the public `/en/mods` page in the background |
 | Host permission for `https://api.frankfurter.app/*` | To fetch currency exchange rates |
 | Host permission for `https://www.cheapshark.com/*` | To fetch the cross-store price comparison table shown on game pages (opt-out toggle in the popup) |
+
+Folder sync and the address-bar keyword need **no additional permission**: folder access is granted per folder by you through the browser's folder picker, and the omnibox keyword is declared in the manifest without a permission.
 
 We do not request any other permissions. In particular we do not request
 `tabs` (full tab access), `webRequest` (network interception), `cookies`
@@ -136,6 +149,7 @@ We do not request any other permissions. In particular we do not request
   your library, your payment methods, or your messages.
 - We do **not** track which games you view, search for, or wishlist on
   any server.
+- We do **not** receive your synced library: the sync file lives only in a folder you chose, and we have no server it could be sent to.
 - We do **not** sell, trade, or rent data, because we have no data to sell.
 - We do **not** load any third-party fonts (no Google Fonts requests).
   All fonts are system fonts.

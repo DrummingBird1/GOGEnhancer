@@ -1,7 +1,7 @@
 /**
  * GOG+ currency conversion feature (page-side price conversion, VAT
  * estimation, FX freshness). Pulled out of the former single-file
- * content.js during the v2.8.0 module split.
+ * content.js during the module split.
  */
 // @ts-check
 
@@ -15,7 +15,7 @@
     const sym = state.pageCurrency.symbol;
     if (!sym || !txt) return null;
     const escSym = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const matches = txt.match(new RegExp(escSym + "\\s?[\\d.,]+", "g"));
+    const matches = txt.match(new RegExp(`${escSym}\\s?[\\d.,]+|\\d[\\d.,]*\\s?${escSym}`, "g"));
     if (!matches?.length) return null;
     const native = window.GOGPlusCurrency.parsePrice(
       matches[matches.length - 1],
@@ -48,7 +48,10 @@
     const srcSym = state.pageCurrency.symbol;
     if (!srcSym) return;
     const escSym = srcSym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const symRe = new RegExp(escSym + "\\s?\\d");
+    const symRe = new RegExp(`${escSym}\\s?\\d|\\d\\s?${escSym}`);
+    const priceOnlyRe = new RegExp(
+      `^\\s*(?:${escSym}\\s?\\d[\\d.,]*|\\d[\\d.,]*\\s?${escSym})\\s*$`
+    );
 
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
@@ -74,11 +77,11 @@
     const tgtCur = state.settings.targetCurrency;
     const tgtRate = tgtCur === "USD" ? 1 : state.settings.rates[tgtCur];
 
-    for (const node of targets) {
-      const price = window.GOGPlusCurrency.parsePrice(node.nodeValue, state.pageCurrency.code);
-      if (!price) continue;
+    const convertInto = (/** @type {Element} */ host, /** @type {string} */ text) => {
+      const price = window.GOGPlusCurrency.parsePrice(text, state.pageCurrency.code);
+      if (!price) return;
       const value = convertedFromCurrency(price, state.pageCurrency.code);
-      if (value === null) continue;
+      if (value === null) return;
 
       const note = document.createElement("span");
       note.className = "gog-plus-conv-note";
@@ -115,8 +118,25 @@
           state.settings.targetCurrency
         )} (rate ${info.label}${info.stale ? ", may be stale" : ""})`;
       }
-      node.parentElement.classList.add("gog-plus-converted");
-      node.parentElement.appendChild(note);
+      host.classList.add("gog-plus-converted");
+      host.appendChild(note);
+    };
+
+    for (const node of targets) {
+      convertInto(/** @type {Element} */ (node.parentElement), node.nodeValue || "");
+    }
+
+    // Second pass: prices split across child elements (<i>$</i>19.99) never
+    // match symRe inside a single text node, so the walker above can't see
+    // them. Look at whole price-like elements instead — but only ones whose
+    // ENTIRE text is one price, and never one that already holds (or sits
+    // inside) a converted node, so nothing is converted twice.
+    for (const el of window.GOGPlusGogDom.findPriceNodes(root).nodes) {
+      if (el.closest(".gog-plus-converted, .gog-plus-banner, .gog-plus-tooltip, .gog-plus-toasts")) continue;
+      if (el.querySelector(".gog-plus-converted, .gog-plus-conv-note")) continue;
+      const text = (el.textContent || "").trim();
+      if (text.length > 24 || !priceOnlyRe.test(text)) continue;
+      convertInto(el, text);
     }
   }
 

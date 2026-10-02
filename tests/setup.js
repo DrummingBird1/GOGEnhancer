@@ -16,6 +16,8 @@ const runtimeListeners = {
 };
 const alarmListeners = [];
 const commandListeners = [];
+const omniboxChanged = [];
+const omniboxEntered = [];
 
 const fire = (changes, area) => {
   for (const fn of onChangedListeners) fn(changes, area);
@@ -108,8 +110,14 @@ globalThis.chrome = {
   },
   tabs: {
     create: vi.fn(),
+    update: vi.fn(),
     query: vi.fn((_q, cb) => cb([{ id: 1 }])),
     reload: vi.fn(),
+  },
+  omnibox: {
+    setDefaultSuggestion: vi.fn(),
+    onInputChanged: { addListener: (fn) => omniboxChanged.push(fn) },
+    onInputEntered: { addListener: (fn) => omniboxEntered.push(fn) },
   },
   commands: {
     onCommand: { addListener: (fn) => commandListeners.push(fn) },
@@ -122,6 +130,8 @@ globalThis.chrome = {
 globalThis.__chromeListeners = {
   alarm: alarmListeners,
   command: commandListeners,
+  omniboxChanged,
+  omniboxEntered,
   ...runtimeListeners,
 };
 

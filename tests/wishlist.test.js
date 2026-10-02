@@ -6,6 +6,8 @@ await import("../extension/lib/dom-safety.js");
 await import("../extension/lib/currency-format.js");
 await import("../extension/lib/genres.js");
 await import("../extension/lib/game-status.js");
+await import("../extension/lib/sysreq.js");
+await import("../extension/content/gog-dom.js");
 await import("../extension/content/translations.js");
 await import("../extension/content/currency-detection.js");
 await import("../extension/content/price-history.js");

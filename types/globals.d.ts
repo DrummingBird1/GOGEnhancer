@@ -139,6 +139,14 @@ declare global {
     GOGPlusCommandPalette?: GogPlusLooseApi;
     GOGPlusPriceCompare?: GogPlusLooseApi;
     GOGPlusPurchases?: GogPlusLooseApi;
+    GOGPlusGogDom?: GogPlusLooseApi;
+    GOGPlusNativeTheme?: GogPlusLooseApi;
+    GOGPlusKeyboardNav?: GogPlusLooseApi;
+    GOGPlusSysReq?: GogPlusLooseApi;
+    GOGPlusIcs?: GogPlusLooseApi;
+    GOGPlusMarkdownExport?: GogPlusLooseApi;
+    GOGPlusSyncCore?: GogPlusLooseApi;
+    GOGPlusLibrarySearch?: GogPlusLooseApi;
 
     GOGPlusTagsState?: GogPlusLooseApi;
     GOGPlusTagsConstants?: GogPlusLooseApi;

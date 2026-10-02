@@ -130,7 +130,7 @@
   async function enhanceGamePage() {
     const slug = slugFromLocation();
     if (!slug) return;
-    if (!document.querySelector("h1, [class*='product']")) return;
+    if (!window.GOGPlusGogDom.hasProductContent()) return;
 
     await Promise.all([
       maybeRecordPriceHistory(slug),
@@ -141,10 +141,15 @@
 
   async function maybeRecordPriceHistory(slug) {
     if (!state.settings.priceHistoryTracking) return;
-    // Find current price text on the page
-    const priceContainers = document.querySelectorAll(
-      '[class*="product-actions-price"], [class*="ProductActionsPrice"], [class*="price-text"], [class*="product-price"]'
+    // Find current price text on the page. Prefer the buy-box specific
+    // containers; if the site's class names changed and none match, fall back
+    // to any price-like element rather than silently recording nothing.
+    let priceContainers = Array.from(
+      document.querySelectorAll(
+        '[class*="product-actions-price"], [class*="ProductActionsPrice"], [class*="price-text"], [class*="product-price"]'
+      )
     );
+    if (!priceContainers.length) priceContainers = window.GOGPlusGogDom.findPriceNodes().nodes;
     let price = null;
     for (const el of priceContainers) {
       const txt = el.textContent || "";
@@ -161,10 +166,7 @@
     if (existing?.dataset.slug === slug) return;
     existing?.remove();
 
-    const anchor =
-      document.querySelector("h1") ||
-      document.querySelector("[class*='product'] h1") ||
-      document.querySelector("main");
+    const anchor = window.GOGPlusGogDom.gamePageAnchor()?.el;
     if (!anchor) return;
 
     const panel = document.createElement("aside");
@@ -208,6 +210,10 @@
     if (state.settings.priceCompareTable) {
       const cmp = renderPriceCompareSection(slug);
       if (cmp) body.appendChild(cmp);
+    }
+    if (state.settings.sysReqCheck) {
+      const sysReq = renderSysReqSection();
+      if (sysReq) body.appendChild(sysReq);
     }
     if (state.settings.refundTimer) {
       body.appendChild(await renderRefundSection(slug));
@@ -408,6 +414,53 @@
         if (status) status.textContent = "Couldn't reach the comparison service.";
       });
 
+    return wrap;
+  }
+
+  const SYSREQ_STATUS_TEXT = {
+    ok: "✓ this device meets it",
+    below: "✗ this device falls short",
+    maybe: "~ might fall short (the browser reports a rounded-down figure)",
+    unknown: "? can't tell from the browser",
+  };
+
+  // RAM-only requirements check against navigator.deviceMemory — see
+  // lib/sysreq.js for why it can't (and doesn't pretend to) check CPU/GPU.
+  // Returns null when the page has no parsable requirements block.
+  /** @returns {HTMLElement | null} */
+  function renderSysReqSection() {
+    const root = /** @type {HTMLElement} */ (
+      document.querySelector("main, [role='main']") || document.body
+    );
+    const req = window.GOGPlusSysReq.parseRequirements(root.innerText || root.textContent || "");
+    if (!req) return null;
+    const reported = /** @type {any} */ (navigator).deviceMemory ?? null;
+    const rows = window.GOGPlusSysReq.summarize(req, reported);
+    if (!rows.length) return null;
+
+    const wrap = document.createElement("section");
+    wrap.className = "gog-plus-gp-section";
+    const h3 = document.createElement("h3");
+    h3.textContent = "System check ";
+    const since = document.createElement("span");
+    since.className = "gog-plus-gp-since";
+    since.textContent = "RAM only";
+    h3.appendChild(since);
+    wrap.appendChild(h3);
+
+    for (const row of rows) {
+      const p = document.createElement("p");
+      p.className = `gog-plus-sysreq-row is-${row.status}`;
+      p.textContent = `${row.label}: ${row.requiredGB} GB — ${SYSREQ_STATUS_TEXT[row.status]}`;
+      wrap.appendChild(p);
+    }
+    const note = document.createElement("p");
+    note.className = "gog-plus-gp-muted";
+    note.textContent =
+      reported === null
+        ? "This browser doesn't report how much memory the device has."
+        : `This browser reports ${reported >= 8 ? "at least" : "about"} ${reported} GB (browsers round this figure and can't see your CPU or GPU).`;
+    wrap.appendChild(note);
     return wrap;
   }
 

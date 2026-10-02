@@ -59,6 +59,8 @@
     "monthlyBudget",
     "customThemeColors",
     "dyslexiaFont",
+    "keyboardNav",
+    "sysReqCheck",
   ]);
 
   const LOCAL_KEYS = new Set([
@@ -81,6 +83,10 @@
     "gameGenres",
     "weeklyDigest",
     "achievements",
+    "syncMeta",
+    "lastFolderSyncAt",
+    "syncFolderName",
+    "syncEncrypt",
   ]);
 
   /**

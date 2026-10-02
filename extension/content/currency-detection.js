@@ -45,9 +45,7 @@
     cached = null;
 
     // Probe: scan a few visible price-like nodes
-    const candidates = document.querySelectorAll(
-      '[class*="price"], [class*="Price"], .product-tile__price, .price-text, .product-row-price'
-    );
+    const candidates = window.GOGPlusGogDom.findPriceNodes().nodes;
 
     const counts = {};
     for (let i = 0; i < Math.min(candidates.length, 30); i++) {
@@ -128,12 +126,14 @@
   function parsePrice(text, knownCurrency = null) {
     if (!text) return null;
 
+    // Symbol-first ("$19.99") or symbol-last ("19,99 €") — which side the
+    // symbol sits on varies by locale and by how GOG's markup is built.
     const grab = (sym, currency) => {
       const escSym = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const re = new RegExp(`${escSym}\\s?([\\d.,]+)`);
+      const re = new RegExp(`${escSym}\\s?([\\d.,]+)|(\\d[\\d.,]*)\\s?${escSym}`);
       const m = text.match(re);
       if (!m) return null;
-      const v = normalizeNumber(m[1], currency);
+      const v = normalizeNumber(m[1] ?? m[2], currency);
       return Number.isFinite(v) ? v : null;
     };
 

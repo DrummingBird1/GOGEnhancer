@@ -99,6 +99,11 @@ async function decryptBackup(envelope, password) {
   return new TextDecoder().decode(plainBuf);
 }
 
+// folder-sync.js (a separate script, so it can't see this file's top-level
+// functions in a module-loading test harness) encrypts/decrypts its sync
+// file with the same envelope as the encrypted backup export.
+window.GOGPlusBackupCrypto = { ENCRYPTED_BACKUP_FORMAT, encryptBackup, decryptBackup };
+
 // customColors, when the resolved theme is "custom": {magenta, cyan, bg}.
 // Applied as inline custom properties on <html> so no CSS class covers the
 // "custom" case — the swatch classes above only style each theme's picker
@@ -110,12 +115,14 @@ function applyThemeClassToHtml(theme, customColors) {
   // then add the current one. "neon" is the CSS default so the class
   // is harmless; we still add it for consistency with content.js.
   // "auto" isn't a real CSS variant — same resolution as content.js.
+  // "native" means "match gog.com's own look", which only exists on gog.com —
+  // on this page it follows the system light/dark preference like "auto".
   const html = document.documentElement;
   [...html.classList]
     .filter((c) => c.startsWith("gog-plus-theme--"))
     .forEach((c) => html.classList.remove(c));
   let resolved = theme || "neon";
-  if (resolved === "auto") {
+  if (resolved === "auto" || resolved === "native") {
     resolved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "neon";
   }
   html.classList.add(`gog-plus-theme--${resolved}`);
@@ -497,7 +504,13 @@ function bind() {
           });
         });
       if (data.sync) await setArea(chrome.storage.sync, data.sync);
-      if (data.local) await setArea(chrome.storage.local, data.local);
+      if (data.local) {
+        // Which folder this browser syncs to (and when it last did) belongs to
+        // THIS browser — a backup from another device must not claim a folder
+        // this one has no access to.
+        const { syncFolderName: _folder, lastFolderSyncAt: _last, ...portable } = data.local;
+        await setArea(chrome.storage.local, portable);
+      }
       // The import may come from an older version of the extension (e.g. a
       // pre-v2 export where tags/notes still lived in sync) — run the same
       // migration pass an upgrade would, instead of loading the old shape as-is.

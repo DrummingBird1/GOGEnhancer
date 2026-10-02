@@ -1,7 +1,7 @@
 /**
  * GOG+ content-script utilities shared across content/features/*.js.
- * Pulled out of the former single-file content.js during the v2.8.0 module
- * split — see CLAUDE.md's content-script load-order section.
+ * Pulled out of the former single-file content.js during the module split —
+ * see CLAUDE.md's content-script load-order section.
  */
 // @ts-check
 
@@ -22,23 +22,8 @@
     if (state.settings.debugLogging || window.GOG_PLUS_DEBUG) console.log("[GOG+]", ...a);
   };
 
-  const slugFromHref = (href) => {
-    const m = (href || "").match(/\/game\/([a-z0-9_]+)/);
-    return m ? m[1] : null;
-  };
-
-  const slugFromLocation = () => slugFromHref(location.pathname);
-
-  const gameTitleFromPage = () => {
-    const h1 =
-      document.querySelector("h1.productcard-basics__title") ||
-      document.querySelector("h1[class*='product'][class*='title']") ||
-      document.querySelector("h1");
-    if (h1) return (h1.textContent || "").trim();
-    const og = document.querySelector("meta[property='og:title']");
-    if (og) return (og.getAttribute("content") || "").replace(/\s*on GOG\.com\s*$/, "");
-    return null;
-  };
+  // Site-markup lookups live in content/gog-dom.js (the site adapter).
+  const { slugFromHref, slugFromLocation, gameTitle: gameTitleFromPage } = window.GOGPlusGogDom;
 
   window.GOGPlusContentUtils = {
     debounce,

@@ -14,7 +14,8 @@ const { $ } = window.GOGPlusTagsConstants;
 const { renderSaleHeatmap, renderStats, renderYearReview, renderGenreDistribution } = window.GOGPlusTagsStats;
 const { renderTagList } = window.GOGPlusTagsManagement;
 const { renderGames } = window.GOGPlusTagsGamesList;
-const { exportPack, importPackFromFile, exportCsv, exportStaticHtml } = window.GOGPlusTagsExportImport;
+const { exportPack, importPackFromFile, exportCsv, exportStaticHtml, exportIcs, exportMarkdown } =
+  window.GOGPlusTagsExportImport;
 const { renderTonightPicker } = window.GOGPlusTagsRecommendations;
 const { toggleFilterBuilder, closeFilterBuilder } = window.GOGPlusTagsFilterBuilder;
 const { evaluateAndPersist, renderAchievements } = window.GOGPlusTagsAchievements;
@@ -81,7 +82,8 @@ function applyThemeClassToHtml(theme, customColors) {
     .filter((c) => c.startsWith("gog-plus-theme--"))
     .forEach((c) => html.classList.remove(c));
   let resolved = theme || "neon";
-  if (resolved === "auto") {
+  // "native" (match gog.com's own look) only exists on gog.com; here it follows the system.
+  if (resolved === "auto" || resolved === "native") {
     resolved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "neon";
   }
   html.classList.add(`gog-plus-theme--${resolved}`);
@@ -112,6 +114,8 @@ function bind() {
     renderGames();
   });
   $("exportStaticHtml").addEventListener("click", exportStaticHtml);
+  $("exportIcs").addEventListener("click", exportIcs);
+  $("exportMarkdown").addEventListener("click", exportMarkdown);
   $("exportPack").addEventListener("click", exportPack);
   $("importPack").addEventListener("click", () => $("importPackFile").click());
   $("importPackFile").addEventListener("change", importPackFromFile);

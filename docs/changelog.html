@@ -130,7 +130,40 @@
   <div class="cl-list wrap">
 
     <div class="cl-entry is-current">
-      <div class="cl-version-row"><span class="cl-version">v3.0.0</span><span class="cl-badge-current">Current</span></div>
+      <div class="cl-version-row"><span class="cl-version">v4.0.0</span><span class="cl-badge-current">Current</span></div>
+      <p class="cl-title">Built to survive a redesign — plus folder sync, an address-bar library search, and a Native theme</p>
+      <h4>Resilience to site changes</h4>
+      <ul>
+        <li>🧭 <strong>One site adapter.</strong> Every lookup of gog.com's markup — game cards, prices, the game title, where the insights panel mounts — now goes through a single module that tries several strategies, most stable first (URL shape, page metadata, semantic hooks, class names, finally the text shape of a price). A layout change now degrades gracefully instead of silently switching features off.</li>
+        <li>🩺 <strong>"Check this page"</strong> in Advanced Options reports which lookups still work on the gog.com page you have open and <em>which strategy</em> found each one — the page path (no query string) and public store text only. Paste it into a bug report.</li>
+        <li><strong>Client-side navigation</strong> is detected explicitly (the old game's panel no longer lingers after you navigate away), and the page observer now survives the site swapping out its <code>&lt;main&gt;</code> element — previously it would have been left watching a detached tree.</li>
+        <li>Prices written <code>19,99 €</code> or split across several elements (<code>&lt;i&gt;$&lt;/i&gt;19.99</code>) are recognized, and cover badges now appear on vertical tiles whose cover spans the full card width.</li>
+      </ul>
+      <h4>Look &amp; feel</h4>
+      <ul>
+        <li>🎨 <strong>Native theme</strong> — reads gog.com's own background, text colour, accent (taken from its main call-to-action) and font each time a page loads, so badges and panels look like they belong there whatever the site looks like. Falls back to the default theme if the page can't be sampled.</li>
+      </ul>
+      <h4>Sync &amp; integration</h4>
+      <ul>
+        <li>☁️ <strong>Sync across devices through a folder you choose</strong> (Dropbox, OneDrive, Google Drive, Syncthing — anything that already syncs a folder). The extension reads and writes one file, <code>gog-enhancer-sync.json</code>, and merges tags, notes, play status, purchases, price alerts and price history from every browser pointed at it, resolving conflicts per record. Optional passphrase encryption. No server of ours and no new network permission — your folder is the whole transport. Needs the File System Access API (Chrome, Edge, Brave).</li>
+        <li>🔎 <strong>Address-bar search:</strong> type <code>gog</code>, press Tab, then a game name, <code>tag:rpg</code> or <code>status:backlog</code> to search your own library; Enter opens the game.</li>
+        <li>📅 <strong>Refund-deadline calendar</strong> (<code>.ics</code>) and 📝 <strong>Markdown export</strong> (grouped by play status, with #hashtags and notes) from the tag dashboard — both built on your device.</li>
+      </ul>
+      <h4>Convenience</h4>
+      <ul>
+        <li>⌨️ <strong>Keyboard navigation</strong> on game grids — <kbd>J</kbd>/<kbd>K</kbd> move between games, <kbd>T</kbd> tags the focused one. Off by default; never acts while you're typing.</li>
+        <li>🖥️ <strong>System check</strong> on game pages compares the RAM requirement with what your browser reports. RAM only — browsers can't see your CPU, GPU or disk, and round the figure.</li>
+      </ul>
+      <h4>Under the hood</h4>
+      <ul>
+        <li>An end-to-end suite now loads the real extension into Chromium and drives it against synthetic gog.com pages in two deliberately different markup shapes. It caught two bugs the unit tests couldn't: badges silently vanishing on full-width covers, and prices becoming undetectable after the converter had annotated them.</li>
+        <li>A new test loads each entry point's scripts in exactly the order <code>manifest.json</code> and the HTML pages list them — nothing checked that before.</li>
+      </ul>
+      <a class="cl-release-link" href="https://github.com/DrummingBird1/GOGEnhancer/releases/tag/v4.0.0" target="_blank" rel="noopener">View release →</a>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v3.0.0</span></div>
       <p class="cl-title">The big one — deals, library tools, analytics, automation, accessibility, and gamification</p>
       <h4>Deals &amp; pricing</h4>
       <ul>

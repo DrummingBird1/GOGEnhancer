@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GOG Enhancer",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "תוסף third-party (לא רשמי) ל-GOG.com: המרת מטבע חיה, מעקב היסטוריית מחירים, תגיות, עברית + RTL.",
 
   "permissions": ["storage", "activeTab", "alarms", "notifications"],
@@ -45,11 +45,14 @@
         "lib/game-status.js",
         "lib/price-compare.js",
         "lib/purchases.js",
+        "lib/sysreq.js",
+        "content/gog-dom.js",
         "content/translations.js",
         "content/currency-detection.js",
         "content/price-history.js",
         "content/tooltips.js",
         "content/toasts.js",
+        "content/native-theme.js",
         "content/state.js",
         "content/utils.js",
         "content/features/currency.js",
@@ -58,6 +61,7 @@
         "content/features/wishlist.js",
         "content/features/game-page.js",
         "content/features/command-palette.js",
+        "content/features/keyboard-nav.js",
         "content/content.js"
       ],
       "css": [
@@ -68,6 +72,10 @@
       "all_frames": false
     }
   ],
+
+  "omnibox": {
+    "keyword": "gog"
+  },
 
   "options_ui": {
     "page": "options/options.html",

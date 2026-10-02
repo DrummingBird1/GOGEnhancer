@@ -37,6 +37,7 @@ function fixtureHtml() {
           <button class="theme-swatch" data-theme="auto"></button>
           <button class="theme-swatch" data-theme="highcontrast"></button>
           <button class="theme-swatch" data-theme="custom"></button>
+          <button class="theme-swatch" data-theme="native"></button>
         </div>
         <div class="custom-theme-editor" id="customThemeEditor" hidden>
           <input type="color" id="customColorMagenta" value="#c64fff">
@@ -369,6 +370,33 @@ describe("theme swatches", () => {
   });
 });
 
+describe("native theme on the options page", () => {
+  it("follows the system light/dark setting instead of applying a palette of its own", async () => {
+    await bootOptions();
+    document.documentElement.style.setProperty("--accent-magenta", "red");
+    document.querySelector('.theme-swatch[data-theme="native"]').click();
+    await new Promise((r) => setTimeout(r, 0));
+    const cls = [...document.documentElement.classList].filter((c) => c.startsWith("gog-plus-theme--"));
+    expect(cls).toHaveLength(1);
+    expect(["gog-plus-theme--light", "gog-plus-theme--neon"]).toContain(cls[0]);
+    // A leftover custom-theme colour must not survive switching to it.
+    expect(document.documentElement.style.getPropertyValue("--accent-magenta")).toBe("");
+    const s = await new Promise((r) => chrome.storage.sync.get(["theme"], r));
+    expect(s.theme).toBe("native");
+  });
+});
+
+describe("GOGPlusBackupCrypto", () => {
+  it("is exposed for the sync-folder script and round-trips a payload", async () => {
+    await bootOptions();
+    const { encryptBackup, decryptBackup, ENCRYPTED_BACKUP_FORMAT } = window.GOGPlusBackupCrypto;
+    const envelope = await encryptBackup("secret text", "pw");
+    expect(envelope.format).toBe(ENCRYPTED_BACKUP_FORMAT);
+    expect(await decryptBackup(envelope, "pw")).toBe("secret text");
+    await expect(decryptBackup(envelope, "wrong")).rejects.toThrow(/Wrong password/);
+  });
+});
+
 describe("force-refresh buttons", () => {
   it("forceFx sends a force-fx-refresh message", async () => {
     await bootOptions();
@@ -644,6 +672,29 @@ describe("full JSON import", () => {
     const s = await new Promise((r) => chrome.storage.sync.get(["vatPercent"], r));
     expect(s.vatPercent).toBe(25);
     expect(window.alert).toHaveBeenCalledWith("Imported successfully.");
+  });
+
+  it("does not import this-browser-only sync state from another device's backup", async () => {
+    await bootOptions();
+    const payload = JSON.stringify({
+      version: 2,
+      local: {
+        tags: { hades: ["x"] },
+        syncFolderName: "Dropbox/other-pc",
+        lastFolderSyncAt: 12345,
+        syncMeta: { "tags:hades": { t: 5 } },
+      },
+    });
+    const file = new File([payload], "backup.json", { type: "application/json" });
+    const input = document.getElementById("importFile");
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    input.dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 20));
+    const l = await new Promise((r) => chrome.storage.local.get(null, r));
+    expect(l.tags).toEqual({ hades: ["x"] });
+    expect(l.syncMeta).toEqual({ "tags:hades": { t: 5 } }); // timestamps travel with the data
+    expect(l.syncFolderName).toBeUndefined();
+    expect(l.lastFolderSyncAt).toBeUndefined();
   });
 
   it("aborts without confirmation and shows an error for malformed JSON", async () => {

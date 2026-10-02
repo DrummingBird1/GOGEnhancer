@@ -657,6 +657,55 @@ button.danger:hover {
 .theme-swatch--custom {
   background: conic-gradient(from 0deg, #c64fff, #00f0ff, #7fffa6, #ff6b9d, #c64fff);
 }
+/* "Native" has no palette of its own, so its preview is a dark|light split:
+   it adopts whichever the live site is using. */
+.theme-swatch--native {
+  background: linear-gradient(135deg, #14141a 0 50%, #f4f4f7 50% 100%);
+  border: 1px solid var(--border);
+}
+.theme-native-note {
+  margin: 10px 0 4px;
+}
+
+/* Inline keyboard keys in option descriptions */
+kbd {
+  font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+  font-size: 0.85em;
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong, var(--border));
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--bg-elevated);
+}
+
+/* Sync + diagnostics messages share the rate-status error treatment */
+.card-sub.has-error {
+  color: var(--accent-pink);
+}
+.card-sub.has-error::before {
+  content: "⚠ ";
+}
+
+/* "Check this page" report */
+.diag-block {
+  margin: 8px 0 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.diag-output {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  max-height: 340px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
 
 /* UI language selector — sits in the Look & feel card under the theme picker */
 .ui-lang-row {

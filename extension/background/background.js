@@ -14,6 +14,8 @@ import "../lib/defaults.js";
 import "../lib/storage.js";
 import "../lib/migrations.js";
 import "../lib/purchases.js";
+import "../lib/sync-core.js";
+import "../lib/library-search.js";
 
 const DEFAULTS = self.GOG_PLUS_DEFAULTS;
 
@@ -589,6 +591,72 @@ chrome.commands.onCommand.addListener(async (command) => {
     await self.GOGPlusStorage.set({ hebrewTranslations: !hebrewTranslations });
   }
 });
+
+/* ---------------- sync timestamps ----------------
+ * Folder sync (lib/sync-core.js) resolves conflicts per record from `syncMeta`
+ * timestamps. Stamping them here, from storage.onChanged, means none of the
+ * many places that write tags/notes/status/etc. need to know sync exists.
+ * Two guards matter: a change that arrives WITH a syncMeta change is a sync
+ * being applied (the merge already carries the right timestamps — stamping
+ * it "now" would let a stale value out-vote a genuinely newer edit on another
+ * device), and our own syncMeta write must not re-trigger stamping. Updates
+ * are chained so two quick changes can't read-modify-write over each other. */
+
+let syncStampQueue = Promise.resolve();
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || changes.syncMeta) return;
+  const { SYNCED_KEYS, stampChanges } = self.GOGPlusSyncCore;
+  const touched = Object.keys(changes).filter((k) => SYNCED_KEYS.includes(k));
+  if (!touched.length) return;
+  const now = Date.now();
+  syncStampQueue = syncStampQueue
+    .then(async () => {
+      const { syncMeta } = await self.GOGPlusStorage.get({ syncMeta: {} });
+      let meta = syncMeta;
+      let changed = false;
+      for (const key of touched) {
+        const next = stampChanges(key, changes[key].oldValue, changes[key].newValue, meta, now);
+        if (next) {
+          meta = next;
+          changed = true;
+        }
+      }
+      if (changed) await self.GOGPlusStorage.set({ syncMeta: meta });
+    })
+    .catch((err) => console.error("[GOG+] sync timestamping failed:", err));
+});
+
+/* ---------------- omnibox ----------------
+ * "gog <text>" in the address bar searches the user's own library (tags,
+ * notes, status, purchases, wishlist) — all from local storage, no network.
+ * Enter on a suggestion opens that game; Enter on free text runs GOG's own
+ * store search. */
+
+if (chrome.omnibox) {
+  chrome.omnibox.setDefaultSuggestion({
+    description: "Search your GOG Enhancer library — a game name, tag:rpg or status:backlog",
+  });
+
+  chrome.omnibox.onInputChanged.addListener(async (text, suggest) => {
+    const data = await self.GOGPlusStorage.get([
+      "tags",
+      "notes",
+      "gameStatus",
+      "purchaseLog",
+      "wishlistSlugs",
+      "priceHistory",
+    ]);
+    const { searchLibrary, suggestionFor } = self.GOGPlusLibrarySearch;
+    suggest(searchLibrary(data, text).map(suggestionFor));
+  });
+
+  chrome.omnibox.onInputEntered.addListener((text, disposition) => {
+    const url = self.GOGPlusLibrarySearch.resolveOmniboxInput(text);
+    if (disposition === "currentTab") chrome.tabs.update({ url });
+    else chrome.tabs.create({ url, active: disposition === "newForegroundTab" });
+  });
+}
 
 /* ---------------- messages ---------------- */
 

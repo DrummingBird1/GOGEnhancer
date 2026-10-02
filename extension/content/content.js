@@ -16,7 +16,7 @@
 
   const DEFAULTS = window.GOG_PLUS_DEFAULTS;
   const state = window.GOGPlusContentState;
-  const { debounce, log, slugFromHref } = window.GOGPlusContentUtils;
+  const { debounce, log, slugFromHref, slugFromLocation } = window.GOGPlusContentUtils;
   const { applyCurrencyConversion, convertedFromCurrency, fxFreshness } =
     window.GOGPlusCurrencyFeature;
   const { applyCardBadges, buildMiniSparkline } = window.GOGPlusCardBadges;
@@ -59,19 +59,28 @@
     if (theme === "auto") {
       theme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "neon";
     }
-    document.documentElement.classList.add(`gog-plus-theme--${theme}`);
+    // "native" has no palette of its own: it samples the live page and writes
+    // the --gp-* vars inline (see content/native-theme.js). The class it adds
+    // is the dark/light base for the colours it doesn't override — and if the
+    // page can't be sampled it quietly behaves like the default theme.
+    // Cleared first so a previous theme's inline vars never leak into the next.
+    window.GOGPlusNativeTheme.clear();
+    if (theme === "native") {
+      const native = window.GOGPlusNativeTheme.apply();
+      document.documentElement.classList.add("gog-plus-theme--native");
+      if (native && !native.isDark) document.documentElement.classList.add("gog-plus-theme--light");
+    } else {
+      document.documentElement.classList.add(`gog-plus-theme--${theme}`);
+    }
     // Custom theme colors are applied as inline vars, not a CSS class — see
     // the identical comment in options.js's applyThemeClassToHtml. Must be
-    // explicitly cleared on every other theme or they'd keep overriding it.
+    // explicitly cleared on every other theme or they'd keep overriding it
+    // (the clear() above already removed them for every non-custom theme).
     const customColors = state.settings.customThemeColors;
     if (theme === "custom" && customColors) {
       document.documentElement.style.setProperty("--gp-magenta", customColors.magenta);
       document.documentElement.style.setProperty("--gp-cyan", customColors.cyan);
       document.documentElement.style.setProperty("--gp-bg", customColors.bg);
-    } else {
-      document.documentElement.style.removeProperty("--gp-magenta");
-      document.documentElement.style.removeProperty("--gp-cyan");
-      document.documentElement.style.removeProperty("--gp-bg");
     }
     document.documentElement.classList.toggle(
       "gog-plus-dyslexia-font",
@@ -95,21 +104,41 @@
 
   const scheduleProcess = debounce(processAll, 250);
 
+  /** @type {MutationObserver | null} */
+  let rootObserver = null;
+
   function startObserving() {
-    state.observers.forEach((o) => o.disconnect());
-    state.observers = [];
+    // Only this observer is replaced — state.observers also holds the
+    // wishlist bar's own live-count observer, which must survive a re-bind.
+    rootObserver?.disconnect();
+    state.observers = state.observers.filter((o) => o !== rootObserver);
 
-    // Targeted observation: main content area only
-    const targets = [
-      document.querySelector("main"),
-      document.querySelector("[ng-view]"),
-      document.body,
-    ].filter(Boolean);
+    // Watch <body>, not <main>: an SPA can swap <main> out wholesale on
+    // navigation, and an observer bound to the old node would be left
+    // watching a detached tree — the extension would silently stop reacting,
+    // with no event anywhere to tell it so. But header/footer churn (a ticking
+    // countdown, a cart badge) doesn't need a full pass, so records are
+    // filtered down to ones inside the content root, or on an ancestor of it
+    // (which is where a swapped <main> shows up).
+    rootObserver = new MutationObserver((records) => {
+      const root = window.GOGPlusGogDom.spaRoot();
+      if (root === document.body || records.some((r) => root.contains(r.target) || r.target.contains(root))) {
+        scheduleProcess();
+      }
+    });
+    rootObserver.observe(document.body, { childList: true, subtree: true });
+    state.observers.push(rootObserver);
+  }
 
-    const root = targets[0];
-    const obs = new MutationObserver(() => scheduleProcess());
-    obs.observe(root, { childList: true, subtree: true });
-    state.observers.push(obs);
+  // Per-page UI must not outlive its page: a client-side navigation doesn't
+  // reload the content script, so nothing else would ever remove it.
+  function onRouteChange() {
+    const panel = document.getElementById("gog-plus-gamepanel");
+    if (panel && panel.dataset.slug !== slugFromLocation()) panel.remove();
+    if (!location.pathname.includes("/account/wishlist")) {
+      document.getElementById("gog-plus-wlfilters")?.remove();
+    }
+    scheduleProcess();
   }
 
   /* ============== settings load + change handling ============== */
@@ -207,9 +236,17 @@
 
   /* ============== boot ============== */
 
+  // The options page's "Check this page" button asks the active gog.com tab
+  // what each lookup found (see GOGPlusGogDom.diagnose).
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg?.type === "gog-plus-diagnose") sendResponse(window.GOGPlusGogDom.diagnose());
+  });
+
   loadSettings().then(() => {
     processAll();
     startObserving();
+    window.GOGPlusGogDom.watchRoute(onRouteChange);
+    window.GOGPlusKeyboardNav.init();
     log("ready", state.settings);
   });
 })();

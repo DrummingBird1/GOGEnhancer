@@ -32,6 +32,8 @@ The extension itself is plain vanilla JS — no bundler, no framework. A Vitest 
 - **Repack for Web Store**: `.\build.ps1` → zips `extension/` into `dist/gog-enhancer-webstore.zip`.
 - **Run tests**: `npm install` (one-time) → `npm test` (one-shot) or `npm run test:watch`. Specs live under `tests/`; environment is happy-dom with a chrome.* shim in `tests/setup.js`.
 - **`options.js`/`popup.js`/`tags.js` register their boot listener with `{ once: true }`** (`document.addEventListener("DOMContentLoaded", init, { once: true })`) — not cosmetic. Their test files re-import the module fresh per test (`vi.resetModules()` + dynamic `import()`) against the *same* long-lived `document`; without `{ once: true }`, `document.addEventListener` accumulates one listener per test, and a later test's `dispatchEvent(new Event("DOMContentLoaded"))` re-fires *every* earlier test's `init()` too — each of which calls `bind()` against the current test's fresh DOM, attaching duplicate click/change listeners. This stayed invisible for a long time because most existing assertions were loose (`toHaveBeenCalled()`, not an exact count) or idempotent; it surfaced once a v2.11.0 test asserted an exact single alert message. If a new page script needs its own boot listener, register it the same way.
+- **End-to-end**: `npm run e2e` loads the real extension into a Chromium and drives it against *synthetic* gog.com pages (`e2e/fixtures.mjs` — a "legacy" markup shape and a "variant" one with no recognisable class names, split prices and a header `h1`), served by intercepting `https://www.gog.com/**` so nothing real is requested. It exists because happy-dom has no layout engine, no real injection and no real MutationObserver timing — it found two bugs the unit tests couldn't. Local only (CI has no Chromium): it needs a build that still honours `--load-extension`, which branded Google Chrome 137+ does not, so it auto-detects one Playwright already installed under `%LOCALAPPDATA%\ms-playwright` (override with `PW_CHROMIUM`; `E2E_SHOTS=dir` saves screenshots). The fixtures are **not** the real new gog.com design — they are a stand-in until that has been inspected.
+- **`tests/load-order.test.js`** loads each entry point's scripts in exactly the order `manifest.json` / the HTML pages list them. Every other suite imports modules in an order the test author chose and would never notice a mis-ordered manifest — which kills the whole content script in a real browser.
 - **Lint**: `npm run lint` (runs ESLint flat config in `eslint.config.js`). CI also runs this on every push and PR via `.github/workflows/test.yml`.
 - **Typecheck**: `npm run typecheck` (`tsc --noEmit` against `tsconfig.json`). Covers `extension/lib/**/*.js`, `extension/content/**/*.js`, and `extension/tags/**/*.js` — every module in all three carries `// @ts-check` + JSDoc annotations (extended from `lib/`-only in v2.9.0). Ambient globals (`window.GOGPlusStorage`, `window.GOGPlusContentState`, `window.GOGPlusTagsState`, etc.) are declared in `types/globals.d.ts` at the repo root, kept out of `extension/` so `build.ps1`'s wholesale folder copies never ship it — kept intentionally loose (`any`-shaped) per that file's own doc comment, since the goal is catching typos and cross-module API misuse, not full type safety. `popup/`, `options/`, and `onboarding/` aren't covered (their scripts are plain top-level, not the IIFE+`window.X` pattern content/tags use).
 
@@ -113,6 +115,8 @@ Storage is split across two `chrome.storage` areas, keyed by a hardcoded set:
 
 `window.GOGPlusStorage` (also `self.GOGPlusStorage` for the service worker) exposes `get`/`set`/`remove`/`onChange` with promise APIs. **Always go through this wrapper** — it auto-routes keys to the correct area via the `SYNC_KEYS`/`LOCAL_KEYS` sets. If you add a new persisted key, add it to one of those sets in `lib/storage.js`, otherwise it falls through to `local` (safer-by-default but not what you usually want for a preference). Direct `chrome.storage.sync`/`chrome.storage.local` access exists in only three places — `lib/migrations.js`, the export/import/clear flows in `options.js`, and inside `lib/storage.js` itself — and is intentional in all three.
 
+**Folder sync** (`options/folder-sync.js` + the pure merge logic in `lib/sync-core.js`) lets the user point the extension at a folder their own cloud client already syncs; it reads/writes one file, `gog-enhancer-sync.json`, and merges per record. The directory handle lives in IndexedDB (extension origin). Conflict resolution needs per-record timestamps, which the **service worker stamps from `storage.onChanged`** into the local `syncMeta` key (so no write site had to learn about syncing). Two invariants: (1) a change event that carries `syncMeta` *together with* data is "a sync being applied" and is **not** re-stamped — so the merge result must always be written in ONE `storage.local.set` containing both; (2) `syncFolderName`/`lastFolderSyncAt` are per-browser and are stripped on backup import. Deletions sync (tombstones, 90-day TTL). Never put synced datasets in `storage.sync` — it's ~100 KB.
+
 Default values live in **`lib/storage.js`**'s sibling **`lib/defaults.js`** as `window.GOG_PLUS_DEFAULTS` (and `self.GOG_PLUS_DEFAULTS` for the SW). It's the single source of truth — adding a new persisted key means three coordinated edits: pick its area in `lib/storage.js` (`SYNC_KEYS`/`LOCAL_KEYS`), add its default value in `lib/defaults.js`, and register the script if a new HTML host needs it.
 
 If a key's storage shape changes, bump `SETTINGS_VERSION` in `lib/defaults.js` and add a branch to `GOGPlusMigrations.run()` in `lib/migrations.js`. The v1→v2 migration already moves `tags`/`notes` from sync to local — model new migrations after it. This module is shared: `background.js` runs it on every `onInstalled`, and the Advanced Options import flow runs it after writing imported data into storage, so an old export gets the same shape-fixing pass a normal upgrade would.
@@ -129,11 +133,14 @@ lib/currency-format.js  → window.GOGPlusCurrencyFormat (symbolFor, formatPrice
 lib/genres.js           → window.GOGPlusGenres (GENRE_PATTERNS, matchGenrePattern, mapGenreLabel)
 lib/game-status.js      → window.GOGPlusGameStatus (STATUSES, statusById) — shared with tags/ dashboard
 lib/price-compare.js    → window.GOGPlusPriceCompare (fetchDeals against cheapshark.com — see Privacy boundary)
+lib/sysreq.js           → window.GOGPlusSysReq (RAM-requirement parsing + comparison for the game page)
+content/gog-dom.js      → window.GOGPlusGogDom (the site adapter — see "Site adapter" below; MUST precede utils.js)
 content/translations.js → window.GOG_PLUS_TRANSLATIONS
 content/currency-detection.js → window.GOGPlusCurrency
 content/price-history.js → window.GOGPlusPriceHistory
 content/tooltips.js     → (binds to data-gog-plus-tip)
 content/toasts.js       → window.GOGPlusToasts
+content/native-theme.js → window.GOGPlusNativeTheme (samples the live page for the "native" theme)
 content/state.js        → window.GOGPlusContentState ({ settings, pageCurrency, observers })
 content/utils.js        → window.GOGPlusContentUtils (debounce, log, slugFromHref, slugFromLocation, gameTitleFromPage)
 content/features/currency.js     → window.GOGPlusCurrencyFeature
@@ -142,12 +149,25 @@ content/features/misc.js         → window.GOGPlusMiscFeatures
 content/features/wishlist.js     → window.GOGPlusWishlistFeature
 content/features/game-page.js    → window.GOGPlusGamePage
 content/features/command-palette.js → window.GOGPlusCommandPalette (Ctrl/Cmd+K quick actions)
+content/features/keyboard-nav.js → window.GOGPlusKeyboardNav (opt-in J/K/T on game grids)
 content/content.js      → orchestrator (depends on all of the above)
 ```
 
 `content.js` used to be one ~1560-line file (through v2.7.0); it's now an orchestrator that's genuinely just orchestration, with each feature split into its own file (the v2.8.0 module split). Every feature module shares mutable state via `content/state.js` rather than closure variables — see that file's own doc comment for the discipline this requires (always dereference `state.settings.x`, never capture `const settings = state.settings`). A few feature modules reference each other via the fully-qualified `window.GOGPlusX.fn()` path instead of top-level destructuring specifically to break circular load-order dependencies (e.g. wishlist ↔ currency); check for that pattern before "simplifying" an import.
 
 Adding a new content-script module means registering it in `manifest.json` **before** `content.js`, and after `content/state.js` if it needs shared state.
+
+### Site adapter (`content/gog-dom.js`)
+
+**Everything that has to find something in gog.com's markup goes through `window.GOGPlusGogDom`** — game cards (`findCards`, `cardCoverHost`), prices (`findPriceNodes`), the game title (`resolveGameTitle`), where the insights panel mounts (`gamePageAnchor`), the wishlist/page roots, URL helpers (`slugFromHref`, `pageType`) and SPA route watching (`watchRoute`). Don't add a new `document.querySelector('.some-gog-class')` to a feature module; add or extend a lookup here. Each lookup tries independent strategies, most stable first — URL shape, page metadata (og:title, JSON-LD), semantic hooks (`h1`, `main`, `[role=main]`), class-name substrings, and finally the text *shape* of a price — and reports which one matched, which is what `diagnose()` (and the options page's "Check this page" button) surfaces. Rules that earned their place the hard way:
+
+- **Never report the extension's own UI as the site's.** Our panel has elements with "price" in their class names; `findPriceNodes` excludes everything inside `OWN_UI_SEL`. Add new injected containers to that list.
+- **Text-shape detection ignores our own `.gog-plus-conv-note` annotations**, otherwise a price stops looking like "just a price" the moment the converter touches it and price-history recording goes blind (a real bug, found by the e2e suite).
+- **`cardCoverHost` judges "smaller than the card" by area** (≤ 90%), not by width *and* height. The old width ≤ 75% rule rejected full-width covers on vertical tiles, so badges silently disappeared.
+- **The page observer watches `<body>`, filtered to the content root** (`content.js` `startObserving`). An observer bound to `<main>` can never notice `<main>` being replaced; header churn (a ticking countdown) is filtered out so it doesn't trigger a pass per second.
+- A content script lives in an isolated world and never sees the page's own `history.pushState`, so route changes are detected by `watchRoute` (Navigation API + popstate/hashchange + a 1 s poll), not by hooking history.
+
+The **"native" theme** (`content/native-theme.js`) hard-codes no palette: it reads the page's computed background/text/font and the primary call-to-action colour and writes the `--gp-*` custom properties inline. `content.js` calls `GOGPlusNativeTheme.clear()` on every pass before applying any theme so one theme's inline vars never leak into the next.
 
 ### Content-script orchestration (`content/content.js`)
 
@@ -179,6 +199,7 @@ ES module service worker. Three responsibilities:
    - `gog-plus-daily` (every 24 h) — local-only. Scans `purchaseLog`, fires `chrome.notifications` for refund windows with 1–2 days left. Only runs if the user enabled `desktopNotifications`; dedupes via `notifLog`.
 2. **Lifecycle**: on `onInstalled`, run `GOGPlusMigrations.run()` → `ensureDefaults()` → create alarms → open onboarding tab if `reason === "install"`.
 3. **Message handler** for `force-fx-refresh`, `force-mods-refresh`, `force-wishlist-refresh`, `wishlist-report`, `open-tag-dashboard`.
+4. **`syncMeta` timestamping** from `storage.onChanged` (see Storage tiering → Folder sync) and the **omnibox keyword** `gog` (`manifest.json` `omnibox`; searches the user's own library from local storage via `lib/library-search.js` — no permission, no network).
 
 ### The wishlist badge dance
 
@@ -198,6 +219,8 @@ Don't try to make the SW scrape `/account/wishlist` directly — it won't work.
 3. Update `STORE_LISTING.md`'s permission-justification list and, if it changes scope, its single-purpose statement.
 
 Note for `fetch()` calls to any of these hosts: `User-Agent` is a forbidden header per the Fetch spec, so a call can never send a custom one — CheapShark rejects requests with a missing/generic UA, but a real browser's own UA (which is all `fetch()` ever sends) passes fine. Verified live against the API before `lib/price-compare.js` was written.
+
+Folder sync adds **no host and no permission**: the extension only ever touches a file in a folder the user explicitly picked (File System Access API, re-granted from a click on the options page). The omnibox keyword needs no permission either. IndexedDB (extension origin) holds two things: note-image attachments and that folder handle.
 
 The runtime permission `notifications` is opt-in: nothing fires unless the user enables "Desktop notifications" in Advanced Options. Background uses `chrome.notifications.create` only — no network traffic. Triggers live in `background/background.js` (`checkRefundWindowExpirations`, `maybeNotifyWishlistJump`) and dedupe via the `notifLog` key in `storage.local`.
 

@@ -299,6 +299,65 @@ function exportStaticHtml() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// Calendar file (.ics) with one all-day event per open refund window, on the
+// day it closes — import it into any calendar app. Built on-device; see
+// lib/ics.js.
+function exportIcs() {
+  const ics = window.GOGPlusIcs.buildRefundCalendar(state.allPurchases, {
+    titleOf: window.GOGPlusTagsGamesList.slugToTitle,
+  });
+  if (!ics) {
+    alert(
+      "No open refund windows to export. Log a purchase date on a game's page first — GOG's refund window closes 30 days after purchase."
+    );
+    return;
+  }
+  downloadText(`gog-plus-refund-deadlines-${new Date().toISOString().slice(0, 10)}.ics`, "text/calendar;charset=utf-8", ics);
+}
+
+// The currently-filtered games as Markdown, grouped by play status, with
+// #hashtags and notes — for Obsidian, Notion or any notes app.
+function exportMarkdown() {
+  const slugs = matchingSlugs();
+  if (!slugs.length) {
+    alert("No games match the current filter — nothing to export.");
+    return;
+  }
+  const { slugToTitle } = window.GOGPlusTagsGamesList;
+  const purchases = {};
+  for (const [slug, raw] of Object.entries(state.allPurchases)) {
+    const entry = window.GOGPlusPurchases.normalizePurchaseEntry(raw);
+    if (entry) purchases[slug] = entry;
+  }
+  const md = window.GOGPlusMarkdownExport.buildLibraryMarkdown(
+    { slugs, tags: state.allTags, notes: state.allNotes, status: state.allStatus, purchases },
+    {
+      titleOf: slugToTitle,
+      heading: state.activeTag ? `${state.activeTag} — GOG library` : "My GOG library",
+    }
+  );
+  const safeName = (state.activeTag || "library").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  downloadText(
+    `gog-plus-${safeName || "library"}-${new Date().toISOString().slice(0, 10)}.md`,
+    "text/markdown;charset=utf-8",
+    md
+  );
+}
+
+/**
+ * @param {string} filename
+ * @param {string} mime
+ * @param {string} text
+ */
+function downloadText(filename, mime, text) {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
   window.GOGPlusTagsExportImport = {
     exportPack,
     importPackFromFile,
@@ -306,5 +365,7 @@ function exportStaticHtml() {
     exportCsv,
     exportWishlistCsv,
     exportStaticHtml,
+    exportIcs,
+    exportMarkdown,
   };
 })();

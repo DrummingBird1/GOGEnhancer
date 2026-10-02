@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 
+await import("../extension/content/gog-dom.js");
 await import("../extension/content/currency-detection.js");
 const { parsePrice, SYMBOL_TO_CODE } = window.GOGPlusCurrency;
 

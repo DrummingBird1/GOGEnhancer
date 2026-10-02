@@ -2,11 +2,12 @@
  * GOG+ card-badge feature: refund/mod/lowest-price badges, tag-colour dot,
  * era-aware + genre-aware cover theming, and the hover quick-look tooltip
  * on every game card. Pulled out of the former single-file content.js
- * during the v2.8.0 module split.
+ * during the module split.
  *
  * applyCardBadges() is CLAUDE.md's own documented "hot zone" — regression
  * coverage lives in tests/apply-card-badges.test.js. Read that file's
- * comments before touching the cover-host resolution logic below.
+ * comments, and cardCoverHost() in content/gog-dom.js, before touching the
+ * cover-host resolution logic.
  */
 // @ts-check
 
@@ -77,9 +78,9 @@
   function applyCardBadges(root = document) {
     // Tighter selector: skip cards we already processed, and only consider
     // anchors that have an image AND aren't tiny carousel previews.
-    const cards = root.querySelectorAll('a[href*="/game/"]:not(.gog-plus-card-done)');
+    const { findCards, cardCoverHost } = window.GOGPlusGogDom;
     const seenSlugs = new Set();
-    cards.forEach((card) => {
+    findCards(root).forEach((card) => {
       const img = card.querySelector("img, picture");
       if (!img) return;
 
@@ -89,28 +90,10 @@
       if (!slug) return;
       if (seenSlugs.has(slug)) return;
 
-      // Find a SAFE host for the absolute-positioned strip: the smallest
-      // ancestor of the cover image that is NOT the card itself.
-      // GOG's carousel/preview overlays already use positioned ancestors,
-      // so modifying the card root explodes their layout.
-      let host = img.parentElement;
-      if (!host || host === card) return;
-
-      // Walk up at most 2 levels until we find a wrapper that is clearly
-      // a cover wrapper (smaller than the card). Stop before reaching the card.
-      const cardRect = card.getBoundingClientRect();
-      let hops = 0;
-      while (host && host !== card && hops < 3) {
-        const r = host.getBoundingClientRect();
-        const isCoverSized =
-          r.width > 0 && r.height > 0 &&
-          r.width <= cardRect.width * 0.75 &&
-          r.height <= cardRect.height * 0.95;
-        if (isCoverSized) break;
-        host = host.parentElement;
-        hops++;
-      }
-      if (!host || host === card) return;
+      // A SAFE host for the absolute-positioned strip — never the card
+      // itself (see GOGPlusGogDom.cardCoverHost).
+      const host = cardCoverHost(card, img);
+      if (!host) return;
 
       seenSlugs.add(slug);
       card.classList.add("gog-plus-card-done");

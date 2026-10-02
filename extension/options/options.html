@@ -174,7 +174,18 @@
           <span class="theme-swatch-name">Custom</span>
           <span class="theme-swatch-sub">pick your own colors</span>
         </button>
+        <button class="theme-swatch" data-theme="native" type="button" aria-label="Native theme (matches gog.com)">
+          <span class="theme-swatch-preview theme-swatch--native" aria-hidden="true"></span>
+          <span class="theme-swatch-name">Native</span>
+          <span class="theme-swatch-sub">matches gog.com's own look</span>
+        </button>
       </div>
+      <p class="card-sub theme-native-note">
+        <strong>Native</strong> reads gog.com's own colors and font each time a
+        page loads, so the extension's panels and badges blend in with whatever
+        the site currently looks like — including after a redesign. On this
+        page it simply follows your system's light/dark setting.
+      </p>
 
       <div class="custom-theme-editor" id="customThemeEditor" hidden>
         <div class="custom-theme-editor-field">
@@ -200,6 +211,31 @@
             tag dashboard) to a more dyslexia-friendly font stack with wider
             letter and line spacing. No fonts are downloaded — this only
             reorders which locally-installed fonts are tried first.
+          </span>
+        </span>
+      </label>
+
+      <label class="dev-toggle">
+        <input type="checkbox" id="keyboardNav" />
+        <span class="dev-toggle-text">
+          <span class="dev-toggle-title">Keyboard navigation on game grids</span>
+          <span class="dev-toggle-sub">
+            <kbd>J</kbd> / <kbd>K</kbd> move between games, <kbd>T</kbd> tags the
+            focused one, <kbd>?</kbd> shows the shortcuts. Off by default because
+            it uses bare letter keys; it never acts while you're typing in a
+            field or holding Ctrl / Alt / Cmd.
+          </span>
+        </span>
+      </label>
+
+      <label class="dev-toggle">
+        <input type="checkbox" id="sysReqCheck" />
+        <span class="dev-toggle-text">
+          <span class="dev-toggle-title">System check on game pages</span>
+          <span class="dev-toggle-sub">
+            Compares a game's RAM requirement with the memory your browser
+            reports. RAM only — browsers can't see your CPU, GPU or disk, and
+            round the memory figure, so the result is a hint, not a promise.
           </span>
         </span>
       </label>
@@ -273,13 +309,78 @@
       </div>
     </section>
 
+    <!-- Folder sync -->
+    <section class="card" id="syncCard">
+      <div class="card-num">07</div>
+      <h2>Sync across devices</h2>
+      <p class="card-sub">
+        Pick a folder that Dropbox, OneDrive, Google Drive or Syncthing already
+        keeps in sync. GOG Enhancer reads and writes one file in it,
+        <code>gog-enhancer-sync.json</code>, and merges changes from every
+        browser pointed at the same folder. It makes no network request for
+        this — your folder is the whole transport. Tags, notes, play status,
+        purchases, price alerts and price history sync; settings already sync
+        through your browser account. Deletions sync too.
+      </p>
+      <p class="card-sub has-error" id="syncUnsupported" hidden>
+        This browser can't pick a folder for sync (it needs the File System
+        Access API — Chrome, Edge and Brave have it).
+      </p>
+      <div class="status-grid">
+        <div class="status-row">
+          <span class="status-label">Folder</span>
+          <span class="status-value" id="syncFolderName">None chosen</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Last sync</span>
+          <span class="status-value" id="syncLast">Never</span>
+        </div>
+      </div>
+      <label class="dev-toggle">
+        <input type="checkbox" id="syncEncrypt" />
+        <span class="dev-toggle-text">
+          <span class="dev-toggle-title">Encrypt the sync file</span>
+          <span class="dev-toggle-sub">
+            Asks for a passphrase on every sync (it is never stored) — worth it
+            if your notes are private and the folder lives in a cloud service.
+            Once a file is encrypted it stays encrypted for every browser.
+          </span>
+        </span>
+      </label>
+      <div class="card-actions wrap">
+        <button id="syncChoose" class="primary">Choose folder…</button>
+        <button id="syncNow" class="ghost" disabled>Sync now</button>
+        <button id="syncForget" class="danger" disabled>Stop syncing</button>
+      </div>
+      <p class="card-sub" id="syncResult" role="status"></p>
+    </section>
+
     <!-- Developer / diagnostics -->
     <section class="card">
-      <div class="card-num">07</div>
+      <div class="card-num">08</div>
       <h2>Developer &amp; diagnostics</h2>
       <p class="card-sub">
         Knobs that help when troubleshooting. Off by default.
       </p>
+
+      <div class="diag-block" id="diagBlock">
+        <div class="dev-toggle-text">
+          <span class="dev-toggle-title">Check a gog.com page</span>
+          <span class="dev-toggle-sub">
+            If something stopped working after a gog.com update, open the page
+            that's misbehaving, then press this. It reports which of the
+            extension's lookups (game cards, prices, title, panel position)
+            still find what they need — the page address (no query string) and
+            public store text only, nothing personal. Copy it into a bug report.
+          </span>
+        </div>
+        <div class="card-actions wrap">
+          <button id="diagRun" class="ghost">Check this page</button>
+          <button id="diagCopy" class="ghost" hidden>Copy report</button>
+        </div>
+        <p class="card-sub" id="diagStatus" role="status"></p>
+        <pre class="diag-output" id="diagOutput" hidden></pre>
+      </div>
       <label class="dev-toggle">
         <input type="checkbox" id="debugLogging" />
         <span class="dev-toggle-text">
@@ -406,6 +507,9 @@
   <script src="../lib/storage.js"></script>
   <script src="../lib/migrations.js"></script>
   <script src="../lib/game-status.js"></script>
+  <script src="../lib/sync-core.js"></script>
   <script src="options.js"></script>
+  <script src="folder-sync.js"></script>
+  <script src="tools-section.js"></script>
 </body>
 </html>

@@ -1370,3 +1370,20 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   color: var(--gp-text-muted);
   white-space: nowrap;
 }
+
+/* ---------- keyboard navigation focus marker ---------- */
+.gog-plus-kbd-focus {
+  outline: 2px solid var(--gp-cyan);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ---------- system check (RAM) rows in the game panel ---------- */
+.gog-plus-sysreq-row {
+  margin: 4px 0;
+  font-size: 13px;
+}
+.gog-plus-sysreq-row.is-ok { color: var(--gp-green); }
+.gog-plus-sysreq-row.is-below { color: var(--gp-pink); }
+.gog-plus-sysreq-row.is-maybe { color: var(--gp-amber); }
+.gog-plus-sysreq-row.is-unknown { color: var(--gp-text-dim); }

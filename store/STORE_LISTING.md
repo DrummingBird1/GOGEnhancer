@@ -125,6 +125,29 @@ code.
   tracking, note-taking, and spending milestones unlock as you use the
   extension, with a toast when a new one lands.
 
+▸ Built to keep working when the site changes
+  Every lookup of GOG's page markup goes through one adapter that tries
+  several strategies, so a redesign degrades gracefully instead of
+  silently switching features off. A "Native" theme reads GOG's own colors
+  and font so the extension's panels blend in, and "Check this page" in
+  Advanced Options reports which lookups still work on the page you have
+  open.
+
+▸ Sync across devices — through a folder you choose
+  Point the extension at a folder your own Dropbox / OneDrive / Google
+  Drive / Syncthing already syncs. It reads and writes one file there and
+  merges tags, notes, play status, purchases, alerts and price history from
+  every browser, optionally encrypted with a passphrase. No server of ours,
+  no new network access — the folder is the whole transport.
+
+▸ Search your library from the address bar
+  Type gog, press Tab, then a game name, tag:rpg or status:backlog.
+
+▸ Exports and small conveniences
+  A refund-deadline calendar (.ics) and a Markdown export (Obsidian,
+  Notion…) from the tag dashboard, optional J / K / T keyboard navigation
+  on game grids, and a RAM-only system check on game pages.
+
 ▸ Hebrew translations + RTL
   Optional Hebrew dictionary covering navigation, UI strings, and common
   patterns. Real RTL with logical-property CSS — not a flipped page.
@@ -245,6 +268,26 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   סט קטן ומקומי לגמרי של תגי הישג בלוח התגיות — אבני דרך של תיוג, מעקב,
   כתיבת הערות והוצאות נפתחות תוך כדי שימוש בתוסף, עם toast כשנפתח חדש.
 
+▸ נבנה להמשיך לעבוד כשהאתר משתנה
+  כל חיפוש של מבנה הדף של GOG עובר דרך מתאם אחד שמנסה כמה אסטרטגיות,
+  כך ששינוי עיצוב מתדרדר בעדינות במקום לכבות פיצ'רים בשקט. ערכת נושא
+  "Native" קוראת את הצבעים והפונט של GOG עצמו, וכפתור "Check this page"
+  ב-Advanced Options מראה אילו חיפושים עדיין עובדים בדף הפתוח.
+
+▸ סנכרון בין מכשירים — דרך תיקייה שתבחרו
+  כוונו את התוסף לתיקייה ש-Dropbox / OneDrive / Google Drive / Syncthing
+  שלכם כבר מסנכרנים. הוא קורא וכותב שם קובץ אחד וממזג תגיות, הערות,
+  סטטוס, רכישות, התראות והיסטוריית מחירים מכל דפדפן, עם הצפנה אופציונלית
+  בסיסמה. בלי שרת שלנו ובלי גישת רשת חדשה — התיקייה היא כל ההובלה.
+
+▸ חיפוש בספרייה מסרגל הכתובות
+  הקלידו gog, לחצו Tab, ואז שם משחק, tag:rpg או status:backlog.
+
+▸ ייצוא ושיפורי נוחות קטנים
+  לוח שנה של מועדי refund‏ (.ics) וייצוא Markdown (Obsidian, Notion…) מלוח
+  התגיות, ניווט מקלדת אופציונלי J / K / T ברשימות משחקים, ובדיקת מערכת
+  של RAM בלבד בעמוד משחק.
+
 ▸ עברית + RTL מלא
   מילון עברית רחב, RTL אמיתי עם logical-properties CSS.
 
@@ -301,6 +344,9 @@ exact answers:
 
 ### Host permission: `https://api.frankfurter.app/*`
 > Required to fetch USD-to-target-currency exchange rates from the Frankfurter public API. No user data is sent — only a public GET request for rates.
+
+### No permission for folder sync or the address-bar keyword
+> The optional folder sync uses the browser's own folder picker (File System Access API): the user grants one folder at a time, from a click, and the extension only touches one file in it. The address-bar keyword ("gog") is declared in the manifest and needs no permission. Neither makes a network request.
 
 ### Host permission: `https://www.cheapshark.com/*`
 > Required to fetch the optional cross-store price comparison table (Steam, Epic, Humble Store, Fanatical, GreenManGaming) shown on GOG game pages. CheapShark's deals API is free and keyless. Only the game's title is sent, as a public GET request; no user data, cookies, or account information. Toggleable in the popup ("Price comparison table"), on by default.

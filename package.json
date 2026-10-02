@@ -8,7 +8,8 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e": "node e2e/extension.e2e.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.2.6",
@@ -17,6 +18,7 @@
     "fake-indexeddb": "^6.2.5",
     "globals": "^15.14.0",
     "happy-dom": "^20.10.6",
+    "playwright-core": "^1.63.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   }
