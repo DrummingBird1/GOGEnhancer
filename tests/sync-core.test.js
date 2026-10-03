@@ -281,3 +281,55 @@ describe("snapshot files", () => {
     expect(Sync.parseSnapshotFile(text).meta).toEqual({});
   });
 });
+
+describe("mergeSnapshots — conflicts", () => {
+  const base = { "tags:a": { t: 100 }, "notes:n": { t: 100 } };
+
+  it("reports nothing without a base (a first sync has nothing to compare against)", () => {
+    const local = snap({ tags: { a: ["L"] } }, { "tags:a": { t: 200 } });
+    const remote = snap({ tags: { a: ["R"] } }, { "tags:a": { t: 300 } });
+    expect(Sync.mergeSnapshots(local, remote, { now: 1000 }).conflicts).toEqual([]);
+  });
+
+  it("reports a record both sides edited since the last sync, naming the side that won", () => {
+    const local = snap({ tags: { a: ["L"] } }, { "tags:a": { t: 200 } });
+    const remote = snap({ tags: { a: ["R"] } }, { "tags:a": { t: 300 } });
+    const m = Sync.mergeSnapshots(local, remote, { now: 1000, baseMeta: base });
+    expect(m.data.tags.a).toEqual(["R"]);
+    expect(m.conflicts).toEqual([{ key: "tags", id: "a", local: ["L"], remote: ["R"], kept: "remote" }]);
+    const flipped = Sync.mergeSnapshots(remote, local, { now: 1000, baseMeta: base });
+    expect(flipped.conflicts[0].kept).toBe("local");
+  });
+
+  it("does not report a record only one side touched, or identical edits", () => {
+    const local = snap({ tags: { a: ["L"] }, notes: { n: "same" } }, { "tags:a": { t: 200 }, "notes:n": { t: 200 } });
+    const remote = snap({ tags: { a: ["L"] }, notes: { n: "same" } }, { "tags:a": { t: 100 }, "notes:n": { t: 300 } });
+    expect(Sync.mergeSnapshots(local, remote, { now: 1000, baseMeta: base }).conflicts).toEqual([]);
+  });
+
+  it("reports an edit that collided with a delete", () => {
+    const local = snap({ tags: { a: ["edited"] } }, { "tags:a": { t: 250 } });
+    const remote = snap({ tags: {} }, { "tags:a": { t: 300, del: true } });
+    const m = Sync.mergeSnapshots(local, remote, { now: 1000, baseMeta: base });
+    expect(m.data.tags.a).toBeUndefined();
+    expect(m.conflicts).toEqual([{ key: "tags", id: "a", local: ["edited"], remote: undefined, kept: "remote" }]);
+  });
+
+  it("syncs the v4 record datasets like any other", () => {
+    const local = snap({ ownedSlugs: { a: "2026-01-01" }, notInterested: { x: true } }, { "ownedSlugs:a": { t: 5 }, "notInterested:x": { t: 5 } });
+    const remote = snap({ ownedSlugs: { b: "2026-02-01" } }, { "ownedSlugs:b": { t: 6 } });
+    const m = Sync.mergeSnapshots(local, remote, { now: 1000 });
+    expect(m.data.ownedSlugs).toEqual({ a: "2026-01-01", b: "2026-02-01" });
+    expect(m.data.notInterested).toEqual({ x: true });
+    expect(Sync.SYNCED_KEYS).toEqual(expect.arrayContaining(["ownedSlugs", "notInterested", "catalogPresets", "tagAlerts", "statusDates"]));
+  });
+});
+
+describe("mergeSnapshots — price history list price", () => {
+  it("keeps the snapshot copy that recorded a list price", () => {
+    const withB = { d: "2026-01-01", p: 5, c: "USD", b: 10 };
+    const without = { d: "2026-01-01", p: 5, c: "USD" };
+    expect(Sync.mergeSnapshots(snap({ priceHistory: { a: [withB] } }), snap({ priceHistory: { a: [without] } })).data.priceHistory.a).toEqual([withB]);
+    expect(Sync.mergeSnapshots(snap({ priceHistory: { a: [without] } }), snap({ priceHistory: { a: [withB] } })).data.priceHistory.a).toEqual([withB]);
+  });
+});

@@ -95,3 +95,30 @@ describe("buildRefundCalendar", () => {
     expect(ics.replace(/\r\n/g, "")).not.toMatch(/[\r\n]/);
   });
 });
+
+describe("buildOfferCalendar", () => {
+  const now = Date.parse("2026-10-02T12:00:00Z");
+  const end = Date.parse("2026-10-07T06:59:59Z");
+
+  it("writes one timed event per running offer, with day-before and two-hours-before reminders", () => {
+    const ics = Ics.buildOfferCalendar([{ slug: "the_witcher_3", title: "The Witcher 3, GOTY", endsAt: end }], { now });
+    expect(ics).toContain("BEGIN:VCALENDAR");
+    expect(ics).toContain("DTSTART:20261007T065959Z");
+    expect(ics).toContain("DTEND:20261007T071459Z");
+    expect(ics).toContain("SUMMARY:GOG offer ends: The Witcher 3\\, GOTY");
+    expect(ics).toContain("UID:offer-the_witcher_3-" + end + "@gog-enhancer");
+    expect(ics).toContain("TRIGGER:-P1D");
+    expect(ics).toContain("TRIGGER:-PT2H");
+    expect(ics).toContain("URL:https://www.gog.com/en/game/the_witcher_3");
+    expect(ics.endsWith("END:VCALENDAR\r\n")).toBe(true);
+    expect(ics.split("\r\n").every((l) => new TextEncoder().encode(l).length <= 75)).toBe(true);
+  });
+
+  it("skips offers that already ended or have no usable end, and titles from the slug by default", () => {
+    expect(Ics.buildOfferCalendar([{ slug: "a", endsAt: now - 1 }, { slug: "b", endsAt: NaN }, null], { now })).toBeNull();
+    expect(Ics.buildOfferCalendar([], { now })).toBeNull();
+    expect(Ics.buildOfferCalendar(undefined, { now })).toBeNull();
+    expect(Ics.buildOfferCalendar([{ slug: "grim_fandango", endsAt: end }], { now })).toContain("GOG offer ends: Grim Fandango");
+    expect(Ics.buildOfferCalendar([{ slug: "x", endsAt: Date.now() + 3600e3 }])).toContain("BEGIN:VEVENT");
+  });
+});

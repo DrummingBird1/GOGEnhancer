@@ -140,6 +140,7 @@
     await Promise.all([
       maybeRecordPriceHistory(slug),
       maybeRecordGameGenre(slug),
+      window.GOGPlusKnowledge?.recordGameFacts(slug),
       ensureGamePagePanel(slug),
     ]);
   }
@@ -169,7 +170,11 @@
       if (p && (price === null || p < price)) price = p;
     }
     if (price !== null) {
-      await window.GOGPlusPriceHistory.record(slug, price, state.pageCurrency.code);
+      // The struck-through list price (when the page shows one) is kept with
+      // the snapshot — it is what lets the deal check tell a sale from a
+      // permanent price.
+      const base = window.GOGPlusGogDom.readGamePrices?.().base ?? undefined;
+      await window.GOGPlusPriceHistory.record(slug, price, state.pageCurrency.code, base);
     }
   }
 
@@ -215,28 +220,43 @@
     anchor.parentElement?.insertBefore(panel, anchor.nextSibling);
 
     const body = panel.querySelector("#gog-plus-gp-body");
+    const Chrome = window.GOGPlusPanelChrome;
+    const Extras = window.GOGPlusGameExtras;
+    const s = state.settings;
 
-    if (state.settings.priceHistoryTracking) {
-      body.appendChild(await renderPriceHistorySection(slug));
+    // Every section has a stable id: the user's collapse state and drag order
+    // are saved by it (see content/features/panel-chrome.js). A section that
+    // throws is skipped — the rest of the panel still renders.
+    /** @type {Array<[string, () => Promise<HTMLElement | null> | HTMLElement | null | undefined]>} */
+    const sections = [
+      ["deal", () => Extras?.renderDealSection(slug)],
+      ["facts", () => Extras?.renderFactsSection(slug)],
+      ["history", () => (s.priceHistoryTracking ? renderPriceHistorySection(slug) : null)],
+      ["compare", () => (s.priceCompareTable ? renderPriceCompareSection(slug) : null)],
+      ["sysreq", () => (s.sysReqCheck ? renderSysReqSection() : null)],
+      ["refund", () => (s.refundTimer ? renderRefundSection(slug) : null)],
+      ["alert", () => renderPriceAlertSection(slug)],
+      ["library", () => Extras?.renderLibrarySection(slug)],
+      [
+        "links",
+        () => (s.openInLinks && Extras ? Extras.renderLinksSection(slug) : s.itadCompare ? renderItadSection(slug) : null),
+      ],
+      ["tags", () => (s.customTags ? renderTagsSection(slug) : null)],
+    ];
+    for (const [id, build] of sections) {
+      let node = null;
+      try {
+        node = await build();
+      } catch (e) {
+        window.GOGPlusContentUtils?.log(`panel section "${id}" failed`, e);
+      }
+      if (!node) continue;
+      Chrome?.decorate(node, id);
+      body.appendChild(node);
     }
-    if (state.settings.priceCompareTable) {
-      const cmp = renderPriceCompareSection(slug);
-      if (cmp) body.appendChild(cmp);
-    }
-    if (state.settings.sysReqCheck) {
-      const sysReq = renderSysReqSection();
-      if (sysReq) body.appendChild(sysReq);
-    }
-    if (state.settings.refundTimer) {
-      body.appendChild(await renderRefundSection(slug));
-    }
-    body.appendChild(await renderPriceAlertSection(slug));
-    if (state.settings.itadCompare) {
-      body.appendChild(renderItadSection(slug));
-    }
-    if (state.settings.customTags) {
-      body.appendChild(await renderTagsSection(slug));
-    }
+    Chrome?.applyOrder(body);
+    Chrome?.addHeaderTools(panel);
+    Chrome?.applyPanelMode(panel);
   }
 
   // Convert one history entry to a target currency via the USD rate matrix.
@@ -436,9 +456,12 @@
     unknown: "? can't tell from the browser",
   };
 
-  // RAM-only requirements check against navigator.deviceMemory — see
-  // lib/sysreq.js for why it can't (and doesn't pretend to) check CPU/GPU.
-  // Returns null when the page has no parsable requirements block.
+  // Requirements check. By default RAM only, against navigator.deviceMemory —
+  // see lib/sysreq.js for why the browser can't (and this doesn't pretend to)
+  // see the CPU or GPU. If the user described their own machine (My PC in
+  // Advanced Options), memory and disk space are compared exactly against it
+  // and the OS / processor / graphics requirements are listed beside what
+  // they typed — never judged. Returns null when the page has nothing to compare.
   /** @returns {HTMLElement | null} */
   function renderSysReqSection() {
     // The site's own requirements table is exact; fall back to reading the
@@ -449,10 +472,13 @@
       const root = /** @type {HTMLElement} */ (window.GOGPlusGogDom.spaRoot());
       req = window.GOGPlusSysReq.parseRequirements(root.innerText || root.textContent || "");
     }
-    if (!req) return null;
+    const pc = state.settings.myPc;
+    const profileRows = table && pc ? window.GOGPlusSysReq.compareProfile(table, pc) : [];
+    if (!req && !profileRows.length) return null;
     const reported = /** @type {any} */ (navigator).deviceMemory ?? null;
-    const rows = window.GOGPlusSysReq.summarize(req, reported);
-    if (!rows.length) return null;
+    // An exact figure the user typed beats the browser's rounded one.
+    const rows = req && !pc?.ramGB ? window.GOGPlusSysReq.summarize(req, reported) : [];
+    if (!rows.length && !profileRows.length) return null;
 
     const wrap = document.createElement("section");
     wrap.className = "gog-plus-gp-section";
@@ -460,7 +486,7 @@
     h3.textContent = "System check ";
     const since = document.createElement("span");
     since.className = "gog-plus-gp-since";
-    since.textContent = "RAM only";
+    since.textContent = profileRows.length ? "your PC profile" : "RAM only";
     h3.appendChild(since);
     wrap.appendChild(h3);
 
@@ -470,12 +496,23 @@
       p.textContent = `${row.label}: ${row.requiredGB} GB — ${SYSREQ_STATUS_TEXT[row.status]}`;
       wrap.appendChild(p);
     }
+    for (const row of profileRows) {
+      const p = document.createElement("p");
+      p.className = `gog-plus-sysreq-row is-${row.status === "info" ? "unknown" : row.status}`;
+      const verdict = row.status === "ok" ? "✓" : row.status === "below" ? "✗" : "compare yourself";
+      p.textContent = `${row.tier} ${row.item}: needs ${row.required} — yours: ${row.yours} ${row.status === "info" ? `(${verdict})` : verdict}`;
+      wrap.appendChild(p);
+    }
     const note = document.createElement("p");
     note.className = "gog-plus-gp-muted";
-    note.textContent =
-      reported === null
-        ? "This browser doesn't report how much memory the device has."
-        : `This browser reports ${reported >= 8 ? "at least" : "about"} ${reported} GB (browsers round this figure and can't see your CPU or GPU).`;
+    if (profileRows.length) {
+      note.textContent = "Compared with the machine you described in Advanced Options. Processor, graphics card and OS are shown side by side, not judged.";
+    } else {
+      note.textContent =
+        reported === null
+          ? "This browser doesn't report how much memory the device has."
+          : `This browser reports ${reported >= 8 ? "at least" : "about"} ${reported} GB (browsers round this figure and can't see your CPU or GPU).`;
+    }
     wrap.appendChild(note);
     return wrap;
   }

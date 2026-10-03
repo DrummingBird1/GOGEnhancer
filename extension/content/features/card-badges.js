@@ -196,6 +196,25 @@
         }
       }
 
+      // Offer-ending badge: only for games whose offer end the extension saw on
+      // their own page (the `timer` attribute — see recordGameFacts), and only
+      // inside the last 3 days. It never guesses an end date.
+      if (state.settings.offerTimer) {
+        const pe = state.settings.gameFacts?.[slug]?.pe;
+        const info = pe ? window.GOGPlusDeals?.offerEndsIn(pe) : null;
+        if (info && info.soon) {
+          const en = document.createElement("span");
+          en.className = `gog-plus-badge gog-plus-badge-ends${info.urgent ? "" : " is-soon"}`;
+          en.textContent = `⏳ ${info.label}`;
+          if (state.settings.richTooltips) {
+            en.dataset.gogPlusTip = `<strong>Offer ending</strong><br>The current discount ends in ${info.label} (as of when you last opened this game).`;
+          } else {
+            en.title = `Offer ends in ${info.label}`;
+          }
+          strip.appendChild(en);
+        }
+      }
+
       if (strip.childNodes.length) {
         host.appendChild(strip);
         host.classList.add("gog-plus-cover-host--has-badges");

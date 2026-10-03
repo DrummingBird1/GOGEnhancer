@@ -41,12 +41,24 @@
     }
     document.documentElement.classList.remove("gog-plus-disabled");
 
-    document.documentElement.classList.toggle("gog-plus-design", !!state.settings.designInjection);
-    document.documentElement.classList.toggle("gog-plus-clean", !!state.settings.cleanLayout);
-    document.documentElement.classList.toggle(
-      "gog-plus-skeletons",
-      !!state.settings.skeletonLoaders
-    );
+    // "Plain look" (the panel's ◐ button, the popup's switch) drops every bit
+    // of injected styling and lets the site look like itself; the features
+    // keep working. It overrides the stored look settings without changing
+    // them, so switching it off restores exactly what the user had.
+    const plain = !!state.settings.plainLook;
+    const html = document.documentElement;
+    html.classList.toggle("gog-plus-plain", plain);
+    html.classList.toggle("gog-plus-design", !!state.settings.designInjection && !plain);
+    html.classList.toggle("gog-plus-clean", !!state.settings.cleanLayout && !plain);
+    html.classList.toggle("gog-plus-skeletons", !!state.settings.skeletonLoaders && !plain);
+    html.classList.toggle("gog-plus-calm", !!state.settings.calmMode);
+    [...html.classList].filter((c) => c.startsWith("gog-plus-palette--")).forEach((c) => html.classList.remove(c));
+    if (state.settings.palette && state.settings.palette !== "default") {
+      html.classList.add(`gog-plus-palette--${state.settings.palette}`);
+    }
+    const scale = Math.min(1.6, Math.max(0.8, Number(state.settings.uiScale) || 1));
+    if (scale === 1) html.style.removeProperty("--gp-scale");
+    else html.style.setProperty("--gp-scale", String(scale));
 
     // Theme: strip prior theme- class then add the current one. "neon" is the
     // CSS default so applying it is a no-op but kept for explicitness.
@@ -55,7 +67,7 @@
     [...document.documentElement.classList]
       .filter((c) => c.startsWith("gog-plus-theme--"))
       .forEach((c) => document.documentElement.classList.remove(c));
-    let theme = state.settings.theme || "neon";
+    let theme = plain ? "native" : state.settings.theme || "neon";
     if (theme === "auto") {
       theme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "neon";
     }
@@ -84,21 +96,61 @@
     }
     document.documentElement.classList.toggle(
       "gog-plus-dyslexia-font",
-      !!state.settings.dyslexiaFont
+      !!state.settings.dyslexiaFont && !plain
     );
 
-    try {
-      state.pageCurrency = window.GOGPlusCurrency.detect();
-      ensureDrmFreeBanner();
-      applyRtlLayout();
-      applyCurrencyConversion();
-      applyCardBadges();
-      hideExpiredSales();
-      applyHebrewTranslations();
-      ensureWishlistFilters();
-      enhanceGamePage();
-    } catch (e) {
-      log("processAll error", e);
+    runFeatures();
+  }
+
+  /* ============== per-feature isolation ============== */
+
+  // One try/catch around everything meant that a feature throwing (the site
+  // changed the markup it reads, say) silently skipped every feature after it
+  // in the list — the symptom was "half the extension stopped working".
+  // Each feature now runs on its own; a failure is logged, counted in
+  // state.failures (shown by "Check this page") and the rest carry on.
+  // Features that return a promise have their rejection caught too.
+
+  /** @type {Array<[string, () => unknown]>} */
+  const FEATURES = [
+    ["currency detection", () => { state.pageCurrency = window.GOGPlusCurrency.detect(); }],
+    ["DRM-free banner", () => ensureDrmFreeBanner()],
+    ["RTL layout", () => applyRtlLayout()],
+    ["currency conversion", () => applyCurrencyConversion()],
+    ["card badges", () => applyCardBadges()],
+    ["expired sales", () => hideExpiredSales()],
+    ["Hebrew translations", () => applyHebrewTranslations()],
+    ["library knowledge", () => window.GOGPlusKnowledge?.learnOwnership()],
+    ["catalog tools", () => window.GOGPlusCatalog?.applyCatalog()],
+    ["wishlist tools", () => ensureWishlistFilters()],
+    ["game page", () => enhanceGamePage()],
+    ["review tools", () => window.GOGPlusReviewTools?.applyReviewFilter()],
+    ["site signals", () => window.GOGPlusSiteSignals?.reportSaleBanner()],
+  ];
+
+  /**
+   * @param {string} name @param {unknown} err
+   */
+  function noteFailure(name, err) {
+    const prev = state.failures[name];
+    state.failures[name] = {
+      count: (prev?.count || 0) + 1,
+      message: String(/** @type {any} */ (err)?.message || err).slice(0, 200),
+      at: Date.now(),
+    };
+    log(`feature "${name}" failed`, err);
+  }
+
+  function runFeatures() {
+    for (const [name, run] of FEATURES) {
+      try {
+        const result = run();
+        if (result && typeof (/** @type {any} */ (result)).catch === "function") {
+          /** @type {Promise<unknown>} */ (result).catch((e) => noteFailure(name, e));
+        }
+      } catch (e) {
+        noteFailure(name, e);
+      }
     }
   }
 
@@ -138,6 +190,8 @@
     if (!location.pathname.includes("/account/wishlist")) {
       document.getElementById("gog-plus-wlfilters")?.remove();
     }
+    if (window.GOGPlusGogDom.pageType() !== "store") document.getElementById("gog-plus-catbar")?.remove();
+    window.GOGPlusSiteSignals?.checkPackLink();
     scheduleProcess();
   }
 
@@ -152,8 +206,39 @@
     };
   }
 
+  // Keys whose change needs no teardown of what is already on the page: data the
+  // page doesn't render directly (sync bookkeeping, queues, caches) and the
+  // look-and-feel switches, which are only classes/vars that processAll()
+  // re-applies. Everything else (feature toggles, tags, price history…) goes
+  // through the full clean-and-rebuild below, as before. Without this split a
+  // background write like "learned another owned game" would strip and rebuild
+  // every badge on the page.
+  const LIGHT_KEYS = new Set([
+    "ownedSlugs", "notInterested", "catalogPresets", "tagAlerts", "statusDates", "syncMeta", "syncConflicts",
+    "syncBaseMeta", "notifLog", "notifyQueue", "lastFolderSyncAt", "syncFolderName", "syncEncrypt", "autoSync",
+    "autoBackup", "autoBackupKeep", "lastAutoBackupAt", "webhookEnabled", "webhookUrl", "tourSeen", "lastSaleSeen",
+    "wishlistCache", "wishlistCacheUpdatedAt", "wishlistSlugs", "weeklyDigest", "achievements", "lastSeenVersion",
+    "notifyMode", "quietHours", "notifyMinDiscount", "notifyMaxPrice", "notifyOnlyAtLow", "seasonRadar", "monthlyGoal",
+    "panelCollapsed", "panelOrder", "panelSticky", "calmMode", "uiScale", "palette", "plainLook",
+    "catalogDensity", "ownedDisplay", "hideNotInterested",
+  ]);
+
   window.GOGPlusStorage.onChange(async ({ key, newValue }) => {
     state.settings[key] = newValue;
+    // Features that live outside processAll (the catalog bar, other tabs'
+    // writes) listen for this instead of for storage directly.
+    document.dispatchEvent(new CustomEvent("gog-plus:data", { detail: { key } }));
+
+    if (LIGHT_KEYS.has(key)) {
+      processAll();
+      return;
+    }
+    // New facts about a game only change the insights panel.
+    if (key === "gameFacts") {
+      document.getElementById("gog-plus-gamepanel")?.remove();
+      processAll();
+      return;
+    }
 
     // Clear "done" markers so re-processing re-applies on existing nodes
     document
@@ -232,21 +317,64 @@
   // otherwise it would only update on the next unrelated re-process.
   window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
     if (state.settings.theme === "auto") processAll();
+    checkSiteTheme();
   });
+
+  /* ============== follow the site's light / dark mode ============== */
+
+  // The "native" theme reads its colours from the page. If the site flips
+  // between light and dark (its own switch, or following the OS), the panels
+  // must follow — but nothing would re-sample on its own. A cheap fingerprint
+  // of the page's colours is compared whenever <html>/<body> change an
+  // attribute; only a REAL change re-runs the pass, so the classes our own
+  // pass toggles on <html> can't feed back into it.
+  let siteThemeSig = "";
+
+  function siteThemeSignature() {
+    const body = getComputedStyle(document.body);
+    const root = getComputedStyle(document.documentElement);
+    return `${body.backgroundColor}|${body.color}|${root.colorScheme}`;
+  }
+
+  function checkSiteTheme() {
+    if (!state.settings.enabled || (state.settings.theme !== "native" && !state.settings.plainLook)) return;
+    const sig = siteThemeSignature();
+    if (siteThemeSig && sig !== siteThemeSig) processAll();
+    siteThemeSig = siteThemeSignature();
+  }
+
+  const scheduleThemeCheck = debounce(() => {
+    checkSiteTheme();
+    // Themes usually fade over a few hundred ms; look again once it settles.
+    setTimeout(checkSiteTheme, 700);
+  }, 300);
+
+  function watchSiteTheme() {
+    const opts = { attributes: true, attributeFilter: ["class", "style", "data-theme", "data-color-scheme", "data-mode"] };
+    const mo = new MutationObserver(scheduleThemeCheck);
+    mo.observe(document.documentElement, opts);
+    mo.observe(document.body, opts);
+    state.observers.push(mo);
+    siteThemeSig = siteThemeSignature();
+  }
 
   /* ============== boot ============== */
 
   // The options page's "Check this page" button asks the active gog.com tab
   // what each lookup found (see GOGPlusGogDom.diagnose).
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg?.type === "gog-plus-diagnose") sendResponse(window.GOGPlusGogDom.diagnose());
+    if (msg?.type === "gog-plus-diagnose") {
+      sendResponse({ ...window.GOGPlusGogDom.diagnose(), featureFailures: { ...state.failures } });
+    }
   });
 
   loadSettings().then(() => {
     processAll();
     startObserving();
+    watchSiteTheme();
     window.GOGPlusGogDom.watchRoute(onRouteChange);
     window.GOGPlusKeyboardNav.init();
+    window.GOGPlusSiteSignals?.checkPackLink();
     log("ready", state.settings);
   });
 })();

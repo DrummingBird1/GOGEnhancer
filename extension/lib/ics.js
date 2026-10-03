@@ -128,7 +128,66 @@
     );
   }
 
-  const api = { escapeText, fold, buildRefundCalendar };
+  /**
+   * One timed event at the moment each offer ends, with reminders a day and
+   * two hours before. Only offers whose end the extension actually saw on a
+   * game page (the `timer` attribute) can be listed — it never guesses.
+   * @param {Array<{ slug: string, title?: string, endsAt: number }>} offers `endsAt` in epoch ms
+   * @param {{ now?: number, titleOf?: (slug: string) => string }} [opts]
+   * @returns {string | null} the .ics text, or null when no offer is still running
+   */
+  function buildOfferCalendar(offers, opts = {}) {
+    const now = opts.now ?? Date.now();
+    const titleOf = opts.titleOf ?? defaultTitle;
+    /** @type {string[]} */
+    const events = [];
+    for (const o of offers || []) {
+      if (!o || !Number.isFinite(o.endsAt) || o.endsAt <= now) continue;
+      const title = o.title || titleOf(o.slug);
+      const url = `https://www.gog.com/en/game/${encodeURIComponent(o.slug)}`;
+      events.push(
+        [
+          "BEGIN:VEVENT",
+          `UID:offer-${o.slug}-${o.endsAt}@gog-enhancer`,
+          `DTSTAMP:${stamp(now)}`,
+          `DTSTART:${stamp(o.endsAt)}`,
+          `DTEND:${stamp(o.endsAt + 15 * 60 * 1000)}`,
+          `SUMMARY:${escapeText(`GOG offer ends: ${title}`)}`,
+          `DESCRIPTION:${escapeText(`The current discount on ${title} ends now.\n${url}`)}`,
+          `URL:${url}`,
+          "TRANSP:TRANSPARENT",
+          "BEGIN:VALARM",
+          "ACTION:DISPLAY",
+          `DESCRIPTION:${escapeText(`${title}: offer ends tomorrow`)}`,
+          "TRIGGER:-P1D",
+          "END:VALARM",
+          "BEGIN:VALARM",
+          "ACTION:DISPLAY",
+          `DESCRIPTION:${escapeText(`${title}: offer ends in two hours`)}`,
+          "TRIGGER:-PT2H",
+          "END:VALARM",
+          "END:VEVENT",
+        ]
+          .map(fold)
+          .join("\r\n")
+      );
+    }
+    if (!events.length) return null;
+    return (
+      [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//GOG Enhancer//Offer ends//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:GOG offers ending",
+        ...events,
+        "END:VCALENDAR",
+      ].join("\r\n") + "\r\n"
+    );
+  }
+
+  const api = { escapeText, fold, buildRefundCalendar, buildOfferCalendar };
   if (typeof window !== "undefined") window.GOGPlusIcs = api;
   if (typeof self !== "undefined") self.GOGPlusIcs = api;
 })();

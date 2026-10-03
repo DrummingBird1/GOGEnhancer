@@ -159,6 +159,11 @@
     ".gog-plus-quickadd-popover",
     ".gog-plus-badges",
     ".gog-plus-conv-note",
+    "#gog-plus-catbar",
+    "#gog-plus-reviewbar",
+    "#gog-plus-compare-tray",
+    ".gog-plus-modal-overlay",
+    ".gog-plus-tilectl",
   ].join(", ");
 
   /** @param {Element} el */
@@ -422,7 +427,13 @@
   }
 
   function wishlistRoot() {
-    return visibleMains()[0] || document.querySelector("[class*='wishlist']");
+    // The legacy account page's own list container is the right place for the
+    // filter bar; <main> is only a fallback for other layouts.
+    return (
+      document.querySelector(".account__products") ||
+      visibleMains()[0] ||
+      document.querySelector("[class*='wishlist']")
+    );
   }
 
   /**
@@ -537,6 +548,8 @@
     cardCoverHost,
     findPriceNodes,
     findFinalPrice,
+    OWN_UI_SEL,
+    isSiteElement,
     displayText,
     currencyHint,
     genreLabels,

@@ -172,3 +172,35 @@ describe("summarize", () => {
     expect(summarize({ minimum: { ramGB: null }, recommended: null }, 8)).toEqual([]);
   });
 });
+
+describe("parseStorageGB / compareProfile", () => {
+  const SR = window.GOGPlusSysReq;
+  it("reads disk space in GB, MB and TB", () => {
+    expect(SR.parseStorageGB("50 GB available space")).toBe(50);
+    expect(SR.parseStorageGB("512MB")).toBe(0.5);
+    expect(SR.parseStorageGB("1,5 TB")).toBe(1536);
+    expect(SR.parseStorageGB("lots")).toBeNull();
+  });
+
+  const table = {
+    minimum: { "OS:": "Windows 10", "Processor:": "Intel i5", "Memory:": "8 GB RAM", "Graphics:": "GTX 660", "Storage:": "50 GB available space" },
+    recommended: { "Memory:": "16 GB RAM", "Storage:": "100 GB available space" },
+  };
+  it("compares memory and disk exactly and lists the rest beside the user's own words", () => {
+    const rows = SR.compareProfile(table, { ramGB: 16, storageGB: 60, os: "Windows 11", cpu: "Ryzen 5", gpu: "RTX 3060" });
+    expect(rows.find((r) => r.tier === "Minimum" && r.item === "RAM")).toMatchObject({ status: "ok", required: "8 GB", yours: "16 GB" });
+    expect(rows.find((r) => r.tier === "Recommended" && r.item === "RAM")).toMatchObject({ status: "ok" });
+    expect(rows.find((r) => r.tier === "Minimum" && r.item === "Storage")).toMatchObject({ status: "ok", yours: "60 GB free" });
+    expect(rows.find((r) => r.tier === "Recommended" && r.item === "Storage")).toMatchObject({ status: "below" });
+    expect(rows.find((r) => r.item === "GPU")).toMatchObject({ status: "info", required: "GTX 660", yours: "RTX 3060" });
+    expect(rows.find((r) => r.item === "CPU")).toMatchObject({ status: "info", yours: "Ryzen 5" });
+    expect(rows.find((r) => r.item === "OS")).toMatchObject({ status: "info", yours: "Windows 11" });
+  });
+  it("flags too little memory and skips what the user left blank", () => {
+    const rows = SR.compareProfile(table, { ramGB: 4, storageGB: 0, os: "", cpu: "", gpu: "" });
+    expect(rows).toEqual([expect.objectContaining({ tier: "Minimum", item: "RAM", status: "below" }), expect.objectContaining({ tier: "Recommended", item: "RAM", status: "below" })]);
+  });
+  it("returns nothing without a profile", () => {
+    expect(SR.compareProfile(table, null)).toEqual([]);
+  });
+});

@@ -105,6 +105,7 @@ interface GogPlusContentStateApi {
   settings: GogPlusSettings;
   pageCurrency: { code: string; symbol: string };
   observers: any[];
+  failures: Record<string, { count: number; message: string; at: number }>;
 }
 
 interface GogPlusContentUtilsApi {
@@ -147,6 +148,20 @@ declare global {
     GOGPlusMarkdownExport?: GogPlusLooseApi;
     GOGPlusSyncCore?: GogPlusLooseApi;
     GOGPlusLibrarySearch?: GogPlusLooseApi;
+    GOGPlusDeals?: GogPlusLooseApi;
+    GOGPlusLangNames?: GogPlusLooseApi;
+    GOGPlusLinks?: GogPlusLooseApi;
+    GOGPlusWishlistTools?: GogPlusLooseApi;
+    GOGPlusCatalogTools?: GogPlusLooseApi;
+    GOGPlusLibraryTools?: GogPlusLooseApi;
+    GOGPlusPack?: GogPlusLooseApi;
+    GOGPlusZip?: GogPlusLooseApi;
+    GOGPlusKnowledge?: GogPlusLooseApi;
+    GOGPlusPanelChrome?: GogPlusLooseApi;
+    GOGPlusGameExtras?: GogPlusLooseApi;
+    GOGPlusCatalog?: GogPlusLooseApi;
+    GOGPlusReviewTools?: GogPlusLooseApi;
+    GOGPlusSiteSignals?: GogPlusLooseApi;
 
     GOGPlusTagsState?: GogPlusLooseApi;
     GOGPlusTagsConstants?: GogPlusLooseApi;

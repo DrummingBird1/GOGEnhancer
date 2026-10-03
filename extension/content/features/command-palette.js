@@ -61,12 +61,44 @@
       run: () => chrome.runtime.sendMessage({ type: "force-mods-refresh" }),
     },
     {
+      id: "toggle-plain",
+      label: () => (state.settings.plainLook ? "Plain look off — back to GOG Enhancer's look" : "Plain look — show the site without GOG Enhancer's styling"),
+      hint: "Plain look — features keep working",
+      run: () => window.GOGPlusStorage.set({ plainLook: !state.settings.plainLook }),
+    },
+    {
+      id: "toggle-calm",
+      label: () => (state.settings.calmMode ? "Turn off calm mode" : "Turn on calm mode"),
+      hint: "No glow or motion in the injected UI",
+      run: () => window.GOGPlusStorage.set({ calmMode: !state.settings.calmMode }),
+    },
+    {
+      id: "toggle-dock",
+      label: () => (state.settings.panelSticky ? "Un-dock the game panel" : "Dock the game panel beside the page"),
+      hint: "Wide screens only",
+      run: () => window.GOGPlusStorage.set({ panelSticky: !state.settings.panelSticky }),
+    },
+    {
       id: "reload-tab",
       label: "Reload this tab",
       hint: "",
       run: () => location.reload(),
     },
   ];
+
+  // Saved catalog searches (made from the catalog bar) become actions too.
+  function allActions() {
+    const presets = state.settings.catalogPresets || {};
+    const saved = Object.entries(presets)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, path]) => ({
+        id: `preset:${name}`,
+        label: `Saved search: ${name}`,
+        hint: "Open this catalog search",
+        run: () => location.assign(path),
+      }));
+    return [...ACTIONS, ...saved];
+  }
 
   let overlay = null;
   let listEl = null;
@@ -138,7 +170,7 @@
     inputEl = overlay.querySelector(".gog-plus-palette-input");
     listEl = overlay.querySelector(".gog-plus-palette-list");
 
-    filtered = ACTIONS;
+    filtered = allActions();
     activeIndex = 0;
     render();
 
@@ -147,9 +179,8 @@
     });
     inputEl.addEventListener("input", () => {
       const q = inputEl.value.trim().toLowerCase();
-      filtered = !q
-        ? ACTIONS
-        : ACTIONS.filter((a) => resolveLabel(a).toLowerCase().includes(q));
+      const all = allActions();
+      filtered = !q ? all : all.filter((a) => resolveLabel(a).toLowerCase().includes(q));
       activeIndex = 0;
       render();
     });

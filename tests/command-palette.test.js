@@ -38,7 +38,7 @@ describe("opening and closing", () => {
     ctrlK();
     const overlay = document.querySelector(".gog-plus-palette-overlay");
     expect(overlay).not.toBeNull();
-    expect(overlay.querySelectorAll(".gog-plus-palette-item").length).toBe(8);
+    expect(overlay.querySelectorAll(".gog-plus-palette-item").length).toBe(11);
   });
 
   it("Cmd (metaKey) also toggles the palette", () => {
@@ -177,5 +177,44 @@ describe("running an action", () => {
     input.dispatchEvent(new Event("input", { bubbles: true }));
     expect(() => key(overlay, "Enter")).not.toThrow();
     expect(window.location.reload).toHaveBeenCalled();
+  });
+});
+
+describe("v4 actions", () => {
+  const labels = () => [...document.querySelectorAll(".gog-plus-palette-item-label")].map((e) => e.textContent);
+
+  it("lists saved catalog searches as actions and opens one", () => {
+    state.settings.catalogPresets = { "RPGs on sale": "/en/games?genres=rpg&discounted=true", Alpha: "/en/games" };
+    const assign = vi.fn();
+    Object.defineProperty(window, "location", { value: { ...window.location, assign, pathname: "/" }, configurable: true });
+    ctrlK();
+    expect(labels()).toContain("Saved search: Alpha");
+    expect(labels().indexOf("Saved search: Alpha")).toBeLessThan(labels().indexOf("Saved search: RPGs on sale"));
+    const overlay = document.querySelector(".gog-plus-palette-overlay");
+    const input = overlay.querySelector(".gog-plus-palette-input");
+    input.value = "rpgs";
+    input.dispatchEvent(new Event("input"));
+    key(overlay, "Enter");
+    expect(assign).toHaveBeenCalledWith("/en/games?genres=rpg&discounted=true");
+  });
+
+  it("toggles plain look, calm mode and the docked panel", async () => {
+    for (const [query, setting] of [["plain", "plainLook"], ["calm", "calmMode"], ["dock", "panelSticky"]]) {
+      ctrlK();
+      const overlay = document.querySelector(".gog-plus-palette-overlay");
+      const input = overlay.querySelector(".gog-plus-palette-input");
+      input.value = query;
+      input.dispatchEvent(new Event("input"));
+      key(overlay, "Enter");
+      await new Promise((r) => setTimeout(r, 0));
+      const stored = await window.GOGPlusStorage.get([setting]);
+      expect(stored[setting], setting).toBe(true);
+    }
+  });
+
+  it("labels the plain-look action by its current state", () => {
+    state.settings.plainLook = true;
+    ctrlK();
+    expect(labels()).toContain("Plain look off — back to GOG Enhancer's look");
   });
 });

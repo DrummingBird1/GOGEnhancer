@@ -9,7 +9,8 @@
  *   await window.GOGPlusPriceHistory.get(slug) → [{date, price, currency}, ...]
  *   await window.GOGPlusPriceHistory.lowest(slug) → {price, date} | null
  *
- * Storage key: priceHistory  (object: { slug: [{d, p, c}, ...] })
+ * Storage key: priceHistory  (object: { slug: [{d, p, c, b?}, ...] } — `b` is
+ *   the list price when the page showed a discount)
  *   Trimmed to last 30 entries per game to keep storage small.
  *
  * `historyMaxEntries` caps entries PER game, but nothing capped the NUMBER
@@ -76,23 +77,38 @@
     await window.GOGPlusStorage.set({ priceHistory: history });
   }
 
-  async function record(slug, price, currency) {
+  /**
+   * @param {string} slug
+   * @param {number} price what is being asked now
+   * @param {string} currency
+   * @param {number} [base] the struck-through list price, when the page showed
+   *   one (only kept when it really is above `price`) — it is what lets the
+   *   deal analysis tell a sale from a permanent price.
+   */
+  async function record(slug, price, currency, base) {
     if (!slug || typeof price !== "number" || price <= 0) return;
+    const list = typeof base === "number" && base > price ? base : undefined;
     const history = await load();
     history[slug] = history[slug] || [];
 
     const last = history[slug][history[slug].length - 1];
     const today = new Date().toISOString().slice(0, 10);
 
-    // Skip if we already recorded the same price today
+    // Skip if we already recorded the same price today (but remember a list
+    // price we hadn't captured yet)
     if (last && last.d === today && last.p === price && last.c === currency) {
+      if (list !== undefined && last.b === undefined) {
+        last.b = list;
+        await save(history);
+      }
       return;
     }
     // Skip if same price as last entry, just update timestamp
     if (last && last.p === price && last.c === currency) {
       last.d = today;
+      if (list !== undefined) last.b = list;
     } else {
-      history[slug].push({ d: today, p: price, c: currency });
+      history[slug].push({ d: today, p: price, c: currency, ...(list !== undefined ? { b: list } : {}) });
     }
     if (history[slug].length > MAX_ENTRIES) {
       history[slug].splice(0, history[slug].length - MAX_ENTRIES);

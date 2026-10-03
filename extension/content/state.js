@@ -29,6 +29,9 @@
     settings: { ...DEFAULTS },
     pageCurrency: { code: "USD", symbol: "$" },
     observers: [],
+    // feature name -> { count, message, at } for features whose last run threw
+    // (see runFeatures in content.js); read by "Check this page".
+    failures: {},
   };
 
   window.GOGPlusContentState = state;

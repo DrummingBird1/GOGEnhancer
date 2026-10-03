@@ -139,7 +139,74 @@
     return rows;
   }
 
-  const api = { parseRamGB, parseRequirements, fromTable, compareRam, summarize };
+  /**
+   * Disk space from a requirement cell: "50 GB available space", "500 MB".
+   * @param {string} text
+   * @returns {number | null} gigabytes
+   */
+  function parseStorageGB(text) {
+    const m = text.match(/(\d+(?:[.,]\d+)?)\s*(gb|mb|tb)/i);
+    if (!m) return null;
+    let n = parseFloat(m[1].replace(",", "."));
+    if (!Number.isFinite(n)) return null;
+    const unit = m[2].toLowerCase();
+    if (unit === "mb") n /= 1024;
+    else if (unit === "tb") n *= 1024;
+    n = Math.round(n * 100) / 100;
+    return n > 0 ? n : null;
+  }
+
+  /** @typedef {{ ramGB: number, storageGB: number, os: string, cpu: string, gpu: string }} PcProfile */
+  /** @typedef {{ tier: "Minimum" | "Recommended", item: "RAM" | "Storage" | "OS" | "CPU" | "GPU", required: string, yours: string, status: "ok" | "below" | "info" }} ProfileRow */
+
+  const ITEM_LABELS = /** @type {const} */ ([
+    ["RAM", /^\s*(memory|ram)\b/i],
+    ["Storage", /^\s*(storage|hard\s*drive|disk|hdd|available\s*space)\b/i],
+    ["OS", /^\s*(os|operating\s*system)\b/i],
+    ["CPU", /^\s*(processor|cpu)\b/i],
+    ["GPU", /^\s*(graphics|video|gpu)\b/i],
+  ]);
+
+  /**
+   * Compares the requirements table with the machine the user described.
+   * Memory and disk space are exact comparisons; the OS, processor and
+   * graphics card are shown side by side with what the user typed and are
+   * NEVER judged — there is no honest way to rank two free-text hardware names.
+   * @param {{ minimum: Record<string, string>, recommended: Record<string, string> }} table
+   * @param {Partial<PcProfile> | null | undefined} pc
+   * @returns {ProfileRow[]}
+   */
+  function compareProfile(table, pc) {
+    if (!pc) return [];
+    /** @type {ProfileRow[]} */
+    const rows = [];
+    for (const [tier, cells] of /** @type {const} */ ([
+      ["Minimum", table.minimum],
+      ["Recommended", table.recommended],
+    ])) {
+      for (const [item, re] of ITEM_LABELS) {
+        const entry = Object.entries(cells || {}).find(([label]) => re.test(label));
+        if (!entry) continue;
+        const required = entry[1];
+        if (item === "RAM") {
+          const need = parseRamGB(`${entry[0]} ${required}`);
+          if (need === null || !pc.ramGB) continue;
+          rows.push({ tier, item, required: `${need} GB`, yours: `${pc.ramGB} GB`, status: pc.ramGB >= need ? "ok" : "below" });
+        } else if (item === "Storage") {
+          const need = parseStorageGB(required);
+          if (need === null || !pc.storageGB) continue;
+          rows.push({ tier, item, required: `${need} GB`, yours: `${pc.storageGB} GB free`, status: pc.storageGB >= need ? "ok" : "below" });
+        } else {
+          const yours = item === "OS" ? pc.os : item === "CPU" ? pc.cpu : pc.gpu;
+          if (!yours) continue;
+          rows.push({ tier, item, required: required.slice(0, 120), yours, status: "info" });
+        }
+      }
+    }
+    return rows;
+  }
+
+  const api = { parseRamGB, parseRequirements, fromTable, compareRam, summarize, parseStorageGB, compareProfile };
   if (typeof window !== "undefined") window.GOGPlusSysReq = api;
   if (typeof self !== "undefined") self.GOGPlusSysReq = api;
 })();

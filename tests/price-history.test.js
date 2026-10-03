@@ -162,3 +162,33 @@ describe("price-history total-size eviction (evictLeastRecentlyUpdated)", () => 
     expect(JSON.stringify(after.priceHistory).length).toBeLessThanOrEqual(TOTAL_BUDGET_BYTES);
   });
 });
+
+describe("list price (b)", () => {
+  const get = () => new Promise((r) => chrome.storage.local.get("priceHistory", (v) => r(v.priceHistory)));
+
+  it("records the struck-through price only when it is above the price being asked", async () => {
+    globalThis.__resetChromeStores();
+    await window.GOGPlusPriceHistory.record("a", 5, "USD", 10);
+    await window.GOGPlusPriceHistory.record("b", 5, "USD", 5);
+    await window.GOGPlusPriceHistory.record("c", 5, "USD", undefined);
+    const h = await get();
+    expect(h.a[0]).toMatchObject({ p: 5, c: "USD", b: 10 });
+    expect(h.b[0].b).toBeUndefined();
+    expect(h.c[0].b).toBeUndefined();
+  });
+
+  it("back-fills a list price seen later on the same day and for an unchanged price", async () => {
+    globalThis.__resetChromeStores();
+    await window.GOGPlusPriceHistory.record("a", 5, "USD");
+    await window.GOGPlusPriceHistory.record("a", 5, "USD", 10);
+    expect((await get()).a).toHaveLength(1);
+    expect((await get()).a[0].b).toBe(10);
+    await window.GOGPlusPriceHistory.record("a", 5, "USD", 12);
+    expect((await get()).a[0].b).toBe(10); // same day: first list price kept
+    const hist = await get();
+    hist.a[0].d = "2020-01-01";
+    await new Promise((r) => chrome.storage.local.set({ priceHistory: hist }, r));
+    await window.GOGPlusPriceHistory.record("a", 5, "USD", 12);
+    expect((await get()).a[0].b).toBe(12); // a later visit refreshes it
+  });
+});

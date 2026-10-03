@@ -10,7 +10,8 @@
  * library while apart. This module resolves that deterministically, with no
  * I/O so it can be tested exhaustively:
  *
- *   • "Record" datasets (tags, notes, status, purchases, alerts, tag colours)
+ *   • "Record" datasets (tags, notes, status, purchases, alerts, tag colours,
+ *     owned games, "not interested", saved searches, tag alerts, status dates)
  *     are keyed by slug/tag. Each key is last-writer-wins, using a per-key
  *     timestamp from `syncMeta` ("<dataset>:<key>" -> { t, del? }). A delete
  *     is a tombstone ({ t, del: true }) so it propagates instead of being
@@ -34,7 +35,19 @@
   const SCHEMA = 1;
   const TOMBSTONE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
-  const RECORD_KEYS = ["tags", "notes", "gameStatus", "purchaseLog", "priceAlerts", "tagColors"];
+  const RECORD_KEYS = [
+    "tags",
+    "notes",
+    "gameStatus",
+    "purchaseLog",
+    "priceAlerts",
+    "tagColors",
+    "ownedSlugs",
+    "notInterested",
+    "catalogPresets",
+    "tagAlerts",
+    "statusDates",
+  ];
   const WHOLE_KEYS = ["tagOrder"];
   const HISTORY_KEY = "priceHistory";
   const EARLIEST_KEY = "achievements";
@@ -43,6 +56,7 @@
   /** @typedef {{ t: number, del?: boolean }} MetaEntry */
   /** @typedef {Record<string, MetaEntry>} SyncMeta */
   /** @typedef {{ data: Record<string, any>, meta: SyncMeta }} Snapshot */
+  /** @typedef {{ key: string, id: string, local: any, remote: any, kept: "local" | "remote" }} Conflict */
 
   /** @param {string} key @param {string} id */
   const metaId = (key, id) => `${key}:${id}`;
@@ -146,12 +160,18 @@
   /**
    * @param {Snapshot} local
    * @param {Snapshot} remote
-   * @param {{ now?: number, historyMax?: number }} [opts]
-   * @returns {{ data: Record<string, any>, meta: SyncMeta, localChanged: boolean, remoteChanged: boolean }}
+   * @param {{ now?: number, historyMax?: number, baseMeta?: SyncMeta }} [opts]
+   *   `baseMeta` is the meta as of the previous sync: with it, records BOTH sides changed since
+   *   then (and disagree about) are reported in `conflicts` — the newest-wins rule still decides,
+   *   the report just lets the user see and overrule it.
+   * @returns {{ data: Record<string, any>, meta: SyncMeta, localChanged: boolean, remoteChanged: boolean, conflicts: Conflict[] }}
    */
   function mergeSnapshots(local, remote, opts = {}) {
     const now = opts.now ?? Date.now();
     const historyMax = opts.historyMax ?? 100;
+    const baseMeta = opts.baseMeta;
+    /** @type {Conflict[]} */
+    const conflicts = [];
     /** @type {Record<string, any>} */
     const data = {};
     /** @type {SyncMeta} */
@@ -179,12 +199,24 @@
       ]);
       for (const id of ids) {
         const mid = metaId(key, id);
-        const w = resolve(
-          sideOf(id in lv, lv[id], local.meta[mid]),
-          sideOf(id in rv, rv[id], remote.meta[mid])
-        );
+        const ls = sideOf(id in lv, lv[id], local.meta[mid]);
+        const rs = sideOf(id in rv, rv[id], remote.meta[mid]);
+        const w = resolve(ls, rs);
         if (w.kind === "value") out[id] = w.v;
         record(mid, w);
+        if (baseMeta && ls.kind !== "none" && rs.kind !== "none") {
+          const baseT = baseMeta[mid]?.t ?? 0;
+          const differ = ls.kind !== rs.kind || (ls.kind === "value" && rs.kind === "value" && !same(ls.v, rs.v));
+          if (differ && ls.t > baseT && rs.t > baseT) {
+            conflicts.push({
+              key,
+              id,
+              local: ls.kind === "value" ? ls.v : undefined,
+              remote: rs.kind === "value" ? rs.v : undefined,
+              kept: w === ls ? "local" : "remote",
+            });
+          }
+        }
       }
       data[key] = out;
     }
@@ -213,7 +245,10 @@
         const seen = new Map();
         for (const e of [...(lh[slug] || []), ...(rh[slug] || [])]) {
           if (!e || typeof e !== "object") continue;
-          seen.set(`${e.d}|${e.c}|${e.p}`, e);
+          const k = `${e.d}|${e.c}|${e.p}`;
+          // Keep the copy that recorded a list price (`b`) if only one did.
+          const prev = seen.get(k);
+          seen.set(k, prev && prev.b !== undefined && e.b === undefined ? prev : e);
         }
         out[slug] = [...seen.values()].sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0)).slice(-historyMax);
       }
@@ -238,7 +273,7 @@
     const differs = (s) =>
       !same(meta, s.meta) || SYNCED_KEYS.some((k) => !same(data[k], s.data[k] ?? (WHOLE_KEYS.includes(k) ? [] : {})));
 
-    return { data, meta, localChanged: differs(local), remoteChanged: differs(remote) };
+    return { data, meta, localChanged: differs(local), remoteChanged: differs(remote), conflicts };
   }
 
   /**

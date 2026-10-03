@@ -5,6 +5,12 @@
  *   T      open the quick-add-tag popover for the focused card
  *   ?      show these shortcuts
  *
+ * On a game page the same opt-in adds one-key actions for the page itself:
+ *   W      press the site's own "Wishlist" button
+ *   T      jump to the tag box in the insights panel
+ *   N      jump to the note box
+ *   A      jump to the price-alert box
+ *
  * Focusing a card's own <a> (rather than faking a highlight) means Enter
  * opens it natively and screen readers announce it. Bare letter keys are only
  * handled when nothing editable has focus, no modifier is held, and the
@@ -86,12 +92,45 @@
     if (host) window.GOGPlusCardBadges.openQuickAddTag(host, entry.slug);
   }
 
+  /**
+   * One-key actions on a game page. Focusing the panel's own inputs (rather
+   * than writing anything) means a key press can never change data by itself;
+   * W presses the site's wishlist button, exactly as a click on it would.
+   * @param {string} key
+   * @returns {boolean} whether the key was one of ours
+   */
+  function gamePageKey(key) {
+    const focusId = (/** @type {string} */ id) => {
+      const el = /** @type {HTMLElement | null} */ (document.getElementById(id));
+      if (!el) return false;
+      el.scrollIntoView({ block: "center", behavior: "auto" });
+      el.focus();
+      return true;
+    };
+    if (key === "w") {
+      const btn = /** @type {HTMLElement | null} */ (
+        document.querySelector('[selenium-id="WishlistButton"]')?.closest("button") || null
+      );
+      if (btn && window.GOGPlusGogDom.isRendered(btn)) btn.click();
+      return true;
+    }
+    if (key === "t") return focusId("gog-plus-tag-input");
+    if (key === "n") return focusId("gog-plus-note");
+    if (key === "a") return focusId("gog-plus-alert-threshold");
+    return false;
+  }
+
   /** @param {KeyboardEvent} e */
   function handleKey(e) {
     if (!state.settings.enabled || !state.settings.keyboardNav) return;
     if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
     if (isTypingTarget(e.target)) return;
     if (document.querySelector(".gog-plus-palette-overlay")) return;
+
+    if (window.GOGPlusGogDom.pageType() === "game" && gamePageKey(e.key)) {
+      e.preventDefault();
+      return;
+    }
 
     if (e.key === "j") {
       e.preventDefault();
@@ -103,9 +142,13 @@
       e.preventDefault();
       tagFocused();
     } else if (e.key === "?") {
-      window.GOGPlusToasts?.show("Keyboard: J / K move between games · T tags the focused game", {
-        variant: "default",
-      });
+      const onGame = window.GOGPlusGogDom.pageType() === "game";
+      window.GOGPlusToasts?.show(
+        onGame
+          ? "Keyboard: W wishlist · T tag · N note · A price alert"
+          : "Keyboard: J / K move between games · T tags the focused game",
+        { variant: "default" }
+      );
     }
   }
 
