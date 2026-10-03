@@ -10,11 +10,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The shippable extension lives entirely under **`extension/`** — `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `icons/`, and `manifest.json`. This is the folder you "Load unpacked" in Chrome and the only thing `build.ps1` zips. Paths inside `manifest.json` and the HTML files are relative to `extension/`, so the whole folder moves as a unit.
 
-**`store/`** holds Web-Store material that is *not* part of the extension: `STORE_LISTING.md` (submission text) and `screenshots/` (the 5 listing PNGs, uploaded separately to the dashboard). Nothing here ships in the zip.
+**`store/`** holds Web-Store material that is *not* part of the extension: `STORE_LISTING.md` (submission text, English and Hebrew) and `screenshots/` (the 5 listing PNGs, uploaded separately to the dashboard; regenerate with `node e2e/store-screenshots.mjs` — they use demo data) and `release-images/`. Nothing here ships in the zip.
 
 Everything else stays at the repo root because it's neither the extension nor store-facing:
 - User-facing docs: `README.md` (English, the repo's front page), `README.he.md` (full Hebrew translation, linked from the top of both), `PRIVACY.md`, `LICENSE`, `CLAUDE.md`.
-- Build + test tooling: `build.ps1`, `package.json`, `package-lock.json`, `vitest.config.js`, `eslint.config.js`, `tests/`, `node_modules/`.
+- Build + test tooling: `build.ps1`, `scripts/` (`release.mjs`, `build-firefox.mjs`), `e2e/`, `package.json`, `package-lock.json`, `vitest.config.js`, `eslint.config.js`, `tests/`, `node_modules/`.
+- `docs/` — the GitHub Pages site: `index.html`, `guide.html` (how it works + FAQ), `privacy.html`, `changelog.html`, `assets/`.
 - `.github/workflows/` — CI (`test.yml`) and release automation (`release.yml`).
 - `dist/` — build outputs (gitignored). `build.ps1` writes `dist/gog-enhancer-webstore.zip`; you can also unzip there for Chrome's "Load unpacked".
 
@@ -35,7 +36,10 @@ The extension itself is plain vanilla JS — no bundler, no framework. A Vitest 
 - **End-to-end**: `npm run e2e` loads the real extension into a Chromium and drives it against *synthetic* gog.com pages (`e2e/fixtures.mjs` — a "legacy" markup shape and a "variant" one with no recognisable class names, split prices and a header `h1`), served by intercepting `https://www.gog.com/**` so nothing real is requested. It exists because happy-dom has no layout engine, no real injection and no real MutationObserver timing — it found two bugs the unit tests couldn't. Local only (CI has no Chromium): it needs a build that still honours `--load-extension`, which branded Google Chrome 137+ does not, so it auto-detects one Playwright already installed under `%LOCALAPPDATA%\ms-playwright` (override with `PW_CHROMIUM`; `E2E_SHOTS=dir` saves screenshots). `fixtures.mjs` holds two deliberately generic markup shapes; `fixtures-real.mjs` holds the shapes **recorded from the live site** (structure only, no content). `E2E_ONLY=real` runs just the recorded-shape checks (and `E2E_EXT=<dir>` points them at another build — running them against the released v3.0.0 failed 8 of 11 — all but one for features it already had — which is how the real-site regressions were demonstrated). `E2E_LIVE=1` runs the extension against the real gog.com (a few public, logged-out page loads) — the only way to know the recorded fixtures still match the site; manual use only. Account pages (wishlist/library/cart) need a login and are not covered end to end — only the *shape* of a logged-in wishlist row/tile was recorded (`wishlistV4`, `catalogV4`, `gameV4` in `fixtures-real.mjs`), so anything that depends on logged-in state beyond that structure is unverified against the real site. `E2E_LIVE=1` also checks the v4 catalog bar mounts above the grid, that sorting by title really re-orders the live grid, and that a real game page yields ratings/tags/year into the facts cache. **A lesson the e2e suite taught that happy-dom cannot:** `chrome.storage` returns object keys in *alphabetical* order, so any "did this record change?" comparison must be canonical (sorted keys — see `canonical()` in `content/features/knowledge.js`), or a perfectly steady page rewrites its own record forever (and `knowledge.js` additionally caps itself at `MAX_WRITES_PER_MINUTE`). Unit tests keep insertion order and will never show this class of bug.
 - **`tests/load-order.test.js`** loads each entry point's scripts in exactly the order `manifest.json` / the HTML pages list them. Every other suite imports modules in an order the test author chose and would never notice a mis-ordered manifest — which kills the whole content script in a real browser.
 - **Lint**: `npm run lint` (runs ESLint flat config in `eslint.config.js`). CI also runs this on every push and PR via `.github/workflows/test.yml`.
-- **Typecheck**: `npm run typecheck` (`tsc --noEmit` against `tsconfig.json`). Covers `extension/lib/**/*.js`, `extension/content/**/*.js`, and `extension/tags/**/*.js` — every module in all three carries `// @ts-check` + JSDoc annotations (extended from `lib/`-only in v2.9.0). Ambient globals (`window.GOGPlusStorage`, `window.GOGPlusContentState`, `window.GOGPlusTagsState`, etc.) are declared in `types/globals.d.ts` at the repo root, kept out of `extension/` so `build.ps1`'s wholesale folder copies never ship it — kept intentionally loose (`any`-shaped) per that file's own doc comment, since the goal is catching typos and cross-module API misuse, not full type safety. `popup/`, `options/`, and `onboarding/` aren't covered (their scripts are plain top-level, not the IIFE+`window.X` pattern content/tags use).
+- **Typecheck**: `npm run typecheck` (`tsc --noEmit` against `tsconfig.json`). Covers `extension/lib/**/*.js`, `extension/content/**/*.js`, and `extension/tags/**/*.js` — every module in all three carries `// @ts-check` + JSDoc annotations (extended from `lib/`-only in v2.9.0). Ambient globals (`window.GOGPlusStorage`, `window.GOGPlusContentState`, `window.GOGPlusTagsState`, etc.) are declared in `types/globals.d.ts` at the repo root, kept out of `extension/` so `build.ps1`'s wholesale folder copies never ship it — kept intentionally loose (`any`-shaped) per that file's own doc comment, since the goal is catching typos and cross-module API misuse, not full type safety. `popup/`, `options/` and `onboarding/` are plain top-level scripts, not the IIFE+`window.X` pattern, so they are checked by their own `tsconfig.pages-*.json` (see the next bullets).
+- **E2E tooling beyond the suite** (all in `e2e/`, all local — CI has no Chromium). `harness.mjs` is the shared launcher (Chromium with the extension, request interception with the fixtures, `setSettings`/`storageGet`; `extraArgs`). `extension.e2e.mjs` is the suite behind `npm run e2e` and also holds the **performance budget** (no single feature pass over 150 ms on 48 tiles / 600 ms on 400, and the page must *settle* — no pass triggered by the extension's own writes; it once caught a feature that re-triggered itself). `structure.mjs` records the live site's structure and diffs it against `e2e/baseline/structure.json` — run it after a site change. `visual.mjs` is screenshot regression against `e2e/baselines/*.png`: byte-identical comparison, so the baselines are specific to the machine's fonts and rendering (`--update` re-records them; never run it in CI). `collect-strings.mjs` lists what the extension's pages show that has no translation row (`--lang he` to look at the result). `store-screenshots.mjs` regenerates the five Web Store / website screenshots (real gog.com pages, **demo data** in the extension's own panels). `save-login.mjs` + `E2E_AUTH=<file>` add a logged-in block to the live run — written but **never run with a real account**.
+- **Scripts**: `scripts/release.mjs` does the mechanical parts of a release (version bump in `manifest.json`, changelog stubs in both places, the banner, the gates, the local tag; it refuses to continue while a `TODO` stub remains and never pushes without `--push`); `scripts/build-firefox.mjs` (see "Firefox build" below); `.github/workflows/canary.yml` is a scheduled check of the live site that opens an issue — it can only be dispatched by hand once it is on `main`, and has not been run on GitHub.
+- **Typecheck of the page scripts**: `tsconfig.pages-popup.json`, `tsconfig.pages-options.json` and `tsconfig.pages-onboarding.json` check those plain top-level scripts separately (`npm run typecheck` runs all four). The dashboard (`tags/`) is part of the main project.
 
 ## GitHub workflow
 
@@ -131,11 +135,15 @@ If a key's storage shape changes, bump `SETTINGS_VERSION` in `lib/defaults.js` a
 lib/browser-compat.js   → `chrome`/`browser` namespace shim (Firefox groundwork — unverified in a real Firefox)
 lib/defaults.js         → window.GOG_PLUS_DEFAULTS, GOG_PLUS_SETTINGS_VERSION
 lib/storage.js          → window.GOGPlusStorage
+lib/net.js              → window.GOGPlusNet (the ONE network layer — allow-list, no cookies/referrer, timeout, local netLog)
+lib/failure-log.js      → window.GOGPlusFailureLog (features that failed, the popup's report)
+lib/streak.js           → window.GOGPlusStreak (days you looked at gog.com)
 lib/dom-safety.js       → window.GOGPlusDomSafety (escapeHtml)
 lib/currency-format.js  → window.GOGPlusCurrencyFormat (symbolFor, formatPrice)
 lib/genres.js           → window.GOGPlusGenres (GENRE_PATTERNS, matchGenrePattern, mapGenreLabel)
 lib/game-status.js      → window.GOGPlusGameStatus (STATUSES, statusById) — shared with tags/ dashboard
 lib/price-compare.js    → window.GOGPlusPriceCompare (fetchDeals against cheapshark.com — see Privacy boundary)
+lib/gog-api.js         → window.GOGPlusGogApi (GOG's own catalog + product APIs: endless scrolling, pack contents)
 lib/purchases.js        → window.GOGPlusPurchases (purchaseLog shape helpers)
 lib/sysreq.js           → window.GOGPlusSysReq (RAM-requirement parsing + comparison for the game page)
 lib/deals.js            → window.GOGPlusDeals (deal score, "is this a real discount", sale-season heuristic, pack-overlap warning)
@@ -144,7 +152,8 @@ lib/links.js            → window.GOGPlusLinks (outbound search/wiki links — 
 lib/wishlist-tools.js   → window.GOGPlusWishlistTools (sorting/grouping/totals over wishlist rows)
 lib/catalog-tools.js    → window.GOGPlusCatalogTools (local sort/filter/compare over catalog tiles)
 lib/library-tools.js    → window.GOGPlusLibraryTools (stats, "Wrapped"/collector numbers over the learned library)
-lib/ics.js              → window.GOGPlusIcs (.ics calendar file for an offer end)
+lib/ics.js              → window.GOGPlusIcs (.ics files: an offer end, refund deadlines, release dates)
+lib/share-card.js       → window.GOGPlusShareCard (Wrapped / collector / wishlist cards as PNG)
 lib/pack.js             → window.GOGPlusPack (tag-pack export/import, mergePack)
 lib/note-history.js     → window.GOGPlusNoteHistory (revision history for notes)
 content/gog-dom.js      → window.GOGPlusGogDom (the site adapter — see "Site adapter" below; MUST precede utils.js)
@@ -154,6 +163,7 @@ content/currency-detection.js → window.GOGPlusCurrency
 content/price-history.js → window.GOGPlusPriceHistory
 content/tooltips.js     → (binds to data-gog-plus-tip)
 content/toasts.js       → window.GOGPlusToasts
+content/announce.js     → window.GOGPlusAnnounce (aria-live announcements)
 content/native-theme.js → window.GOGPlusNativeTheme (samples the live page for the "native" theme)
 content/state.js        → window.GOGPlusContentState ({ settings, pageCurrency, observers, failures })
 content/utils.js        → window.GOGPlusContentUtils (debounce, log, slugFromHref, slugFromLocation, gameTitleFromPage)
@@ -166,6 +176,7 @@ content/features/panel-chrome.js → window.GOGPlusPanelChrome (panel decoration
 content/features/game-extras.js  → window.GOGPlusGameExtras (language check, change-since-last-visit, links, calendar, share cards)
 content/features/game-page.js    → window.GOGPlusGamePage (the insights panel; sections are an id'd array, each built inside its own try/catch)
 content/features/catalog.js      → window.GOGPlusCatalog (tools bar, local sort/filter, comparison chart, tile controls)
+content/features/catalog-endless.js → window.GOGPlusEndless (opt-in endless scrolling — see "Privacy boundary")
 content/features/review-tools.js → window.GOGPlusReviewTools
 content/features/site-signals.js → window.GOGPlusSiteSignals
 content/features/command-palette.js → window.GOGPlusCommandPalette (Ctrl/Cmd+K quick actions)
@@ -188,8 +199,8 @@ Adding a new content-script module means registering it in `manifest.json` **bef
 - Catalog tiles are vertical: `a.product-tile` > `div.product-tile__image-wrapper` (full tile width, ~half its height) — which is why `cardCoverHost` judges by area.
 - The game page has its own `selenium-id` hooks: `ProductFinalPrice`, `ProductBasePrice`, `ProductGenres`; the requirements are a `.system-requirements` table of `.table__row`s (label / `__minimum` / `__recommended` cells), rendered twice with one copy hidden. GOG now also has its own HowLongToBeat section, so don't build one.
 - **Logged-in state is only visible on the game page** (`user-logged-in` on `<body>`); catalog/home tiles never carry it, so a tile can prove a game is owned (`.product-label--owned` — the "IN LIBRARY" label) but can never prove it is *not*. That asymmetry is why `knowledge.js` only ever *adds* ownership from tiles and only a logged-in game page may *remove* it. The tile's visible title text also includes that "IN LIBRARY" label — read the title from `<product-title>`, not the tile's text.
-- **Wishlist rows** are legacy AngularJS `.product-row--wishlist` rows; their state flags (owned/discounted/…) are *always present in the DOM and hidden*, so test visibility, not presence. The header menu also contains tiles that look like wishlist links (an old filter counted "All 7" from them) — only ever count real rows. A row exposes a release *year*, not a date, which is why there is no release-date calendar.
-- **`RecommendedProductsPurchasedTogether`** (the "bundle" hint) was empty/lazy on every page inspected, so the pack-overlap warning in `lib/deals.js` is a heuristic and its markup assumptions are unverified.
+- **Wishlist rows** are legacy AngularJS `.product-row--wishlist` rows; their state flags (owned/discounted/…) are *always present in the DOM and hidden*, so test visibility, not presence. The header menu also contains tiles that look like wishlist links (an old filter counted "All 7" from them) — only ever count real rows. A row exposes a release *year*, not a date — the exact date comes from the game page's JSON-LD (`releaseDate`, stored as `gameFacts[slug].rd`), so the release-date calendar only contains games whose page the user has opened.
+- **Packs and bundles.** A bundle page lists its games in `[selenium-id="BundleCoverItem"]` elements (`readBundleItems` — no request needed). Otherwise `knowledge.js` asks GOG's v2 product API once per game page (`lib/gog-api.js` `fetchPackContents`, only the numeric product id from the JSON-LD `sku` is sent): `_links.includesGames` lists the children and each child's `_links.store.href` gives its slug. Children whose store slug equals the pack's own slug (hidden component entries that point back at it) and duplicates are dropped. Cached in `packInfo` (30-day TTL, at most 400); the overlap warning (`lib/deals.js` `packOverlap`) is computed from it. The old `RecommendedProductsPurchasedTogether` block was empty on every page inspected and is no longer used.
 
 Rules that earned their place the hard way:
 
@@ -276,6 +287,28 @@ Two of the allow-listed hosts have **no `host_permissions` entry**: `catalog.gog
 Folder sync adds **no host and no permission**: the extension only ever touches a file in a folder the user explicitly picked (File System Access API, re-granted from a click on the options page). The omnibox keyword needs no permission either. IndexedDB (extension origin) holds two things: note-image attachments and that folder handle. Everything v4 learns about the user's library (`ownedSlugs`, `gameFacts`, `notInterested`, note history, …) lives in `storage.local` and is derived only from pages the user opened — it makes no request of its own.
 
 The runtime permission `notifications` is opt-in: nothing fires unless the user enables "Desktop notifications" in Advanced Options. Background uses `chrome.notifications.create` only — no network traffic. Triggers live in `background/background.js` (`checkRefundWindowExpirations`, `maybeNotifyWishlistJump`) and dedupe via the `notifLog` key in `storage.local`.
+
+### Interface translations (`lib/i18n.js` + `lib/i18n-pages*.js`)
+
+Two mechanisms, both applied by `GOGPlusI18n.apply(lang)`. `lib/i18n.js` is the old keyed one (`data-i18n` attributes, 7 languages) and still drives most of the popup. **`lib/i18n-pages.js` translates by the English text itself** and covers the tag dashboard, the options page, the popup's un-keyed strings and the first-run wizard: rows `[english, he, ru, pl, de, fr, es]` live in `lib/i18n-pages-{common,dashboard,dashboard-messages,options,options-messages,popup,onboarding}.js` and register themselves with `GOGPlusPageI18n.add()`. It rewrites text nodes and `title`/`placeholder`/`aria-label`/`alt`, translates a sentence with highlighted words as one piece (`<1>…</1>` marks the highlighted element, so a translation may reorder them; `<kbd>`/`<code>` stay in place), picks Russian/Polish plural forms (`{1#игра|игры|игр}`), remembers the English per node (so switching language, or back to English, starts from the original), and keeps watching the page with a `MutationObserver` so what the dashboard draws later is translated too. Placeholders in a row's English: `{n}` a number, `{}` any text (translated itself); in translations `{1}`, `{2}`… by position.
+
+Rules: **a new user-visible string needs a row in all six languages** — `tests/i18n-pages-data.test.js` fails when a string in the four pages' static markup has none, and checks every row (six non-empty translations, placeholders and `<k>` tags consistent with the English, plural-form counts, the same English never translated two ways). Text a page builds in JS is covered only if it has a row — run `node e2e/collect-strings.mjs` to see what is missing. Dialogs (`confirm`/`alert`/`prompt`) bypass the DOM, so wrap them in `window.GOGPlusPageI18n.tx(...)`. Text that is the user's own (tag names, notes, game titles) and the language picker carry `data-no-i18n` / `translate="no"` and are never translated — add the attribute to any new element that shows user content. The scripts load in each page's HTML after `lib/i18n.js`; they are not content scripts. The six non-English translations were **not reviewed by native speakers**.
+
+### Local progress: streak, challenges, achievements, failure log
+
+`lib/streak.js` (days you looked at gog.com, local calendar days; `{last,current,best}`), `lib/challenges.js` (three monthly challenges picked deterministically from a pool of six by an FNV hash of the month; `challengesDone[month]`) and `lib/achievements.js` (36 achievements in bronze/silver/gold, some `hidden`, plus a Completionist; `tierCounts`) are pure and local; `tags/features/achievements.js` evaluates them and shows toasts. `lib/failure-log.js` records features that failed on a gog.com page (`failureLog`, at most 40 entries, de-duplicated, written at most every 10 minutes) and builds the report the popup banner offers — no web addresses, no personal data; "Report on GitHub" only opens an issue page with the text filled in. `netLog`, `failureLog`, `failureSeenAt`, `streak` and `challengesDone` are in `content.js`'s QUIET keys: changing them must not rebuild the page.
+
+### Accessibility of the dashboard
+
+`tags/a11y.js` (`GOGPlusTagsA11y`: `focusables`, `trapFocus`, `menu`, `announce`) and `content/announce.js` (`GOGPlusAnnounce`, an `aria-live="polite"` region) give the dashboard a skip link, landmarks, focusable tags (`Enter` filters, `Alt`+`↑`/`↓` reorders and announces the new position), menus with arrow keys / `Home` / `End` / `Esc` that return focus to their button, and dialogs (colour picker, filter builder) that trap focus. Keep new popovers on the same helpers; `tests/dashboard-a11y.test.js` covers them.
+
+### Files the extension builds on the device
+
+`lib/ics.js` (`buildRefundCalendar`, `buildReleaseCalendar` — release dates come from the game pages the user opened, `gameFacts.rd`), `lib/digest-html.js` (the weekly digest as one self-contained HTML file; the popup's *Save as page*), `lib/share-card.js` (Wrapped, collector and wishlist cards drawn on a canvas and saved as PNG), `lib/markdown-export.js`. None of them makes a request.
+
+### Firefox build
+
+`node scripts/build-firefox.mjs` (also `npm run build:firefox`) copies the same files `build.ps1` ships into `dist/firefox/` and zips them; only `manifest.json` differs (`background.scripts` + `type: module` instead of a service worker, `browser_specific_settings.gecko` with an add-on id, `strict_min_version` 140 and `data_collection_permissions: {required: ["none"]}`). `npm run lint:firefox` runs `web-ext lint` on it (0 errors; 22 `UNSAFE_VAR_ASSIGNMENT` warnings for the `innerHTML` templates, whose dynamic values all go through `escapeHtml`, and one note that `data_collection_permissions` needs Firefox for Android 142). The zip is attached to each GitHub Release. **It has never been run in a real Firefox**, and folder sync (File System Access API) is unavailable there — keep calling it experimental until someone has.
 
 ### Security guards (don't regress these)
 

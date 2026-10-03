@@ -67,14 +67,14 @@ export const PAGES = {
 };
 
 /**
- * @param {{ live?: boolean, extPath: string, viewport?: { width: number, height: number }, cookies?: any[] }} opts
+ * @param {{ live?: boolean, extPath: string, viewport?: { width: number, height: number }, cookies?: any[], extraArgs?: string[] }} opts
  */
-export async function startHarness({ live = false, extPath, viewport = { width: 1100, height: 800 }, cookies }) {
+export async function startHarness({ live = false, extPath, viewport = { width: 1100, height: 800 }, cookies, extraArgs = [] }) {
   const userDataDir = mkdtempSync(join(tmpdir(), "gog-enhancer-e2e-"));
   const context = await chromium.launchPersistentContext(userDataDir, {
     executablePath: findChromium(),
     headless: false,
-    args: [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`, "--headless=new", "--no-first-run"],
+    args: [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`, "--headless=new", "--no-first-run", ...extraArgs],
     viewport,
   });
 

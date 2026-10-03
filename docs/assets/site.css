@@ -498,3 +498,34 @@ footer {
   font-style: italic;
   margin-top: 40px;
 }
+
+/* ---- guide page: collapsible questions ---- */
+.faq details {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 0 0 10px;
+  padding: 0 18px;
+}
+.faq details[open] { border-color: var(--border-strong); }
+.faq summary {
+  cursor: pointer;
+  padding: 14px 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  list-style: none;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::before { content: "＋"; color: var(--accent-cyan); margin-inline-end: 10px; }
+.faq details[open] summary::before { content: "－"; }
+.faq summary:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; border-radius: 6px; }
+.faq details p { margin: 0 0 14px; color: var(--text-secondary); }
+.policy-article kbd {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.85em;
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--bg-surface);
+}

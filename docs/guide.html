@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How it works &amp; FAQ — GOG Enhancer</title>
+<meta name="description" content="How GOG Enhancer works, what it sends and stores, how to sync, and answers to the questions people ask most." />
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+
+<meta property="og:title" content="How it works &amp; FAQ — GOG Enhancer" />
+<meta property="og:description" content="What the extension does, what it never does, and how to fix things when gog.com changes." />
+<meta property="og:image" content="assets/hero-icon.png" />
+<meta property="og:type" content="website" />
+
+<link rel="stylesheet" href="assets/site.css" />
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html">
+      <img src="assets/favicon.png" alt="" />
+      <span>GOG Enhancer</span>
+    </a>
+    <nav class="links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#screenshots">Screenshots</a>
+      <a href="index.html#install">Install</a>
+      <a class="active" href="guide.html">Guide</a>
+      <a href="changelog.html">Changelog</a>
+      <a href="privacy.html">Privacy</a>
+      <a class="nav-gh" href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">
+        ★ GitHub
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <div class="policy-hero wrap">
+    <span class="eyebrow">Guide</span>
+    <h1>How it works &amp; FAQ</h1>
+    <p class="policy-lede">
+      GOG Enhancer is an unofficial extension that adds things gog.com doesn't have — currency
+      conversion, price history, tags and notes, a smarter wishlist and catalog, library
+      statistics — on top of the real site. This page explains how it does that, and answers the
+      questions that come up most.
+    </p>
+  </div>
+
+  <article class="policy-article wrap">
+
+    <h2 id="how">How it works</h2>
+    <p>
+      The extension runs on <code>www.gog.com</code> pages. It <strong>reads</strong> what the page
+      already shows (cards, prices, the game title, ratings, the "IN LIBRARY" label) and
+      <strong>adds</strong> its own elements next to it — a converted price, a badge, the insights
+      panel on a game page, a bar above the catalog. It does not log in for you, change your
+      account, or call GOG's account API.
+    </p>
+    <p>
+      Everything that looks at gog.com's markup goes through a single module, the <em>site
+      adapter</em>, which tries several independent ways to find each thing (the URL, the page's
+      metadata, semantic tags, class names, finally the text shape of a price). When gog.com
+      changes its layout, one way usually still works, so a redesign degrades a feature instead of
+      switching everything off — and each feature runs on its own, so one broken lookup never takes
+      the others with it. <strong>Advanced Options → Check this page</strong> shows which
+      lookups still work on the page you have open.
+    </p>
+    <p>
+      What the extension learns — which games you own, ratings, languages, prices, price history —
+      comes only from <strong>pages you open yourself</strong>, and is stored on your device. It
+      makes no request to build any of it.
+    </p>
+
+    <h2 id="network">What it sends, and where</h2>
+    <p>
+      Five addresses, and no others: <code>www.gog.com</code> (the page you're on, and the public
+      mods list once a day), <code>api.frankfurter.app</code> (exchange rates),
+      <code>www.cheapshark.com</code> (the optional price-comparison table — only the game's
+      title), <code>api.gog.com</code> (once per game page, to see what a pack contains — only its
+      numeric id) and <code>catalog.gog.com</code> (only if you switch on endless scrolling). No
+      cookies, no referrer, no account information. The one other possible destination is a
+      webhook address <em>you</em> type in, off by default. Every request is listed on the
+      Advanced Options page under <em>Privacy &amp; transparency</em>, with what the extension
+      keeps on your device. The full detail is in the <a href="privacy.html">privacy policy</a>.
+    </p>
+
+    <h2 id="start">Getting started</h2>
+    <ol>
+      <li>Download <code>gog-enhancer-webstore.zip</code> from the <a href="https://github.com/DrummingBird1/GOGEnhancer/releases/latest" target="_blank" rel="noopener">latest release</a> and unzip it (or use the store listing once it's live).</li>
+      <li>In Chrome, Edge or Brave open <code>chrome://extensions</code>, switch on <strong>Developer mode</strong> and choose <strong>Load unpacked</strong>.</li>
+      <li>A short wizard opens: your currency, your region's tax, which features you want, a look. Everything can be changed later.</li>
+      <li>Open <a href="https://www.gog.com" target="_blank" rel="noopener">gog.com</a>. Click the toolbar icon (or press <kbd>Alt</kbd>+<kbd>G</kbd>) for the quick toggles; <strong>Advanced</strong> opens every setting; <strong>Tag dashboard</strong> opens your tags, notes, statistics and achievements.</li>
+    </ol>
+
+    <h2 id="faq">Frequently asked questions</h2>
+    <div class="faq">
+
+      <details>
+        <summary>Does it need my GOG login, or can it see my account?</summary>
+        <p>No. It never logs in, never reads your order history and never calls GOG's account API. It knows which games you own only because gog.com itself marks them <em>IN LIBRARY</em> on pages you open while signed in; it remembers that mark locally. Catalog pages can only add to that list — a tile without the mark might just mean you're signed out — and a refunded game is removed only when you open its own page while signed in.</p>
+      </details>
+
+      <details>
+        <summary>Where is my data, and can I take it with me?</summary>
+        <p>On your device, in the browser's own storage. Preferences (which features are on, your currency) travel with your browser's sync if you use it; tags, notes, price history and everything learned about your library never do. <strong>Advanced Options → Your data</strong> exports everything as JSON (optionally encrypted with a passphrase) and imports it back; the dashboard exports to CSV, Markdown, an Obsidian vault, a pack file you can share, and more. <em>Reset everything</em> deletes it all.</p>
+      </details>
+
+      <details>
+        <summary>How do I use it on two computers?</summary>
+        <p>Pick a folder that Dropbox, OneDrive, Google Drive or Syncthing already keeps in sync: <strong>Advanced Options → Sync across devices → Choose folder</strong>, then do the same in the other browser. The extension reads and writes one file, <code>gog-enhancer-sync.json</code>, and merges changes per record; if both sides changed the same record, the newer edit wins and the overwritten one is listed so you can overrule it. You can encrypt the file with a passphrase, switch on automatic sync and dated backups, and none of it involves a server of ours. It needs a browser with the File System Access API — Chrome, Edge or Brave.</p>
+      </details>
+
+      <details>
+        <summary>Something stopped working after gog.com changed. What do I do?</summary>
+        <p>Open the page that misbehaves, then <strong>Advanced Options → Check this page</strong>. It lists which lookups (cards, prices, title, panel position) still find what they need and which strategy found each one — only the page path and public store text, nothing personal. If a feature has failed, the popup also shows a banner with <em>Copy report</em> and <em>Report on GitHub</em>; the report contains no web addresses or personal data, and "Report on GitHub" only opens a page with it filled in — you decide whether to send it.</p>
+      </details>
+
+      <details>
+        <summary>Prices aren't being converted.</summary>
+        <p>Check that a target currency is chosen in the popup and that the converter is on. On a page where GOG already shows your currency the extension deliberately leaves the price alone. Conversion pivots through USD, so it needs a rate for both currencies; rates refresh every 12 hours and can be edited by hand under <em>Exchange rates</em>. If that all looks right, use <em>Check this page</em> — game-page prices in particular are drawn with CSS by GOG, which the extension reads specially.</p>
+      </details>
+
+      <details>
+        <summary>What is endless scrolling, and why is it off?</summary>
+        <p>When you reach the end of the 48 games on a catalog page, it appends the next page below, as the extension's own cards. To do that it asks GOG's own catalog API (<code>catalog.gog.com</code>) for the same list the site is already showing — the same call the site makes. It's off by default because it adds a network destination; turn it on under <em>Catalog, wishlist &amp; library</em>. It only continues a list it can match to the one on screen.</p>
+      </details>
+
+      <details>
+        <summary>What does "this pack contains games you own" use?</summary>
+        <p>A bundle's own page lists its games, so reading them costs nothing. For other packs the extension asks GOG's product API once per game page, sending only the numeric product id, and remembers the answer for 30 days. You can switch it off under <em>Catalog, wishlist &amp; library</em>.</p>
+      </details>
+
+      <details>
+        <summary>Why do I have to type my purchase date for the refund timer?</summary>
+        <p>GOG doesn't show a purchase date on the game page, so the 30-day countdown starts from a date you enter in the panel. No date, no countdown.</p>
+      </details>
+
+      <details>
+        <summary>Which languages does it speak?</summary>
+        <p>The tag dashboard, Advanced Options, popup and first-run wizard come in English, Hebrew (laid out right-to-left), Russian, Polish, German, French and Spanish — pick one under <em>Interface language</em>. What you wrote yourself (tag names, notes) is never translated. Separately, the optional <em>Hebrew translation overlay</em> translates gog.com's own navigation and interface. The non-English translations have not been reviewed by native speakers; tell us what reads wrong.</p>
+      </details>
+
+      <details>
+        <summary>Does it work in Firefox, Edge, Brave or Opera?</summary>
+        <p>Edge, Brave and Opera run the same build as Chrome. A Firefox variant is attached to each release; it passes the add-on linter but <strong>has not been run in a real Firefox</strong>, and folder sync isn't available there. Treat it as experimental.</p>
+      </details>
+
+      <details>
+        <summary>Keyboard shortcuts?</summary>
+        <p><kbd>Alt</kbd>+<kbd>G</kbd> opens the popup, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd> switches the extension on or off, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>H</kbd> toggles the Hebrew overlay, <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd> on gog.com opens a command palette. Optional (off by default): <kbd>J</kbd>/<kbd>K</kbd>/<kbd>T</kbd> on game grids and <kbd>W</kbd>/<kbd>N</kbd>/<kbd>A</kbd> on a game page. In the tag dashboard, <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> reorders the focused tag. Type <code>gog</code> and <kbd>Tab</kbd> in the address bar to search your own library. Chrome lets you rebind the global ones at <code>chrome://extensions/shortcuts</code>.</p>
+      </details>
+
+      <details>
+        <summary>How do I remove it?</summary>
+        <p>Uninstall it from <code>chrome://extensions</code>; the browser deletes its storage. If you used folder sync, the file in your folder stays until you delete it. <em>Advanced Options → Reset everything</em> wipes the data without uninstalling.</p>
+      </details>
+
+      <details>
+        <summary>Is it official? Does it cost anything?</summary>
+        <p>It's an unofficial, free, open-source (MIT) extension with no ads, analytics or paid tier, and it isn't affiliated with GOG sp. z o.o. or CD Projekt S.A. If it saves you money or time you can support it on <a href="https://ko-fi.com/idanlights" target="_blank" rel="noopener">Ko-fi</a>, <a href="https://buymeacoffee.com/MrIdan" target="_blank" rel="noopener">Buy Me a Coffee</a> or <a href="https://www.patreon.com/c/IdanLights" target="_blank" rel="noopener">Patreon</a> — entirely optional.</p>
+      </details>
+
+      <details>
+        <summary>Where do I report a bug or ask for a feature?</summary>
+        <p>On <a href="https://github.com/DrummingBird1/GOGEnhancer/issues" target="_blank" rel="noopener">GitHub Issues</a>. Attaching the output of <em>Check this page</em> makes a site-change problem much quicker to fix.</p>
+      </details>
+
+    </div>
+
+  </article>
+
+</main>
+
+<footer class="wrap">
+  <div class="footer-inner">
+    <a class="brand" href="index.html">
+      <img src="assets/favicon.png" alt="" />
+      <span>GOG Enhancer</span>
+    </a>
+    <div class="footer-links">
+      <a href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/DrummingBird1/GOGEnhancer/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="guide.html">Guide</a>
+      <a href="changelog.html">Changelog</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="https://github.com/DrummingBird1/GOGEnhancer/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+      <a href="https://ko-fi.com/idanlights" target="_blank" rel="noopener">Ko-fi</a>
+      <a href="https://buymeacoffee.com/MrIdan" target="_blank" rel="noopener">Buy Me a Coffee</a>
+      <a href="https://www.patreon.com/c/IdanLights" target="_blank" rel="noopener">Patreon</a>
+    </div>
+  </div>
+  <p class="disclaimer">
+    GOG Enhancer is an unofficial, third-party browser extension. It is not
+    affiliated with, endorsed by, or sponsored by GOG sp. z o.o. or CD Projekt
+    S.A. The "GOG" name is used nominatively to describe the website the
+    extension works with. All trademarks belong to their respective owners.
+  </p>
+</footer>
+
+</body>
+</html>

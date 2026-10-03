@@ -112,6 +112,7 @@
       <a href="index.html#features">Features</a>
       <a href="index.html#screenshots">Screenshots</a>
       <a href="index.html#install">Install</a>
+      <a href="guide.html">Guide</a>
       <a class="active" href="changelog.html">Changelog</a>
       <a class="nav-gh" href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">
         ★ GitHub
@@ -131,7 +132,7 @@
 
     <div class="cl-entry is-current">
       <div class="cl-version-row"><span class="cl-version">v4.0.0</span><span class="cl-badge-current">Current</span></div>
-      <p class="cl-title">Built to survive a redesign — plus smarter prices, a smart wishlist and catalog, library knowledge, automatic folder sync, calmer notifications and a calmer look</p>
+      <p class="cl-title">Built to survive a redesign — plus smarter prices, a smart wishlist and catalog, library knowledge, seven languages everywhere, a privacy dashboard, automatic folder sync and calmer notifications</p>
       <h4>Resilience to site changes</h4>
       <ul>
         <li>🔧 <strong>Fixes what the redesign had broken</strong>, found by inspecting the live site: game-page prices — which GOG now prints with CSS, leaving a bare <code>2.99</code> in the page text — are converted again and recorded in your price history (the page's currency is read from the class it puts on <code>&lt;body&gt;</code>); the game's genre is read from the site's own genre element again; cover badges appear on the new catalog's full-width tile covers; and the DRM-free banner sits at the bottom edge instead of covering the site's fixed header.</li>
@@ -166,12 +167,14 @@
       <ul>
         <li>💖 <strong>Smart wishlist</strong> — sort by discount, distance from the tracked low, converted price or date added; filters for "near the low" and "ending soon"; a live total in the page header; grouping by tag or play status; and export to CSV, Markdown or <code>.ics</code>.</li>
         <li>🗂️ <strong>Catalog tools</strong> — a bar above the grid: dim or hide games you already own, mark games <em>not interested</em> (hidden, with a restore switch), sort the 48 tiles on the page locally, compact or list density, saved filter presets (also in the command palette), select several tiles to tag or track at once, and a side-by-side comparison.</li>
-        <li>Not included: infinite scrolling. The site replaces its tiles on every page change, so a reliable version would need to call GOG's catalog API directly — a new network host the extension deliberately doesn't have.</li>
+        <li>♾️ <strong>Endless scrolling</strong> (off by default). When you reach the end of the 48 tiles on a catalog page, the next page is added below it as the extension's own cards (cover, title, price, discount, a converted price). It asks GOG's own catalog API — <code>catalog.gog.com</code>, the same call the site makes, reached under the page's normal cross-origin rules so Chrome shows no extra install warning — and continues only a list it can match to the one on screen, using the query the site itself transferred to the page. After 8 pages a <em>Load more games</em> button takes over. If GOG ever restricts that API, the feature simply stops appending; nothing else is affected.</li>
       </ul>
       <h4>Game page &amp; library</h4>
       <ul>
         <li>🎮 <strong>Language check</strong> against the languages you care about, <strong>what changed since your last visit</strong> (price, rating, review count), a <strong>review filter</strong>, <strong>similar games you own</strong>, review-score summary, tag suggestions that also use GOG's own tags, and "open in" links to Steam, IsThereAnyDeal and PCGamingWiki — plain links, no requests.</li>
-        <li>⚠️ <strong>Pack overlap heads-up</strong> when a bundle contains games you already own. This is a heuristic: GOG's "bought together" block was empty on every page inspected, so how it behaves on real bundles is unverified.</li>
+        <li>📦 <strong>What a pack really contains.</strong> A bundle page lists its games in the page itself, so reading them costs no request; for other packs the extension asks GOG's product API (<code>api.gog.com</code>) once per game page, sending only the numeric product id, and remembers the answer for 30 days. A pack that includes games you already own says so — and which ones. Hidden component entries that point back at the pack itself are filtered out. Switch it off under <em>Catalog, wishlist &amp; library</em>.</li>
+        <li>📅 <strong>Release-date calendar</strong> (<code>.ics</code>) for the wishlisted games that haven't come out yet, from the release dates read off the game pages you've opened — and a <strong>wishlist card</strong> you can save as a PNG, drawn on your device.</li>
+        <li>📰 <strong>Weekly digest as a web page</strong> — a <em>Save as page</em> button in the popup writes the digest (price alerts that hit, refund windows closing, wishlist drops) as a single HTML file you can keep or send.</li>
         <li>📚 <strong>Learns your library as you browse</strong> — the site's own "IN LIBRARY" label on tiles and the owned status on game and wishlist pages are remembered locally; nothing is fetched. A refund is noticed only on a logged-in game page.</li>
         <li>🎲 <strong>Weighted backlog roulette</strong> (favours well-rated, short and long-waiting games), a <strong>monthly "games to finish"</strong> goal, and <strong>Wrapped</strong> and <strong>collector</strong> cards saved as PNG — drawn on your device.</li>
         <li>📝 <strong>Note version history</strong>, an <strong>Obsidian vault</strong> export (a <code>.zip</code> with one note per game, front-matter included), and CSV / line exports for <strong>Notion, Google Sheets and Trello</strong>. All files are made on your device.</li>
@@ -189,13 +192,33 @@
         <li><strong>Calm mode</strong> (no glow or animation), a one-click <strong>plain look</strong> that switches every injected style off, <strong>colour-vision palettes</strong>, <strong>text-size scaling</strong> for the extension's own UI, and <strong>settings profiles</strong> (minimal / full / accessible).</li>
         <li>The <strong>Native theme follows the site</strong> when it switches between light and dark, and a short <strong>tour</strong> opens after the update to show what's new and offer "Check this page".</li>
       </ul>
+      <h4>Privacy &amp; trust</h4>
+      <ul>
+        <li>🔒 <strong>A privacy dashboard</strong> in Advanced Options: every address the extension contacted (host and path, never the query), how often and whether it worked, what it keeps on your device and how big each part is, which extra site access Chrome has granted it (with a button to take the webhook's back), and one-click <em>clear the request list</em> / <em>forget what it learned about my library</em>.</li>
+        <li>All network traffic now goes through one module that refuses any address not on its short allow-list, sends no cookies and no referrer, applies a time limit, and writes the local log the dashboard shows. A test fails the build if a permission or host changes without the privacy policy, the store listing and the website saying so, if anything outside that module calls <code>fetch</code>, or if anything could load or run remote code.</li>
+        <li>🩺 <strong>Failure log.</strong> When a feature stops working after a gog.com change, the popup shows a banner with <em>Copy report</em> and <em>Report on GitHub</em> (it only opens a page with the report filled in — you decide whether to send it). The report has no web addresses and no personal data.</li>
+      </ul>
+      <h4>Languages &amp; accessibility</h4>
+      <ul>
+        <li>🌍 The <strong>tag dashboard, Advanced Options, popup and first-run wizard</strong> are available in all seven interface languages — English, Hebrew, Russian, Polish, German, French and Spanish — about 600 strings each, including sentences with highlighted words (translated as a whole so the word order can differ), Russian and Polish plural forms, and the dialogs. Hebrew is laid out right-to-left. What you wrote yourself (tag names, notes, game titles) is never translated. The store-translation overlay for gog.com's redesigned catalog, home page and filters was extended too.</li>
+        <li>♿ <strong>Keyboard and screen readers on the dashboard</strong>: a skip link and landmarks, tags that are focusable list items (<kbd>Enter</kbd> filters, <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> reorders, with the new position announced), menus with arrow keys, <kbd>Home</kbd>/<kbd>End</kbd> and <kbd>Esc</kbd>, and the colour picker and filter builder as dialogs that hold focus and give it back.</li>
+      </ul>
+      <h4>Achievements, streaks &amp; challenges</h4>
+      <ul>
+        <li>🏆 <strong>36 achievements</strong> in bronze, silver and gold (a few hidden until you earn them, and a Completionist one for the rest), a <strong>streak</strong> of days you've looked at gog.com, and three <strong>monthly challenges</strong> picked from a pool of six. All local, computed from what the extension already knows.</li>
+      </ul>
+      <h4>Firefox (experimental)</h4>
+      <ul>
+        <li>🦊 <code>node scripts/build-firefox.mjs</code> builds a Firefox variant (a background page in place of the service worker, an add-on id, and a statement that the developer receives no data); the zip is attached to the GitHub release. It is clean under <code>web-ext lint</code> but <strong>has not been run in a real Firefox</strong>. Folder sync needs an API Firefox doesn't have and says so on its card.</li>
+      </ul>
       <h4>Under the hood</h4>
       <ul>
         <li>An end-to-end suite now loads the real extension into Chromium and drives it against gog.com pages — synthetic ones in two deliberately different markup shapes, markup recorded from the live site, and (manually) the live public pages themselves. Run against the markup recorded from the live site, v3.0.0 failed 8 of those 11 checks (all but one for features it already had); this release passes all of them. It also caught two bugs the unit tests couldn't: badges silently vanishing on full-width covers, and prices becoming undetectable after the converter had annotated them.</li>
         <li>A new test loads each entry point's scripts in exactly the order <code>manifest.json</code> and the HTML pages list them — nothing checked that before.</li>
         <li><strong>Each feature runs in isolation.</strong> A failing lookup used to skip every feature after it; now one broken feature is recorded (and shown in "Check this page") and the rest keep working.</li>
         <li>The end-to-end suite grew to cover the new catalog bar, wishlist tools and game-page facts against markup recorded from the live site, and it found two bugs the unit tests couldn't: a record that rewrote itself in a loop because <code>chrome.storage</code> returns keys in alphabetical order, and tile titles that swallowed the "IN LIBRARY" label.</li>
-        <li><strong>Unverified:</strong> Firefox; folder sync against a real cloud-sync client; the webhook against a live endpoint; and everything that needs a logged-in account beyond the page structure that was recorded. Please report anything that misbehaves.</li>
+        <li>New tooling: a performance budget on long catalogs (no pass over 150 ms at 48 tiles or 600 ms at 400, and the page must settle — the e2e suite caught a feature that re-triggered itself), a recorder that diffs the live site's structure against the last recorded one, screenshot regression for the panels and pages, a type-check of the popup, options and wizard scripts, a scheduled workflow that opens an issue when the live site stops matching, and a release script that refuses to tag with a stale changelog.</li>
+        <li><strong>Unverified:</strong> Firefox (no Firefox was available — only <code>web-ext lint</code> was run); folder sync against a real cloud-sync client; the webhook against a live endpoint; everything that needs a logged-in account beyond the page structure that was recorded (the logged-in checks exist but have not been run with a real account); and the translations, which no native speaker has reviewed. Please report anything that misbehaves.</li>
       </ul>
       <a class="cl-release-link" href="https://github.com/DrummingBird1/GOGEnhancer/releases/tag/v4.0.0" target="_blank" rel="noopener">View release →</a>
     </div>
@@ -446,6 +469,7 @@
     <div class="footer-links">
       <a href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">GitHub</a>
       <a href="https://github.com/DrummingBird1/GOGEnhancer/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="guide.html">Guide</a>
       <a href="changelog.html">Changelog</a>
       <a href="privacy.html">Privacy Policy</a>
       <a href="https://github.com/DrummingBird1/GOGEnhancer/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>

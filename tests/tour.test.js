@@ -21,7 +21,7 @@ beforeEach(() => {
 describe("the tour", () => {
   it("starts on the first slide with a dot per slide and Back disabled", () => {
     expect(visible()).toEqual(["0"]);
-    expect(document.querySelectorAll(".tour-dot")).toHaveLength(5);
+    expect(document.querySelectorAll(".tour-dot")).toHaveLength(6);
     expect($("tourPrev").disabled).toBe(true);
     expect(document.querySelector(".tour-dot.is-on").getAttribute("aria-selected")).toBe("true");
   });
@@ -32,8 +32,8 @@ describe("the tour", () => {
     expect($("tourPrev").disabled).toBe(false);
     $("tourPrev").click();
     expect(visible()).toEqual(["0"]);
-    for (let i = 0; i < 4; i++) $("tourNext").click();
-    expect(visible()).toEqual(["4"]);
+    for (let i = 0; i < 5; i++) $("tourNext").click();
+    expect(visible()).toEqual(["5"]);
     expect($("tourNext").textContent).toBe("Done");
     $("tourNext").click();
     expect(window.close).toHaveBeenCalled();
@@ -49,7 +49,7 @@ describe("the tour", () => {
     T.show(-5);
     expect(visible()).toEqual(["0"]);
     T.show(99);
-    expect(visible()).toEqual(["4"]);
+    expect(visible()).toEqual(["5"]);
   });
 
   it("can be skipped and can open the settings", () => {

@@ -28,6 +28,7 @@
       <a href="index.html#features">Features</a>
       <a href="index.html#screenshots">Screenshots</a>
       <a href="index.html#install">Install</a>
+      <a href="guide.html">Guide</a>
       <a href="changelog.html">Changelog</a>
       <a class="active" href="privacy.html">Privacy</a>
       <a class="nav-gh" href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">
@@ -119,6 +120,8 @@
           <tr><td>What a pack contains (game ids, slugs and titles), per game page you opened, for 30 days</td><td><code>chrome.storage.local</code></td><td>The answer GOG's product API gave (section 3.8), so the "you already own part of this pack" warning doesn't ask again</td></tr>
           <tr><td>The date each game is released on GOG, read from the game page you opened</td><td><code>chrome.storage.local</code> (inside the game facts above)</td><td>Only to build the optional wishlist release-date calendar you can download</td></tr>
           <tr><td>A list of the extension's own recent network requests: when, which address and path (never the query), and whether it worked — at most 120 entries</td><td><code>chrome.storage.local</code></td><td>So you can see exactly what it contacted (Advanced Options → Privacy &amp; transparency). Cleared by "Clear the request list" and "Reset everything"</td></tr>
+          <tr><td>A short list of features that failed on a gog.com page: the feature's name, an error message, the page path without its query, how often and when — at most 40 entries</td><td><code>chrome.storage.local</code></td><td>So the popup can tell you something stopped working after a site change and offer a report you copy or open on GitHub. The report has no web addresses or personal data and is never sent by the extension: "Report on GitHub" only opens a page with it filled in, and you decide whether to submit it</td></tr>
+          <tr><td>The days you looked at gog.com in a row (last day, current run, best run), and which monthly challenges you completed</td><td><code>chrome.storage.local</code></td><td>Only for the streak, the monthly challenges and the achievements in the tag dashboard — local progress, never sent anywhere</td></tr>
           <tr><td>Your computer description if you choose to type one (operating system, processor, graphics card)</td><td><code>chrome.storage.local</code></td><td>Compared as plain text with a game's requirements; never read from your machine automatically and never sent anywhere</td></tr>
           <tr><td>Notification rules (quiet hours, a one-summary-a-day mode, thresholds, season radar), notifications held back until their time, and display preferences (calm mode, plain look, palette, text size, panel order and fold state, profiles, the tour-seen flag)</td><td><code>chrome.storage.sync</code> / <code>chrome.storage.local</code></td><td>So the extension behaves the way you asked and notifications arrive when you wanted them</td></tr>
           <tr><td>The address of your own webhook, and whether it is switched on</td><td><code>chrome.storage.local</code></td><td>Only if you set one up (3.7). It is a secret: it is <strong>never</strong> written to a backup, an export or the sync file, and is ignored if found in one</td></tr>
@@ -158,9 +161,12 @@
     </p>
     <p>
       The <strong>address-bar keyword</strong> (<code>gog</code>) searches the
-      same local data and sends it nowhere. The <strong>calendar (.ics) and
-      Markdown exports</strong> are built on your device and saved as files you
-      download.
+      same local data and sends it nowhere. The <strong>calendar (.ics) files</strong>
+      (refund deadlines, and the release dates of wishlisted games), the
+      <strong>Markdown, Obsidian (.zip) and CSV exports</strong>, the <strong>weekly digest
+      saved as a web page</strong> and the <strong>Wrapped, collector and wishlist
+      cards saved as PNG</strong> are all built on your device and saved as files you
+      download; nothing is uploaded to make them.
     </p>
     <p>
       You can wipe all of this at any time from the <strong>Advanced Settings</strong>
@@ -338,6 +344,7 @@
     <div class="footer-links">
       <a href="https://github.com/DrummingBird1/GOGEnhancer" target="_blank" rel="noopener">GitHub</a>
       <a href="https://github.com/DrummingBird1/GOGEnhancer/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="guide.html">Guide</a>
       <a href="changelog.html">Changelog</a>
       <a href="privacy.html">Privacy Policy</a>
       <a href="https://github.com/DrummingBird1/GOGEnhancer/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>

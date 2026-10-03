@@ -9,7 +9,9 @@
     "coverage": "vitest run --coverage",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.pages-popup.json && tsc --noEmit -p tsconfig.pages-onboarding.json && tsc --noEmit -p tsconfig.pages-options.json",
-    "e2e": "node e2e/extension.e2e.mjs"
+    "e2e": "node e2e/extension.e2e.mjs",
+    "build:firefox": "node scripts/build-firefox.mjs",
+    "lint:firefox": "node scripts/build-firefox.mjs --no-zip && npx --yes web-ext@latest lint -s dist/firefox"
   },
   "devDependencies": {
     "@types/chrome": "^0.2.6",

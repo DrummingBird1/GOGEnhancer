@@ -15,6 +15,8 @@
   let keysBound = false;
 
   const slides = () => Array.from($$(".slide"));
+  /** Text the tour writes itself, in the page's language — see lib/i18n-pages.js. */
+  const tx = (/** @type {string} */ s) => window.GOGPlusPageI18n?.tx(s) ?? s;
 
   function show(i) {
     const all = slides();
@@ -27,7 +29,7 @@
       d.setAttribute("aria-selected", String(n === index));
     });
     $("tourPrev").disabled = index === 0;
-    $("tourNext").textContent = index === all.length - 1 ? "Done" : "Next";
+    $("tourNext").textContent = tx(index === all.length - 1 ? "Done" : "Next");
   }
 
   function next() {
@@ -65,7 +67,7 @@
       d.type = "button";
       d.className = "tour-dot";
       d.setAttribute("role", "tab");
-      d.setAttribute("aria-label", `Slide ${n + 1}`);
+      d.setAttribute("aria-label", tx(`Slide ${n + 1}`));
       d.addEventListener("click", () => show(n));
       dots.appendChild(d);
     });
@@ -86,6 +88,16 @@
     show(0);
   }
 
-  window.GOGPlusTour = { show, next, checkSite, init, get index() { return index; } };
-  document.addEventListener("DOMContentLoaded", init, { once: true });
+  /** Builds the tour, then puts it in the language chosen under Advanced Options. */
+  async function boot() {
+    init();
+    const { uiLanguage } = (await window.GOGPlusStorage?.get({ uiLanguage: "en" })) || {};
+    if (uiLanguage && uiLanguage !== "en") {
+      window.GOGPlusI18n?.apply(uiLanguage);
+      show(index); // the buttons' own text was written before the language was known
+    }
+  }
+
+  window.GOGPlusTour = { show, next, checkSite, init, boot, get index() { return index; } };
+  document.addEventListener("DOMContentLoaded", boot, { once: true });
 })();

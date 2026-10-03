@@ -14,11 +14,12 @@ const PAGES = {
   options: { html: "options/options.html", files: ["common", "options", "options-messages"] },
   popup: { html: "popup/popup.html", files: ["common", "popup"] },
   onboarding: { html: "onboarding/onboarding.html", files: ["common", "onboarding"] },
+  tour: { html: "tour/tour.html", files: ["common", "options-messages", "tour"] },
 };
 
 /** What a page may show without a row: names, codes, addresses, numbers and sizes. */
 const TECHNICAL = new Set([
-  "GOG Enhancer", "v4.0.0", "v2.4", "ILS", "EUR", "GBP", "PLN", "RUB", "USD", "zł", "₪ ILS", "€ EUR", "£ GBP", "₽ RUB", "zł PLN", "$ USD",
+  "GOG Enhancer", "GOG Enhancer 4", "v4.0.0", "v2.4", "ILS", "EUR", "GBP", "PLN", "RUB", "USD", "zł", "₪ ILS", "€ EUR", "£ GBP", "₽ RUB", "zł PLN", "$ USD",
   "1 USD =", "frankfurter.app", "api.frankfurter.app", "www.gog.com", "www.cheapshark.com", "api.gog.com", "catalog.gog.com", "gog.com",
   "Ko-fi", "☕ Ko-fi", "Patreon", "💜 Patreon", "https://discord.com/api/webhooks/…", "Windows 11", "Ryzen 5 5600", "RTX 3060", "Hebrew, English",
   "J", "K", "T", "?", "Alt", "G", "H", "Shift", "English", "עברית (Hebrew)", "Русский (Russian)", "Polski (Polish)", "Deutsch (German)", "Français (French)", "Español (Spanish)",
@@ -49,7 +50,7 @@ describe("the shipped rows", () => {
     delete window.GOGPlusPageI18n;
     await import("../extension/lib/i18n-pages.js");
     const names = readdirSync(resolve(EXT, "lib")).flatMap((n) => /^i18n-pages-(.+)\.js$/.exec(n)?.[1] ?? []);
-    expect(names.length).toBeGreaterThanOrEqual(7);
+    expect(names.length).toBeGreaterThanOrEqual(8);
     for (const n of names) await import(`../extension/lib/i18n-pages-${n}.js`);
     rows = window.GOGPlusPageI18n.rows();
   });

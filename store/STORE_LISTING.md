@@ -147,10 +147,29 @@ code.
   Type gog, press Tab, then a game name, tag:rpg or status:backlog.
 
 ▸ Exports and small conveniences
-  A refund-deadline calendar (.ics) and a Markdown export (Obsidian,
-  Notion…) from the tag dashboard, optional J / K / T keyboard navigation
-  on game grids (and W / N / A on a game page), and a RAM-only system
-  check on game pages.
+  A refund-deadline calendar (.ics), a release-date calendar for the games
+  on your wishlist, Markdown / Obsidian / CSV exports, a wishlist card and
+  a weekly digest you can save as a PNG or a web page — all made on your
+  device. Optional J / K / T keyboard navigation on game grids (and
+  W / N / A on a game page), and a RAM-only system check on game pages.
+
+▸ Seven interface languages
+  The tag dashboard, Advanced Options, popup and first-run wizard come in
+  English, Hebrew (right-to-left), Russian, Polish, German, French and
+  Spanish. What you wrote yourself — tag names, notes — is never translated.
+
+▸ See exactly what it does
+  A privacy dashboard in Advanced Options lists every address the extension
+  contacted and everything it keeps on your device, and a test fails the
+  build if a permission or address ever changes without this policy
+  saying so. If a feature stops working after a gog.com change, the popup
+  offers a one-click report with no web addresses and no personal data.
+
+▸ Achievements, streaks and challenges
+  36 local achievements in three tiers (a few hidden), a streak of days
+  you've browsed, and three monthly challenges. The dashboard works from
+  the keyboard too: a skip link, tags reordered with Alt + arrow keys,
+  menus and dialogs that hold focus and announce changes to screen readers.
 
 ▸ Smarter prices and a smarter wishlist
   "Is this discount real?" compares the base price with GOG's own
@@ -160,7 +179,9 @@ code.
   low, converted price), "near the low" / "ending soon" filters, a live
   total and exports. The catalog gets a tools bar: dim or hide games you
   own, "not interested", local sort, density, saved filters, side-by-side
-  comparison.
+  comparison, and optional endless scrolling (off by default). A pack's
+  page shows what it really contains and warns when it overlaps games you
+  already own.
 
 ▸ Learns your library as you browse — nothing is fetched
   The extension remembers which games gog.com itself marks "IN LIBRARY" on
@@ -201,14 +222,16 @@ code.
 
 ▸ Privacy-first
   No analytics, no third-party tracking, no Google Fonts, no remote code.
-  All your tags, notes, and history stay on your device. Three outbound
+  All your tags, notes, and history stay on your device. Five outbound
   destinations only: exchange rates from frankfurter.app, the public GOG
   mods catalog, GOG's own product API (api.gog.com — once per game page, to
-  see what a pack contains; toggleable) and catalog API (catalog.gog.com —
-  only if you turn on endless scrolling), and (optionally, on by default,
-  toggleable) game-title lookups against CheapShark's keyless deals API for
-  the price comparison table. None of these send cookies or account
-  information, and a list of every request is shown in Advanced Options. Desktop
+  see what a pack contains; toggleable), GOG's own catalog API
+  (catalog.gog.com — only if you turn on endless scrolling), and
+  (optionally, on by default, toggleable) game-title lookups against
+  CheapShark's keyless deals API for the price comparison table. None of
+  these send cookies, a referrer or account information, and every request
+  is listed in Advanced Options (Privacy & transparency) next to what the
+  extension keeps on your device. Desktop
   notifications (if you enable them) use the local chrome.notifications
   API — nothing transmitted. The only other possible destination is a
   webhook address you enter yourself (off by default; the browser asks you
@@ -301,9 +324,23 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   החיפוש בלוח התגיות קיבלה בורר סינון גלוי + אופרטור genre:, ומשחקים
   יכולים כעת לשאת תמונה מצורפת לצד ההערה.
 
-▸ Achievements
-  סט קטן ומקומי לגמרי של תגי הישג בלוח התגיות — אבני דרך של תיוג, מעקב,
-  כתיבת הערות והוצאות נפתחות תוך כדי שימוש בתוסף, עם toast כשנפתח חדש.
+▸ הישגים, רצפים ואתגרים
+  36 הישגים מקומיים לגמרי בשלוש דרגות (כמה מהם מוסתרים עד שמרוויחים
+  אותם), רצף של ימי גלישה ושלושה אתגרים חודשיים — עם toast כשנפתח משהו
+  חדש. לוח התגיות עובד גם מהמקלדת: קישור דילוג, סידור תגיות מחדש עם
+  Alt וחצים, ותפריטים ודיאלוגים שתופסים פוקוס ומכריזים על שינויים לקורא
+  מסך.
+
+▸ שבע שפות ממשק
+  לוח התגיות, ההגדרות המתקדמות, החלון הקופץ ואשף ההתקנה זמינים באנגלית,
+  עברית (מימין לשמאל), רוסית, פולנית, גרמנית, צרפתית וספרדית. מה שכתבתם
+  בעצמכם — שמות תגיות והערות — אף פעם לא מתורגם.
+
+▸ רואים בדיוק מה התוסף עושה
+  לוח פרטיות בהגדרות המתקדמות מציג כל כתובת שהתוסף פנה אליה וכל מה שהוא
+  שומר במכשיר שלכם, ובדיקה גורמת לבנייה להיכשל אם הרשאה או כתובת משתנות
+  בלי שמדיניות הפרטיות אומרת זאת. אם תכונה מפסיקה לעבוד אחרי שינוי ב-gog.com,
+  החלון הקופץ מציע דוח בלחיצה אחת — בלי כתובות אינטרנט ובלי מידע אישי.
 
 ▸ נבנה להמשיך לעבוד כשהאתר משתנה
   כל חיפוש של מבנה הדף של GOG עובר דרך מתאם אחד שמנסה כמה אסטרטגיות,
@@ -323,9 +360,11 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   הקלידו gog, לחצו Tab, ואז שם משחק, tag:rpg או status:backlog.
 
 ▸ ייצוא ושיפורי נוחות קטנים
-  לוח שנה של מועדי refund‏ (.ics) וייצוא Markdown (Obsidian, Notion…) מלוח
-  התגיות, ניווט מקלדת אופציונלי J / K / T ברשימות משחקים (ו-W / N / A בעמוד
-  משחק), ובדיקת מערכת של RAM בלבד בעמוד משחק.
+  לוח שנה של מועדי refund‏ (.ics), לוח שנה של תאריכי יציאה למשחקים
+  שב-wishlist, ייצוא Markdown / Obsidian / CSV, כרטיס wishlist ודייג'סט
+  שבועי שאפשר לשמור כ-PNG או כדף אינטרנט — הכול נוצר במכשיר שלכם. ניווט
+  מקלדת אופציונלי J / K / T ברשימות משחקים (ו-W / N / A בעמוד משחק),
+  ובדיקת מערכת של RAM בלבד בעמוד משחק.
 
 ▸ מחירים חכמים ו-wishlist חכם
   "האם ההנחה אמיתית?" משווה את מחיר הבסיס ל"המחיר הנמוך ב-30 הימים
@@ -333,8 +372,10 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   לשעת משחק, המחיר בכמה מטבעות, קצב מבצעים לכל משחק וגרף השוואה. ל-wishlist
   נוספים מיון (הנחה, מרחק מהשפל, מחיר מומר), מסננים "קרוב לשפל" ו"נגמר
   בקרוב", סכום חי וייצוא. לקטלוג נוסף סרגל כלים: עמעום או הסתרה של
-  משחקים שבבעלותכם, "לא מעניין", מיון מקומי, צפיפות, פילטרים שמורים
-  והשוואה צד-לצד.
+  משחקים שבבעלותכם, "לא מעניין", מיון מקומי, צפיפות, פילטרים שמורים,
+  השוואה צד-לצד וגלילה אינסופית אופציונלית (כבויה כברירת מחדל). בעמוד של
+  חבילה רואים מה היא באמת מכילה, ומקבלים אזהרה כשהיא חופפת למשחקים
+  שכבר יש לכם.
 
 ▸ לומד את הספרייה שלכם תוך כדי גלישה — בלי להביא כלום
   התוסף זוכר אילו משחקים gog.com עצמה מסמנת "IN LIBRARY" בדפים שפתחתם,
@@ -371,10 +412,14 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
 
 ▸ פרטיות לפני הכל
   שום analytics, שום tracking, שום Google Fonts, שום קוד מרוחק. תגיות,
-  הערות, היסטוריה — הכל נשאר אצלך. שלושה יעדים חיצוניים בלבד: שערי מטבע
-  מ-frankfurter.app, קטלוג mods פומבי של GOG, ו(אופציונלי, ברירת מחדל
-  פעיל, ניתן לכיבוי) בדיקת שם משחק מול ה-API החינמי של CheapShark
-  לטבלת ההשוואה. אף אחד מהם לא שולח cookies או פרטי חשבון. desktop
+  הערות, היסטוריה — הכל נשאר אצלך. חמישה יעדים חיצוניים בלבד: שערי מטבע
+  מ-frankfurter.app, קטלוג mods פומבי של GOG, ה-API של המוצרים של GOG עצמה
+  (api.gog.com — פעם אחת בכל דף משחק, כדי לראות מה חבילה מכילה; ניתן
+  לכיבוי), ה-API של הקטלוג של GOG עצמה (catalog.gog.com — רק אם מפעילים
+  גלילה אינסופית), ו(אופציונלי, ברירת מחדל פעיל, ניתן לכיבוי) בדיקת שם
+  משחק מול ה-API החינמי של CheapShark לטבלת ההשוואה. אף אחד מהם לא שולח
+  cookies, referrer או פרטי חשבון, וכל בקשה מופיעה בהגדרות המתקדמות
+  (פרטיות ושקיפות) לצד מה שהתוסף שומר במכשיר שלכם. desktop
   notifications (אם מפעילים) משתמשות ב-chrome.notifications המקומי —
   שום מידע יוצא. היעד האפשרי היחיד הנוסף הוא כתובת webhook שתקלידו
   בעצמכם (כבוי כברירת מחדל; הדפדפן ישאל אם לאשר את המקור הבודד הזה; רק
