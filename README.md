@@ -48,6 +48,8 @@ An unofficial third-party extension for GOG.com — live currency conversion, pr
 - **System fonts only** — zero dependency on Google Fonts. No external network request except the currency-rate API.
 - **One site adapter** (`content/gog-dom.js`) — every lookup of gog.com's markup (cards, prices, title, panel position) tries several strategies, so a redesign degrades gracefully instead of silently breaking features. "Check this page" in Advanced Options shows which lookups still work.
 - **Focused `MutationObserver`** on the page content with debouncing; header churn is filtered out and a replaced `<main>` is picked up.
+- **Each feature runs in isolation** — if one lookup breaks after a site change, that feature switches off and the rest keep working; "Check this page" lists what failed.
+- **Learns only from pages you open** — ownership, ratings, languages and price facts are read from pages you visit yourself and stored locally. The extension fetches nothing extra to build them.
 
 ### Features
 - 💱 **Live currency rates** — fetched automatically from `api.frankfurter.app` every 12 hours. Editable manually.
@@ -68,7 +70,25 @@ An unofficial third-party extension for GOG.com — live currency conversion, pr
 - 🎨 **Native theme** — samples gog.com's own colors and font so injected UI blends in with whatever the site looks like.
 - ⌨️ **Keyboard navigation** (opt-in) — `J`/`K` move between games on a listing, `T` tags the focused one.
 - 📅 **Refund-deadline calendar (`.ics`)** and 📝 **Markdown export** (Obsidian, Notion…) from the tag dashboard.
-- 🖥️ **System check** on game pages — compares a game's RAM requirement with what your browser reports (RAM only; browsers can't see your CPU or GPU).
+- 🖥️ **System check** on game pages — compares a game's RAM requirement with what your browser reports (RAM only; browsers can't see your CPU or GPU). Type your own OS / processor / graphics card in Advanced Options and those are compared as plain text — an estimate.
+
+#### Deals & pricing (v4)
+- 💸 **"Is this discount real?"** — compares the base price with GOG's own lowest-in-30-days and your tracked history; ⏳ **offer countdown** on the game page, on cards and in the digest.
+- **Price per hour of play**, **price in several currencies** at once, a per-game **sale rhythm**, a **comparison chart** for 2–3 games, **"how much I saved"** totals, and national **VAT presets** (DE, FR, ES, IT, NL, RU).
+
+#### Wishlist & catalog (v4)
+- 💖 **Smart wishlist** — sort by discount / distance from the low / converted price / date added, "near the low" and "ending soon" filters, a live total, grouping by tag or status, export to CSV / Markdown / `.ics`.
+- 🗂️ **Catalog tools** — a bar above the grid: dim or hide games you own, **not interested** (restorable), local sort of the page, compact / list density, saved filter presets, bulk tag/track, side-by-side comparison.
+
+#### Game page & library (v4)
+- 🎮 **Language check**, **what changed since your last visit**, review filter, **similar games you own**, a pack-overlap heads-up (heuristic), "open in" links to Steam / IsThereAnyDeal / PCGamingWiki, and the `W` / `N` / `A` shortcuts.
+- 📚 **Learns your library as you browse** (from the site's own "IN LIBRARY" label), which powers hide-owned, real library statistics, a weighted backlog roulette, a monthly "games to finish" goal, and **Wrapped / collector cards** you can save as PNG.
+- 📝 **Note version history**, an **Obsidian vault** export (`.zip`), and CSV / line exports for **Notion, Google Sheets and Trello**.
+
+#### Sync, notifications & look (v4)
+- 🔄 **Automatic folder sync** (dashboard open + every 30 minutes, when the browser still remembers the folder permission and the file isn't passphrase-encrypted), a conflicts list, and dated backups kept in the folder.
+- 🔔 **Quiet hours**, a **one-summary-a-day** mode, thresholds, **alerts by tag**, an optional **season radar**, a richer weekly digest — and an optional **webhook to an address you own** (see the permissions table).
+- 🎨 **Fold / dock / reorder** the game panel, **calm mode**, a one-click **plain look**, colour-vision palettes, text-size scaling, settings profiles, and a short **tour** after the update.
 
 ### Visual upgrade module
 Enabled via the "Design injection" toggle in the popup. When on:
@@ -86,6 +106,7 @@ Enabled via the "Design injection" toggle in the popup. When on:
   2. `api.frankfurter.app` — for currency rates (no API key, no tracking).
   3. `www.cheapshark.com` — the optional price-comparison table on game pages (free, keyless; turn it off in the popup).
 - **Folder sync makes no network request of its own** — it reads and writes one file in a folder you pick; your own cloud client does any uploading.
+- **The webhook is optional and yours** — nothing is requested at install. If you type your own `https://` address in Advanced Options, the browser asks you once to allow that single origin; only the notification text is sent to it, and the address never leaves your device through exports or sync.
 - **Zero analytics, zero gtag, zero Google Fonts.**
 - **Tags, notes, and history live on your device** via `chrome.storage.local`. Nothing leaves it.
 - **Open source** — every line of code is in this repository.
@@ -122,6 +143,7 @@ Enabled via the "Design injection" toggle in the popup. When on:
 | `Alt+Shift+H` | Toggle Hebrew translations |
 | `Ctrl/Cmd+K` (on gog.com) | Open the command palette |
 | `J` / `K` / `T` (on game grids, opt-in) | Previous/next game, tag the focused game |
+| `W` / `N` / `A` (on a game page, opt-in) | Add to wishlist, open the note, set a price alert |
 | `gog` + `Tab` (address bar) | Search your own library |
 
 Shortcuts can be changed at `chrome://extensions/shortcuts`.
@@ -139,6 +161,7 @@ Shortcuts can be changed at `chrome://extensions/shortcuts`.
 | Host: `www.gog.com` | Inject UI into GOG pages |
 | Host: `api.frankfurter.app` | Fetch currency rates |
 | Host: `www.cheapshark.com` | Optional cross-store price comparison on game pages |
+| Optional host: any `https://` origin | **Never granted at install.** Requested at runtime, for one origin only, if you enter your own webhook address in Advanced Options; only notification text is sent to it |
 
 No permission is needed for folder sync (you grant one folder at a time, from a click) or for the address-bar keyword.
 
@@ -147,7 +170,9 @@ No permission is needed for folder sync (you grant one folder at a time, from a 
 ## 🛠️ Known limitations
 
 - **Redesign adaptation was checked against the live site, but gog.com keeps changing** — the home page, catalog and game page were inspected and exercised end to end (logged out) on 2026-10-02; account pages (wishlist, library, cart) need a login and were only inspected structurally. The site currently mixes two generations of markup, so expect more churn. Use *Advanced Options → Check this page* if something stops working after a gog.com update.
-- **Folder sync resolves conflicts by each device's clock** — last edit wins per record, so badly skewed clocks can pick the wrong winner. It needs the File System Access API (Chrome, Edge, Brave; not Firefox), and folder access has to be re-granted from the options page now and then.
+- **Folder sync resolves conflicts by each device's clock** — last edit wins per record (the overwritten records are listed on the options page), so badly skewed clocks can pick the wrong winner. It needs the File System Access API (Chrome, Edge, Brave; not Firefox), and folder access has to be re-granted from the options page now and then. The background job can't ask for permission or a passphrase, so it silently skips until you open the dashboard when either is missing. It has been tested against a local folder, not against a real cloud-sync client.
+- **Not everything in v4 could be verified against the real site** — features that depend on being logged in (wishlist rows, library ownership, the "pack overlap" heads-up) were built from recorded page *structure* and unit/end-to-end tests, not exercised with a live account. The webhook has not been tried against a live endpoint, and Firefox is untested.
+- **Not built:** infinite scrolling on the catalog (the site replaces its tiles on every page change and a reliable version would need a new network host), release-date calendar entries (the wishlist only exposes a year), a wishlist share card, and a downloadable HTML digest.
 - **Mods list scraping** — depends on `gog.com/en/mods` keeping a similar structure. If it regresses, force-refresh via Advanced Options.
 - **Wishlist badge counter** — based on a live DOM count taken when you visit `/account/wishlist` (24h TTL). If you haven't visited recently, the badge stays empty until your next visit — the extension icon's tooltip will suggest visiting.
 - **Refund timer relies on a manually entered date** — GOG doesn't expose a purchase date through any public DOM, so the 30-day countdown depends on a date you type into the panel. No date typed, no countdown.

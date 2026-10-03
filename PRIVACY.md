@@ -1,6 +1,6 @@
 # Privacy Policy — GOG Enhancer
 
-**Last updated:** October 2, 2026
+**Last updated:** October 3, 2026
 **Extension version:** 4.0.0+
 **Contact:** https://github.com/DrummingBird1/GOGEnhancer/issues
 
@@ -25,7 +25,9 @@ requests, all to public unauthenticated endpoints, all of which transmit
 `api.frankfurter.app`, (b) a periodic read of the public GOG mods page at
 `gog.com/en/mods`, and (c), if you leave the "Price comparison table" feature
 on, a per-game title search against `cheapshark.com`'s public deals API when
-you open a game page.
+you open a game page. One further request exists only if *you* set it up: an
+optional webhook to an `https://` address that you type yourself (section 3.7);
+it is off, and has no permission, until you do.
 
 ---
 
@@ -52,8 +54,17 @@ extension:
 | One optional photo you attach to a game's note in the tag dashboard | `IndexedDB` (a separate local database, not `chrome.storage`) | Images are downscaled on your device before saving; `chrome.storage`'s ~5&nbsp;MB total quota is too small for photos, so this uses its own local storage bucket instead. Still never leaves your device, and "Reset everything" deletes it too (best-effort — instantly if no other GOG Enhancer tab is open, otherwise once you close the others) |
 | Per-record "last edited" timestamps for tags, notes, status, purchases and alerts | `chrome.storage.local` | Only used to merge changes correctly if you turn on folder sync (below); stamped locally, never sent anywhere by this extension |
 | A browser-held reference to the sync folder you picked, its display name, and when you last synced | `IndexedDB` (the reference) and `chrome.storage.local` (name, time) | So you don't have to pick the folder again each time. The reference is only usable by this extension, and only for the one folder you chose |
+| Which games the site showed you as **already in your library** (a list of game slugs and the date first seen) | `chrome.storage.local` | Read from the "IN LIBRARY" label and owned status that gog.com itself displays on pages **you** open — see the note below. Powers hiding owned games, library statistics and the language / "similar games you own" features |
+| Facts a game page states when you open it: ratings, languages, time to beat, tags, release year, the price shown and when its offer ends (for up to 800 games), plus the previous visit's price and rating | `chrome.storage.local` | To show "what changed since your last visit", the language check and the offer countdown without fetching anything |
+| Games you marked "not interested", saved catalog filter presets, price-drop rules by tag, status-change dates, a monthly "games to finish" goal, and earlier versions of your notes | `chrome.storage.local` | Your own library tools, kept on this device |
+| Your computer description if you choose to type one (operating system, processor, graphics card) | `chrome.storage.local` | Compared as plain text with a game's requirements; never read from your machine automatically and never sent anywhere |
+| Notification rules (quiet hours, a one-summary-a-day mode, thresholds, season radar), notifications held back until their time, and display preferences (calm mode, plain look, palette, text size, panel order and fold state, profiles, the tour-seen flag) | `chrome.storage.sync` / `chrome.storage.local` | So the extension behaves the way you asked and notifications arrive when you wanted them |
+| The address of your own webhook, and whether it is switched on | `chrome.storage.local` | Only if you set one up (3.7). It is a secret: it is **never** written to a backup, an export or the sync file, and is ignored if found in one |
+| Which conflicts the last folder sync had to resolve, the timestamps it compared them to, and whether auto-sync and dated backups are switched on | `chrome.storage.local` | So the options page can tell you what was overwritten. Per-browser: never exported or synced |
 
-**Folder sync (optional, off until you pick a folder).** If you choose a sync folder, the extension reads and writes one file in it, `gog-enhancer-sync.json`, containing your tags, notes, play status, purchase dates and prices, price alerts and price history. That file is **in a folder you control**: if that folder is inside Dropbox, OneDrive, Google Drive or similar, that service's own policy then applies to the file. GOG Enhancer itself makes no network request for this and never receives the file. You can encrypt it with a passphrase (AES-256-GCM, on-device; the passphrase is never stored). Without a folder chosen, nothing is written outside the browser.
+**What "already in your library" means.** GOG Enhancer does **not** log in to your GOG account, call GOG's account API or read your order history. gog.com itself marks games you own ("IN LIBRARY") on the pages it shows you. The extension notices that mark while you browse and remembers it locally, so it can hide or dim games you own. It is never sent anywhere by this extension, it is not transmitted to CheapShark or to a webhook, and catalog pages can only ever *add* to it (a tile without the mark might just mean you are logged out); a refunded game is removed only when you open its own page while logged in. "Reset everything" deletes it.
+
+**Folder sync (optional, off until you pick a folder).** If you choose a sync folder, the extension reads and writes one file in it, `gog-enhancer-sync.json`, containing your tags, notes, play status, purchase dates and prices, price alerts and price history (and, if you enable them, dated backup copies of your data in the same folder). It can do so automatically — when you open the tag dashboard and every 30 minutes in the background — but only while your browser still remembers the permission you gave for that folder, and only if the file isn't passphrase-encrypted (the extension never stores your passphrase). Otherwise it waits until you press "Sync now". That file is **in a folder you control**: if that folder is inside Dropbox, OneDrive, Google Drive or similar, that service's own policy then applies to the file. GOG Enhancer itself makes no network request for this and never receives the file. You can encrypt it with a passphrase (AES-256-GCM, on-device; the passphrase is never stored). Without a folder chosen, nothing is written outside the browser.
 
 The **address-bar keyword** (`gog`) searches the same local data and sends it nowhere. The **calendar (.ics) and Markdown exports** are built on your device and saved as files you download.
 
@@ -71,10 +82,12 @@ of this extension.
 
 ## 3. Background jobs and network requests
 
-The extension runs four background jobs on a schedule. Two make network
+The extension runs several background jobs on a schedule. Two make network
 requests (to two destinations only — both public, both unauthenticated);
-the other two are entirely local. A fifth, non-scheduled request happens
-directly from the game-page content script itself — see 3.3 below.
+the others are entirely local (the notification-delivery job, the 30-minute
+folder auto-sync and the weekly digest included). A further, non-scheduled
+request happens directly from the game-page content script itself — see 3.3
+below — and one more exists only if you set up your own webhook (3.7).
 
 ### 3.1 `api.frankfurter.app` — currency exchange rates
 
@@ -114,6 +127,14 @@ directly from the game-page content script itself — see 3.3 below.
 
 - **What happens:** Only when you press "Sync now" on the options page, the extension reads `gog-enhancer-sync.json` from the folder you picked, merges it with your local data, and writes back whichever side changed. Folder access is granted by you through the browser's own folder picker, one folder at a time, and can be revoked in the browser or by pressing "Stop syncing".
 - **Why it's not a network request:** Everything happens against files on your own disk. If your folder is synced by a cloud client, that client — not this extension — does the uploading.
+- **Automatic runs (since v4):** if you switch on "Sync automatically", the same read-merge-write also runs when you open the tag dashboard and every 30 minutes in the background, and "Keep dated backups" additionally writes timestamped copies into the same folder (keeping the number you choose). The background run cannot show a permission prompt or ask for a passphrase, so it simply does nothing when either is needed.
+
+### 3.7 Your own webhook — *optional, off by default, requires your approval*
+
+- **What happens:** If you enable "Also send notifications to my own webhook" in Advanced Options and type an `https://` address (a Discord webhook, an IFTTT/Zapier hook, your own server…), the extension sends each notification — in addition to, or instead of, the on-screen one, depending on whether you also enabled desktop notifications — to that address as a small JSON `POST` (no cookies, no referrer).
+- **What is sent:** Only the notification's title and text (for example "A Witcher game dropped 40%"). Not your library, not your tags or notes, not your settings, not an identifier.
+- **Permission:** Nothing is requested at install. When you save the address, the browser asks you — once — to allow access to **that one origin** (this is the manifest's `optional_host_permissions`; it is never granted in advance, and you can revoke it in the browser at any time). The address is stored only on this device and is never included in a backup, an export or the sync file.
+- **Who receives it:** Whoever runs the address you typed. That service's own policy applies; GOG Enhancer has no say in, and no visibility of, what it does with the text. A "Send a test" button in the same place sends a fixed test message.
 
 ---
 
@@ -129,7 +150,9 @@ directly from the game-page content script itself — see 3.3 below.
 | Host permission for `https://api.frankfurter.app/*` | To fetch currency exchange rates |
 | Host permission for `https://www.cheapshark.com/*` | To fetch the cross-store price comparison table shown on game pages (opt-out toggle in the popup) |
 
-Folder sync and the address-bar keyword need **no additional permission**: folder access is granted per folder by you through the browser's folder picker, and the omnibox keyword is declared in the manifest without a permission.
+| Optional host permission for `https://*/*` | **Optional and never granted at install.** Declared as `optional_host_permissions` so that, *only if you enter your own webhook address*, the browser can ask you to allow that single origin. Without it nothing can be sent anywhere new. |
+
+Folder sync (including its automatic and backup modes) and the address-bar keyword need **no additional permission**: folder access is granted per folder by you through the browser's folder picker, and the omnibox keyword is declared in the manifest without a permission.
 
 We do not request any other permissions. In particular we do not request
 `tabs` (full tab access), `webRequest` (network interception), `cookies`
@@ -145,10 +168,12 @@ We do not request any other permissions. In particular we do not request
   highlight or hide products.
 - We do **not** load any code from a remote source. All JavaScript that runs
   is shipped inside the extension and reviewed by Chrome at install time.
-- We do **not** read your GOG account information, your purchase history,
-  your library, your payment methods, or your messages.
-- We do **not** track which games you view, search for, or wishlist on
-  any server.
+- We do **not** log in to, call or scrape your GOG account: no order history,
+  no payment methods, no messages. The only library information the extension
+  holds is the "already in your library" marks that gog.com itself shows on
+  pages you open, remembered **on your device** (see section 2).
+- We do **not** send which games you view, search for, own or wishlist to any
+  server — including the optional webhook, which receives notification text only.
 - We do **not** receive your synced library: the sync file lives only in a folder you chose, and we have no server it could be sent to.
 - We do **not** sell, trade, or rent data, because we have no data to sell.
 - We do **not** load any third-party fonts (no Google Fonts requests).

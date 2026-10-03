@@ -131,7 +131,7 @@
 
     <div class="cl-entry is-current">
       <div class="cl-version-row"><span class="cl-version">v4.0.0</span><span class="cl-badge-current">Current</span></div>
-      <p class="cl-title">Built to survive a redesign — plus folder sync, an address-bar library search, and a Native theme</p>
+      <p class="cl-title">Built to survive a redesign — plus smarter prices, a smart wishlist and catalog, library knowledge, automatic folder sync, calmer notifications and a calmer look</p>
       <h4>Resilience to site changes</h4>
       <ul>
         <li>🔧 <strong>Fixes what the redesign had broken</strong>, found by inspecting the live site: game-page prices — which GOG now prints with CSS, leaving a bare <code>2.99</code> in the page text — are converted again and recorded in your price history (the page's currency is read from the class it puts on <code>&lt;body&gt;</code>); the game's genre is read from the site's own genre element again; cover badges appear on the new catalog's full-width tile covers; and the DRM-free banner sits at the bottom edge instead of covering the site's fixed header.</li>
@@ -152,13 +152,50 @@
       </ul>
       <h4>Convenience</h4>
       <ul>
-        <li>⌨️ <strong>Keyboard navigation</strong> on game grids — <kbd>J</kbd>/<kbd>K</kbd> move between games, <kbd>T</kbd> tags the focused one. Off by default; never acts while you're typing.</li>
-        <li>🖥️ <strong>System check</strong> on game pages compares the RAM requirement with what your browser reports. RAM only — browsers can't see your CPU, GPU or disk, and round the figure.</li>
+        <li>⌨️ <strong>Keyboard navigation</strong> — <kbd>J</kbd>/<kbd>K</kbd> move between games on a grid and <kbd>T</kbd> tags the focused one; on a game page <kbd>W</kbd> adds it to your wishlist, <kbd>N</kbd> opens its note and <kbd>A</kbd> sets a price alert. Off by default; never acts while you're typing.</li>
+        <li>🖥️ <strong>System check</strong> on game pages compares the RAM requirement with what your browser reports. RAM only — browsers can't see your CPU, GPU or disk, and round the figure. If you type your own OS / processor / graphics card in Advanced Options, those are compared <em>as plain text</em> — an estimate, never a guarantee.</li>
+      </ul>
+      <h4>Deals &amp; pricing</h4>
+      <ul>
+        <li>💸 <strong>"Is this discount real?"</strong> compares the struck-through base price with GOG's own "lowest price in the last 30 days" and with your tracked history, and says so when the base price looks inflated.</li>
+        <li>⏳ <strong>Offer countdown</strong> read from the offer's own end date — on the game page, as a badge on cards, and in the weekly digest.</li>
+        <li><strong>Price per hour of play</strong> (from the time-to-beat GOG already shows), the <strong>price in several currencies</strong> at once, a per-game <strong>sale rhythm</strong> (how often it drops, how deep, when the next one is likely), a <strong>comparison chart</strong> for 2–3 games, and <strong>"how much I saved"</strong> totals.</li>
+        <li>National <strong>VAT presets</strong> for Germany, France, Spain, Italy, the Netherlands and Russia, next to the existing ones.</li>
+      </ul>
+      <h4>Wishlist &amp; catalog</h4>
+      <ul>
+        <li>💖 <strong>Smart wishlist</strong> — sort by discount, distance from the tracked low, converted price or date added; filters for "near the low" and "ending soon"; a live total in the page header; grouping by tag or play status; and export to CSV, Markdown or <code>.ics</code>.</li>
+        <li>🗂️ <strong>Catalog tools</strong> — a bar above the grid: dim or hide games you already own, mark games <em>not interested</em> (hidden, with a restore switch), sort the 48 tiles on the page locally, compact or list density, saved filter presets (also in the command palette), select several tiles to tag or track at once, and a side-by-side comparison.</li>
+        <li>Not included: infinite scrolling. The site replaces its tiles on every page change, so a reliable version would need to call GOG's catalog API directly — a new network host the extension deliberately doesn't have.</li>
+      </ul>
+      <h4>Game page &amp; library</h4>
+      <ul>
+        <li>🎮 <strong>Language check</strong> against the languages you care about, <strong>what changed since your last visit</strong> (price, rating, review count), a <strong>review filter</strong>, <strong>similar games you own</strong>, review-score summary, tag suggestions that also use GOG's own tags, and "open in" links to Steam, IsThereAnyDeal and PCGamingWiki — plain links, no requests.</li>
+        <li>⚠️ <strong>Pack overlap heads-up</strong> when a bundle contains games you already own. This is a heuristic: GOG's "bought together" block was empty on every page inspected, so how it behaves on real bundles is unverified.</li>
+        <li>📚 <strong>Learns your library as you browse</strong> — the site's own "IN LIBRARY" label on tiles and the owned status on game and wishlist pages are remembered locally; nothing is fetched. A refund is noticed only on a logged-in game page.</li>
+        <li>🎲 <strong>Weighted backlog roulette</strong> (favours well-rated, short and long-waiting games), a <strong>monthly "games to finish"</strong> goal, and <strong>Wrapped</strong> and <strong>collector</strong> cards saved as PNG — drawn on your device.</li>
+        <li>📝 <strong>Note version history</strong>, an <strong>Obsidian vault</strong> export (a <code>.zip</code> with one note per game, front-matter included), and CSV / line exports for <strong>Notion, Google Sheets and Trello</strong>. All files are made on your device.</li>
+      </ul>
+      <h4>Sync, backups &amp; notifications</h4>
+      <ul>
+        <li>🔄 <strong>Folder sync runs on its own</strong> — when you open the dashboard and every 30 minutes — resolves a conflict by keeping the newer record and <em>lists what it overwrote</em>, and can keep dated backups (optionally encrypted) in the same folder, pruned to the number you choose. The background job only syncs when the browser still remembers your permission for the folder and the sync file isn't passphrase-encrypted (the extension never stores your passphrase); otherwise it waits until you open the dashboard or press Sync now.</li>
+        <li>🔔 <strong>Quiet hours</strong> and a <strong>one-summary-a-day</strong> mode, thresholds (smallest drop worth an alert, maximum price, only at the tracked low), <strong>alerts by tag</strong>, an optional <strong>season radar</strong> that notices a big sale starting, and a weekly digest that now lists offers about to end.</li>
+        <li>🔗 <strong>Optional webhook</strong> — also send notifications to a Discord-style or generic JSON address <em>you</em> own. Nothing is requested at install: typing an <code>https://</code> address triggers one browser permission prompt for that single origin, only the notification text is sent, and the address is excluded from every export and sync.</li>
+        <li>Tag packs can be shared and imported (the import had been failing on every attempt before this release).</li>
+      </ul>
+      <h4>Look &amp; feel, continued</h4>
+      <ul>
+        <li>The game panel can be <strong>folded</strong> (remembered per section), <strong>docked</strong> beside the page on wide screens, and its sections <strong>reordered by dragging</strong>.</li>
+        <li><strong>Calm mode</strong> (no glow or animation), a one-click <strong>plain look</strong> that switches every injected style off, <strong>colour-vision palettes</strong>, <strong>text-size scaling</strong> for the extension's own UI, and <strong>settings profiles</strong> (minimal / full / accessible).</li>
+        <li>The <strong>Native theme follows the site</strong> when it switches between light and dark, and a short <strong>tour</strong> opens after the update to show what's new and offer "Check this page".</li>
       </ul>
       <h4>Under the hood</h4>
       <ul>
         <li>An end-to-end suite now loads the real extension into Chromium and drives it against gog.com pages — synthetic ones in two deliberately different markup shapes, markup recorded from the live site, and (manually) the live public pages themselves. Run against the markup recorded from the live site, v3.0.0 failed 8 of those 11 checks (all but one for features it already had); this release passes all of them. It also caught two bugs the unit tests couldn't: badges silently vanishing on full-width covers, and prices becoming undetectable after the converter had annotated them.</li>
         <li>A new test loads each entry point's scripts in exactly the order <code>manifest.json</code> and the HTML pages list them — nothing checked that before.</li>
+        <li><strong>Each feature runs in isolation.</strong> A failing lookup used to skip every feature after it; now one broken feature is recorded (and shown in "Check this page") and the rest keep working.</li>
+        <li>The end-to-end suite grew to cover the new catalog bar, wishlist tools and game-page facts against markup recorded from the live site, and it found two bugs the unit tests couldn't: a record that rewrote itself in a loop because <code>chrome.storage</code> returns keys in alphabetical order, and tile titles that swallowed the "IN LIBRARY" label.</li>
+        <li><strong>Unverified:</strong> Firefox; folder sync against a real cloud-sync client; the webhook against a live endpoint; and everything that needs a logged-in account beyond the page structure that was recorded. Please report anything that misbehaves.</li>
       </ul>
       <a class="cl-release-link" href="https://github.com/DrummingBird1/GOGEnhancer/releases/tag/v4.0.0" target="_blank" rel="noopener">View release →</a>
     </div>

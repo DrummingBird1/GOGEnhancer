@@ -8,7 +8,7 @@ Copy each block as-is.
 
 ## Single-purpose statement
 
-> GOG Enhancer's single purpose is to enhance the user experience on the GOG.com storefront — by adding currency conversion, price history, personal tagging, Hebrew translation, and small visual improvements to that one site.
+> GOG Enhancer's single purpose is to enhance the user experience on the GOG.com storefront — by adding currency conversion, price history and deal analysis, personal tagging and library tools, notifications about that store's prices, Hebrew translation, and small visual improvements to that one site.
 
 (One sentence. Chrome Web Store reviewers care about this matching what the
 extension actually does. Don't add features outside of this scope without
@@ -137,8 +137,11 @@ code.
   Point the extension at a folder your own Dropbox / OneDrive / Google
   Drive / Syncthing already syncs. It reads and writes one file there and
   merges tags, notes, play status, purchases, alerts and price history from
-  every browser, optionally encrypted with a passphrase. No server of ours,
-  no new network access — the folder is the whole transport.
+  every browser, optionally encrypted with a passphrase. It can run by
+  itself (when you open the dashboard and every 30 minutes, while the
+  browser still remembers the folder permission) and keep dated backups
+  there. No server of ours, no new network access — the folder is the whole
+  transport.
 
 ▸ Search your library from the address bar
   Type gog, press Tab, then a game name, tag:rpg or status:backlog.
@@ -146,7 +149,36 @@ code.
 ▸ Exports and small conveniences
   A refund-deadline calendar (.ics) and a Markdown export (Obsidian,
   Notion…) from the tag dashboard, optional J / K / T keyboard navigation
-  on game grids, and a RAM-only system check on game pages.
+  on game grids (and W / N / A on a game page), and a RAM-only system
+  check on game pages.
+
+▸ Smarter prices and a smarter wishlist
+  "Is this discount real?" compares the base price with GOG's own
+  lowest-in-30-days and your history; an offer countdown, price per hour of
+  play, the price in several currencies, a per-game sale rhythm, and a
+  comparison chart. The wishlist gets sorting (discount, distance from the
+  low, converted price), "near the low" / "ending soon" filters, a live
+  total and exports. The catalog gets a tools bar: dim or hide games you
+  own, "not interested", local sort, density, saved filters, side-by-side
+  comparison.
+
+▸ Learns your library as you browse — nothing is fetched
+  The extension remembers which games gog.com itself marks "IN LIBRARY" on
+  pages you open, plus ratings, languages and prices a game page states.
+  That powers hide-owned, a language check, "what changed since your last
+  visit", similar games you own, a weighted backlog roulette, a monthly
+  goal, Wrapped / collector cards (PNG, drawn on your device), note
+  history, and exports for Obsidian, Notion, Google Sheets and Trello. It
+  never logs in to your account and never sends any of it anywhere.
+
+▸ Calmer notifications and a calmer look
+  Quiet hours, one summary a day, price thresholds, alerts by tag, an
+  optional season radar and a richer weekly digest. Fold, dock and reorder
+  the game panel; calm mode, a one-click plain look, colour-vision palettes,
+  text-size scaling and settings profiles. Optionally, notifications can
+  also be posted to a webhook address you type yourself — the browser asks
+  you once to allow that one origin, only notification text is sent, and
+  nothing is requested unless you do this.
 
 ▸ Hebrew translations + RTL
   Optional Hebrew dictionary covering navigation, UI strings, and common
@@ -175,7 +207,9 @@ code.
   lookups against CheapShark's keyless deals API for the price comparison
   table. None of these send cookies or account information. Desktop
   notifications (if you enable them) use the local chrome.notifications
-  API — nothing transmitted.
+  API — nothing transmitted. The only other possible destination is a
+  webhook address you enter yourself (off by default; the browser asks you
+  to approve that single origin; only notification text is sent).
 
 ▸ Open source under the MIT license. Verifiable end-to-end.
 
@@ -278,15 +312,42 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   כוונו את התוסף לתיקייה ש-Dropbox / OneDrive / Google Drive / Syncthing
   שלכם כבר מסנכרנים. הוא קורא וכותב שם קובץ אחד וממזג תגיות, הערות,
   סטטוס, רכישות, התראות והיסטוריית מחירים מכל דפדפן, עם הצפנה אופציונלית
-  בסיסמה. בלי שרת שלנו ובלי גישת רשת חדשה — התיקייה היא כל ההובלה.
+  בסיסמה. הוא יכול לרוץ לבד (בפתיחת הדשבורד וכל 30 דקות, כל עוד הדפדפן
+  עדיין זוכר את הרשאת התיקייה) ולשמור שם גיבויים מתוארכים. בלי שרת שלנו
+  ובלי גישת רשת חדשה — התיקייה היא כל ההובלה.
 
 ▸ חיפוש בספרייה מסרגל הכתובות
   הקלידו gog, לחצו Tab, ואז שם משחק, tag:rpg או status:backlog.
 
 ▸ ייצוא ושיפורי נוחות קטנים
   לוח שנה של מועדי refund‏ (.ics) וייצוא Markdown (Obsidian, Notion…) מלוח
-  התגיות, ניווט מקלדת אופציונלי J / K / T ברשימות משחקים, ובדיקת מערכת
-  של RAM בלבד בעמוד משחק.
+  התגיות, ניווט מקלדת אופציונלי J / K / T ברשימות משחקים (ו-W / N / A בעמוד
+  משחק), ובדיקת מערכת של RAM בלבד בעמוד משחק.
+
+▸ מחירים חכמים ו-wishlist חכם
+  "האם ההנחה אמיתית?" משווה את מחיר הבסיס ל"המחיר הנמוך ב-30 הימים
+  האחרונים" של GOG עצמה ולהיסטוריה שלכם; ספירה לאחור לסיום מבצע, מחיר
+  לשעת משחק, המחיר בכמה מטבעות, קצב מבצעים לכל משחק וגרף השוואה. ל-wishlist
+  נוספים מיון (הנחה, מרחק מהשפל, מחיר מומר), מסננים "קרוב לשפל" ו"נגמר
+  בקרוב", סכום חי וייצוא. לקטלוג נוסף סרגל כלים: עמעום או הסתרה של
+  משחקים שבבעלותכם, "לא מעניין", מיון מקומי, צפיפות, פילטרים שמורים
+  והשוואה צד-לצד.
+
+▸ לומד את הספרייה שלכם תוך כדי גלישה — בלי להביא כלום
+  התוסף זוכר אילו משחקים gog.com עצמה מסמנת "IN LIBRARY" בדפים שפתחתם,
+  וגם דירוגים, שפות ומחירים שדף משחק מציג. זה מזין הסתרת משחקים בבעלותכם,
+  מד שפות, "מה השתנה מאז הביקור הקודם", משחקים דומים שיש לכם, רולטת
+  Backlog משוקללת, יעד חודשי, כרטיסי Wrapped / אספן (PNG, מצוירים במכשיר
+  שלכם), היסטוריית הערות וייצוא ל-Obsidian, Notion, Google Sheets ו-Trello.
+  הוא אף פעם לא מתחבר לחשבון שלכם ולא שולח שום דבר מזה לשום מקום.
+
+▸ התראות רגועות יותר ומראה רגוע יותר
+  שעות שקט, סיכום אחד ביום, ספי מחיר, התראות לפי תג, רדאר מבצעי עונה
+  אופציונלי ודייג'סט שבועי עשיר יותר. קיפול, עגינה וסידור מחדש של פאנל
+  המשחק; מצב שקט, מראה פשוט בלחיצה אחת, פלטות לעיוורון צבעים, שינוי גודל
+  טקסט ופרופילי הגדרות. אופציונלית, אפשר לשלוח את ההתראות גם ל-webhook
+  בכתובת שתקלידו בעצמכם — הדפדפן ישאל פעם אחת אם לאשר את המקור הבודד הזה,
+  רק טקסט ההתראה נשלח, ושום דבר לא מתבקש אם לא תעשו זאת.
 
 ▸ עברית + RTL מלא
   מילון עברית רחב, RTL אמיתי עם logical-properties CSS.
@@ -312,7 +373,9 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   פעיל, ניתן לכיבוי) בדיקת שם משחק מול ה-API החינמי של CheapShark
   לטבלת ההשוואה. אף אחד מהם לא שולח cookies או פרטי חשבון. desktop
   notifications (אם מפעילים) משתמשות ב-chrome.notifications המקומי —
-  שום מידע יוצא.
+  שום מידע יוצא. היעד האפשרי היחיד הנוסף הוא כתובת webhook שתקלידו
+  בעצמכם (כבוי כברירת מחדל; הדפדפן ישאל אם לאשר את המקור הבודד הזה; רק
+  טקסט ההתראה נשלח).
 
 ▸ Open source ברישיון MIT. ניתן לאימות.
 
@@ -346,7 +409,10 @@ exact answers:
 > Required to fetch USD-to-target-currency exchange rates from the Frankfurter public API. No user data is sent — only a public GET request for rates.
 
 ### No permission for folder sync or the address-bar keyword
-> The optional folder sync uses the browser's own folder picker (File System Access API): the user grants one folder at a time, from a click, and the extension only touches one file in it. The address-bar keyword ("gog") is declared in the manifest and needs no permission. Neither makes a network request.
+> The optional folder sync uses the browser's own folder picker (File System Access API): the user grants one folder at a time, from a click, and the extension only touches the sync file (and, if the user enables dated backups, backup files) in it. The background auto-sync only runs while the browser still remembers that grant and cannot prompt. The address-bar keyword ("gog") is declared in the manifest and needs no permission. Neither makes a network request.
+
+### Optional host permission: `https://*/*` (`optional_host_permissions`)
+> Never granted at install and never used unless the user turns on the optional "send notifications to my own webhook" setting and types an https address. At that moment the extension requests access to that single origin through the browser's own permission prompt, and only the notification's title and text are POSTed to it (no cookies, no referrer, no library data). The address is stored locally and excluded from every export and sync. If the user never sets a webhook, no network request is ever made under this permission. A broad optional pattern is required because the address is chosen by the user and cannot be known in advance.
 
 ### Host permission: `https://www.cheapshark.com/*`
 > Required to fetch the optional cross-store price comparison table (Steam, Epic, Humble Store, Fanatical, GreenManGaming) shown on GOG game pages. CheapShark's deals API is free and keyless. Only the game's title is sent, as a public GET request; no user data, cookies, or account information. Toggleable in the popup ("Price comparison table"), on by default.
@@ -368,6 +434,8 @@ extension:
   - **Web history:** No
   - **User activity:** No
   - **Website content:** No (we read public game-page text on the user's behalf, but we don't collect or transmit it)
+
+  - Note for the "Website content" / "User activity" answers: the extension reads which games gog.com displays as owned and facts shown on pages the user opens, and keeps them **only on the device**. The one path by which text derived from that could leave the device is the optional user-entered webhook (notification title and text only, to an address the user chose and approved in a browser prompt). That is a user-directed transfer, not collection by the developer — if the dashboard form asks about it, describe it as such and link the privacy policy (section 3.7).
 
 - "I do not sell or transfer user data to third parties..." — **Yes, I certify**
 - "I do not use or transfer user data for purposes that are unrelated..." — **Yes, I certify**
@@ -414,7 +482,7 @@ Capture them all in a clean Chrome window with no other extensions visible.
 Before clicking "Submit for review", verify:
 
 - [ ] Privacy policy is live at https://drummingbird1.github.io/GOGEnhancer/privacy.html (GitHub Pages). Paste that URL into the Privacy section of the dashboard.
-- [ ] All **six** permission justifications above are pasted into the form (including the new `notifications` one for v2.1+).
+- [ ] All permission justifications above are pasted into the form (including `notifications` and, from v4.0.0, the **optional** host permission `https://*/*` — expect a longer review and be ready to explain that it is only ever requested at runtime for a user-typed webhook address).
 - [ ] At least one 1280×800 screenshot is uploaded. Reshoot popup + advanced-settings if your earlier captures predate v2.1's refund-timer toggle and theme picker.
 - [ ] The Single-purpose statement above is pasted in the Distribution tab.
 - [ ] The detailed description matches what you actually shipped (don't promise features not in the build).
