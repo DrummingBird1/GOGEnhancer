@@ -308,6 +308,21 @@ function bind() {
     });
   });
 
+  $("digestDownload")?.addEventListener("click", async () => {
+    const { weeklyDigest } = await window.GOGPlusStorage.get({ weeklyDigest: null });
+    if (!weeklyDigest) return;
+    const Digest = window.GOGPlusDigestHtml;
+    const html = Digest.build(weeklyDigest, { titleOf: slugToTitle });
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = Digest.fileName(weeklyDigest.generatedAt || Date.now());
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
   $("openOptions").addEventListener("click", (e) => {
     e.preventDefault();
     chrome.runtime.openOptionsPage();

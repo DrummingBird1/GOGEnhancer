@@ -102,6 +102,8 @@
    * @property {"show" | "dim" | "hide"} ownedDisplay what to do with games already in the library on catalog pages
    * @property {boolean} hideNotInterested hide games marked "not interested"
    * @property {boolean} wishlistSmart smart sort / filters / totals / export on the wishlist page
+   * @property {boolean} endlessCatalog append the next catalog page when you reach the end (uses GOG's catalog API; off by default)
+   * @property {boolean} packContents look up which games a pack contains (GOG's product API) to warn about games you already own
    * @property {boolean} panelSticky keep the game-page panel pinned beside the page on wide screens
    * @property {boolean} calmMode no glow, motion or animation in the injected UI
    * @property {boolean} plainLook drop all injected styling and let the site look like itself (features keep working)
@@ -134,6 +136,8 @@
    * @property {string} webhookUrl the user's own webhook (Discord / generic JSON); stays on this device
    * @property {string} tourSeen version whose intro tour was shown
    * @property {string} lastSaleSeen headline of the last store-wide sale already announced
+   * @property {Array<{t: number, kind: string, host: string, path: string, status: number | null, ok: boolean, error?: string}>} netLog the extension's own recent network requests (host + path, never a query), for the privacy dashboard
+   * @property {Record<string, {t: number, children: Array<{id: string, slug: string, title: string}>}>} packInfo slug -> what a pack contains ([] = not a pack), cached
    * @property {Record<string, Array<{t: number, text: string}>>} noteHistory slug -> earlier versions of the note, newest first (see lib/note-history.js)
    */
 
@@ -147,6 +151,7 @@
    * @property {Record<string, string>} [hours] time-to-beat label -> "108 h"
    * @property {string[]} [tags] GOG's own tags
    * @property {number | null} [year] release year
+   * @property {string} [rd] release date on GOG ("YYYY-MM-DD"; the planned date for a game not out yet)
    * @property {string | null} [pe] promo end as the page's timer attribute
    * @property {{p: number | null, b: number | null, l: number | null, c: string | null} | null} [price] last seen price / list price / 30-day low / currency
    * @property {{t: number, price: {p: number | null, b: number | null, l: number | null, c: string | null} | null, rating: {score: number, count: number} | null, criticsPct: number | null} | null} [prev] snapshot from the previous visit (for "what changed")
@@ -291,6 +296,8 @@
     ownedDisplay: "show",
     hideNotInterested: true,
     wishlistSmart: true,
+    endlessCatalog: false,
+    packContents: true,
 
     // v4 expansion: look and feel
     panelSticky: false,
@@ -328,6 +335,8 @@
     tourSeen: "",
     lastSaleSeen: "",
     noteHistory: {},
+    netLog: [],
+    packInfo: {},
   };
 
   if (typeof window !== "undefined") {

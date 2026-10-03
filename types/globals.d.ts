@@ -171,6 +171,10 @@ declare global {
     GOGPlusTagsLibraryHub?: GogPlusLooseApi;
     GOGPlusTagsBoot?: GogPlusLooseApi;
     GOGPlusNoteHistory?: GogPlusLooseApi;
+    GOGPlusNet?: GogPlusLooseApi;
+    GOGPlusGogApi?: GogPlusLooseApi;
+    GOGPlusEndless?: GogPlusLooseApi;
+    GOGPlusAnnounce?: GogPlusLooseApi;
 
     GOGPlusTagsState?: GogPlusLooseApi;
     GOGPlusTagsConstants?: GogPlusLooseApi;

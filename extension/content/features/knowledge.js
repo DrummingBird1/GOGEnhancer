@@ -114,6 +114,7 @@
       hours: page.timeToBeat ?? old?.hours,
       tags: page.tags.length ? page.tags.slice(0, 16) : old?.tags,
       year: page.releaseYear ?? old?.year ?? null,
+      rd: page.releaseDate || old?.rd || undefined,
       // The offer end is NOT carried over: a page without one means no offer.
       pe: hasPrice ? page.promoEnd : old?.pe ?? null,
       price: hasPrice
@@ -224,6 +225,46 @@
     return out;
   }
 
+  /* ---------------- packs ---------------- */
+
+  const MAX_PACK_INFO = 400;
+  /** Slugs already looked up (or tried) in this page session — one try each. */
+  /** @type {Set<string>} */
+  const packLookups = new Set();
+
+  /**
+   * Learns what the current game page's product contains, from GOG's own
+   * product API, and caches it for 30 days (an ordinary game caches as []).
+   * Only the numeric product id leaves the page. Does nothing when the
+   * "packContents" switch is off, when the answer is still fresh, or when a
+   * lookup for this slug already ran this session; a failed lookup is not
+   * cached, so nothing is guessed.
+   * @param {string} slug
+   * @returns {Promise<boolean>} true when something new was stored
+   */
+  async function ensurePackInfo(slug) {
+    const s = state.settings;
+    if (!s.packContents || !slug || Dom.pageType() !== "game") return false;
+    if (window.GOGPlusDeals.packInfoFresh(s.packInfo?.[slug]) || packLookups.has(slug)) return false;
+    const id = Dom.readProductId();
+    if (!id) return false;
+    packLookups.add(slug);
+    const children = await window.GOGPlusGogApi.fetchPackContents(id, slug);
+    if (!children) return false;
+    /** @type {Record<string, any>} */
+    const next = { ...(s.packInfo || {}), [slug]: { t: Date.now(), children } };
+    const keys = Object.keys(next);
+    if (keys.length > MAX_PACK_INFO) {
+      keys
+        .sort((a, b) => (next[a].t || 0) - (next[b].t || 0))
+        .slice(0, keys.length - MAX_PACK_INFO)
+        .forEach((k) => delete next[k]);
+    }
+    state.settings.packInfo = next;
+    await window.GOGPlusStorage.set({ packInfo: next });
+    return true;
+  }
+
   /* ---------------- not interested ---------------- */
 
   /**
@@ -248,6 +289,7 @@
     recordGameFacts,
     changesSince,
     setNotInterested,
-    _internals: { buildFacts, sameFacts, canonical, snapshotOf, MAX_FACTS, VISIT_GAP_MS, MAX_WRITES_PER_MINUTE, writeLog },
+    ensurePackInfo,
+    _internals: { buildFacts, sameFacts, canonical, snapshotOf, MAX_FACTS, VISIT_GAP_MS, MAX_WRITES_PER_MINUTE, writeLog, packLookups, MAX_PACK_INFO },
   };
 })();

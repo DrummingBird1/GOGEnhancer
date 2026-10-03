@@ -306,7 +306,51 @@
     return { total, byYear, rows };
   }
 
+  /* ---------------- packs ---------------- */
+
+  /** How long a looked-up pack answer is trusted (ms). */
+  const PACK_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+  /**
+   * Is a cached pack answer still good?
+   * @param {{ t?: number, children?: unknown[] } | undefined} info
+   * @param {number} [now]
+   */
+  function packInfoFresh(info, now = Date.now()) {
+    return !!info && Array.isArray(info.children) && typeof info.t === "number" && now - info.t < PACK_TTL_MS;
+  }
+
+  /**
+   * What a pack's contents mean for what you own.
+   * @param {Array<{ slug: string, title: string }>} children
+   * @param {Record<string, unknown>} ownedSlugs
+   * @returns {{ total: number, owned: Array<{ slug: string, title: string }>, missing: Array<{ slug: string, title: string }>, allOwned: boolean }}
+   */
+  function packOverlap(children, ownedSlugs) {
+    const owned = children.filter((c) => !!ownedSlugs[c.slug]);
+    const missing = children.filter((c) => !ownedSlugs[c.slug]);
+    return { total: children.length, owned, missing, allOwned: children.length > 0 && missing.length === 0 };
+  }
+
+  /**
+   * Packs (from the cache of ones you've opened) that contain this game and
+   * that you own — so a game page can say "you already have this, in X".
+   * @param {string} slug
+   * @param {Record<string, { children?: Array<{ slug: string }> }>} packInfo
+   * @param {Record<string, unknown>} ownedSlugs
+   * @returns {string[]} slugs of owned packs containing the game
+   */
+  function ownedPacksContaining(slug, packInfo, ownedSlugs) {
+    return Object.entries(packInfo || {})
+      .filter(([packSlug, info]) => packSlug !== slug && ownedSlugs[packSlug] && (info?.children || []).some((c) => c.slug === slug))
+      .map(([packSlug]) => packSlug);
+  }
+
   const api = {
+    PACK_TTL_MS,
+    packInfoFresh,
+    packOverlap,
+    ownedPacksContaining,
     parsePromoDate,
     formatDuration,
     offerEndsIn,

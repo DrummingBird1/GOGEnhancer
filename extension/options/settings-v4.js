@@ -118,6 +118,8 @@
     ["ownershipLearning", "Learn what's in my library", "Reads the site's own “IN LIBRARY” labels as you browse, so the extension knows which games you own — it powers hiding owned games, the library statistics and the “already own” warnings. Stored on this device."],
     ["catalogTools", "Catalog tools", "A bar above the catalog: sort this page, hide or dim owned games, hide games you're not interested in, compare games side by side, tag several at once, save searches."],
     ["hideNotInterested", "Hide “not interested” games", "Keeps games you've hidden out of catalogs and carousels. Turn off to see them again (they stay marked)."],
+    ["endlessCatalog", "Endless scrolling in catalogs", "When you reach the end of the 48 games on a catalog page, the next page is added below it. Asks GOG's own catalog API (catalog.gog.com) for it — the same call the site makes — and only continues a list it can match to the one on screen. Off by default."],
+    ["packContents", "Warn about packs that overlap my library", "On a game page, asks GOG's product API (api.gog.com) once what the game contains (only its numeric id is sent) so a pack that includes games you already own can say so. The answer is remembered for 30 days."],
     ["wishlistSmart", "Smart wishlist", "Sort by discount or closeness to your tracked low, filter “near my low” / “ending soon”, group by tag, a live total, and CSV / Markdown / calendar export."],
   ]);
 

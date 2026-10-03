@@ -187,7 +187,64 @@
     );
   }
 
-  const api = { escapeText, fold, buildRefundCalendar, buildOfferCalendar };
+  /**
+   * All-day events on the day each wishlisted game comes out, with a reminder
+   * the morning before. Dates are the ones the extension read from each game's
+   * own page (GOG's store release date, a planned date for a game not out
+   * yet); games it never opened have none and are simply not listed.
+   * @param {Array<{ slug: string, title?: string, date: string }>} releases `date` is "YYYY-MM-DD"
+   * @param {{ now?: number, titleOf?: (slug: string) => string }} [opts]
+   * @returns {string | null} the .ics text, or null when nothing is upcoming
+   */
+  function buildReleaseCalendar(releases, opts = {}) {
+    const now = opts.now ?? Date.now();
+    const titleOf = opts.titleOf ?? defaultTitle;
+    const today = Date.parse(new Date(now).toISOString().slice(0, 10));
+    /** @type {string[]} */
+    const events = [];
+    for (const r of releases || []) {
+      const day = typeof r?.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.date) ? Date.parse(r.date) : NaN;
+      if (!Number.isFinite(day) || day < today) continue;
+      const title = r.title || titleOf(r.slug);
+      const url = `https://www.gog.com/en/game/${encodeURIComponent(r.slug)}`;
+      events.push(
+        [
+          "BEGIN:VEVENT",
+          `UID:release-${r.slug}-${r.date}@gog-enhancer`,
+          `DTSTAMP:${stamp(now)}`,
+          `DTSTART;VALUE=DATE:${ymd(new Date(day))}`,
+          `DTEND;VALUE=DATE:${ymd(new Date(day + DAY_MS))}`,
+          `SUMMARY:${escapeText(`Out on GOG: ${title}`)}`,
+          `DESCRIPTION:${escapeText(`${title} is due out today on your GOG wishlist.\n${url}`)}`,
+          `URL:${url}`,
+          "TRANSP:TRANSPARENT",
+          "BEGIN:VALARM",
+          "ACTION:DISPLAY",
+          `DESCRIPTION:${escapeText(`${title} comes out tomorrow`)}`,
+          "TRIGGER:-PT15H",
+          "END:VALARM",
+          "END:VEVENT",
+        ]
+          .map(fold)
+          .join("\r\n")
+      );
+    }
+    if (!events.length) return null;
+    return (
+      [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//GOG Enhancer//Release dates//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:GOG wishlist releases",
+        ...events,
+        "END:VCALENDAR",
+      ].join("\r\n") + "\r\n"
+    );
+  }
+
+  const api = { escapeText, fold, buildRefundCalendar, buildOfferCalendar, buildReleaseCalendar };
   if (typeof window !== "undefined") window.GOGPlusIcs = api;
   if (typeof self !== "undefined") self.GOGPlusIcs = api;
 })();

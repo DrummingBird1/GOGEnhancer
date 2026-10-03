@@ -15,6 +15,7 @@
 import "../lib/browser-compat.js";
 import "../lib/defaults.js";
 import "../lib/storage.js";
+import "../lib/net.js";
 import "../lib/migrations.js";
 import "../lib/purchases.js";
 import "../lib/deals.js";
@@ -56,7 +57,7 @@ const FX_INTERVAL_MIN = 12 * 60;
 async function fetchLiveRates() {
   try {
     const url = "https://api.frankfurter.app/latest?from=USD&to=ILS,EUR,GBP,PLN";
-    const res = await fetch(url, { method: "GET" });
+    const res = await self.GOGPlusNet.request("fx", url, { method: "GET" });
     if (!res.ok) throw new Error(`status ${res.status}`);
     const data = await res.json();
     if (!data || !data.rates) throw new Error("no rates");
@@ -89,10 +90,7 @@ const MODS_INTERVAL_MIN = 24 * 60;
 
 async function refreshModsList() {
   try {
-    const res = await fetch("https://www.gog.com/en/mods", {
-      method: "GET",
-      credentials: "omit",
-    });
+    const res = await self.GOGPlusNet.request("mods", "https://www.gog.com/en/mods", { method: "GET" });
     if (!res.ok) throw new Error(`status ${res.status}`);
     const html = await res.text();
     const slugs = new Set();
@@ -259,8 +257,10 @@ async function postWebhook(url, n) {
       credentials: "omit",
       referrerPolicy: "no-referrer",
     });
+    self.GOGPlusNet.recordWebhook(new URL(clean).hostname, res.status, res.ok);
     return res.ok ? { ok: true } : { ok: false, error: `HTTP ${res.status}` };
   } catch (err) {
+    self.GOGPlusNet.recordWebhook(new URL(clean).hostname, null, false, String(err?.message || err).slice(0, 80));
     return { ok: false, error: String(err?.message || err).slice(0, 120) };
   }
 }

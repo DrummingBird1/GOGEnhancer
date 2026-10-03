@@ -71,11 +71,13 @@ export function gamePageHtml({
   tags = ["Adventure", "Fantasy", "Story Rich"],
   year = 2015,
   reviews = [],
+  productId = null,
 } = {}) {
   const tick = '<svg class="ic-svg details__languages-icon details__languages-icon--tick"><use xlink:href="#check_tick"></use></svg>';
   return `
   <h1 class="productcard-basics__title" selenium-id="ProductTitle">${title}</h1>
-  <script type="application/ld+json">${JSON.stringify({ "@type": "Product", name: title, releaseDate: `${year}-05-19T00:00:00+02:00` })}</script>
+  <script type="application/ld+json">${JSON.stringify({ "@type": "Product", name: title, ...(productId ? { sku: productId } : {}), releaseDate: `${year}-05-19T00:00:00+02:00` })}</script>
+  ${productId ? `<div class="productcard" card-product="${productId}"></div>` : ""}
   <div class="productcard-rating"><p class="rating productcard-rating__score--version-a">${rating}</p><p class="rating productcard-rating__details">( ${reviewCount} Reviews )</p></div>
   <div id="ProductActionsBody" selenium-id="ProductActionsBody">
     <div class="product-actions-price product-actions-price--discounted">

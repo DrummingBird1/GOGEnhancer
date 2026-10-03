@@ -78,6 +78,8 @@
     "ownedDisplay",
     "hideNotInterested",
     "wishlistSmart",
+    "endlessCatalog",
+    "packContents",
     "panelSticky",
     "calmMode",
     "plainLook",
@@ -137,6 +139,8 @@
     "tourSeen",
     "lastSaleSeen",
     "noteHistory",
+    "netLog",
+    "packInfo",
   ]);
 
   /**

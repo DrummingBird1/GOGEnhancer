@@ -288,6 +288,19 @@ body::-webkit-scrollbar-thumb:hover {
   margin-bottom: 6px;
 }
 .digest-icon { font-size: 13px; }
+.digest-download {
+  margin-inline-start: auto;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--text-secondary, inherit);
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 9px;
+  opacity: 0.8;
+}
+.digest-download:hover, .digest-download:focus-visible { opacity: 1; }
 .digest-title {
   font-family: var(--display);
   font-weight: 700;

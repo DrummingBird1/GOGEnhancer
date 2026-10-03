@@ -435,6 +435,8 @@
       ["csv", "CSV"],
       ["md", "Markdown"],
       ["ics", "Offer ends (.ics)"],
+      ["releases", "Release dates (.ics)"],
+      ["png", "Share card (PNG)"],
       ["cards", "Copy as cards"],
     ])) {
       const b = /** @type {HTMLButtonElement} */ (el("button", "gog-plus-bar-btn", label));
@@ -541,7 +543,7 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  /** @param {"csv" | "md" | "ics" | "cards"} kind */
+  /** @param {"csv" | "md" | "ics" | "releases" | "png" | "cards"} kind */
   async function exportWishlist(kind) {
     const Tools = window.GOGPlusWishlistTools;
     const ctx = smartCtx();
@@ -564,6 +566,31 @@
         return;
       }
       download(`gog-offers-ending-${day}.ics`, "text/calendar", ics);
+    } else if (kind === "releases") {
+      const releases = Tools.upcomingReleases(rows, state.settings.gameFacts || {});
+      const ics = window.GOGPlusIcs?.buildReleaseCalendar(releases);
+      if (!ics) {
+        window.GOGPlusToasts?.show("No upcoming release dates known — a game's date is learned when you open its page", { variant: "muted", duration: 4500 });
+        return;
+      }
+      download(`gog-wishlist-releases-${day}.ics`, "text/calendar", ics);
+      const unknown = rows.filter((r) => r.slug && !r.owned && !state.settings.gameFacts?.[r.slug]?.rd).length;
+      window.GOGPlusToasts?.show(`${releases.length} release${releases.length === 1 ? "" : "s"} saved${unknown ? ` — ${unknown} game${unknown === 1 ? "" : "s"} have no date yet` : ""}`);
+    } else if (kind === "png") {
+      try {
+        const upcoming = Tools.upcomingReleases(rows, state.settings.gameFacts || {});
+        const blob = await window.GOGPlusShareCard.toPng(window.GOGPlusShareCard.wishlistModel(rows, ctx, { upcoming }));
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `gog-wishlist-${day}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (_) {
+        window.GOGPlusToasts?.show("Couldn't make the image in this browser", { variant: "muted" });
+      }
     } else if (kind === "cards") {
       const lines = rows.map((r) => `${r.title || r.slug}${r.price != null ? ` — ${r.price.toFixed(2)} ${r.currency || ""}` : ""}${r.discountPct ? ` (-${r.discountPct}%)` : ""}`.trim());
       try {

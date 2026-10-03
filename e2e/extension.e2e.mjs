@@ -17,7 +17,7 @@ import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { storeLegacy, storeVariant, gameLegacy, gameVariant } from "./fixtures.mjs";
-import { homeReal, catalogReal, gameReal, realTile, catalogV4, wishlistV4, gameV4 } from "./fixtures-real.mjs";
+import { homeReal, catalogReal, gameReal, realTile, catalogV4, wishlistV4, gameV4, V4_TILES } from "./fixtures-real.mjs";
 
 // E2E_LIVE=1 runs the extension against the REAL gog.com (public pages, logged
 // out, a handful of page loads) instead of fixtures — the only way to know the
@@ -64,6 +64,7 @@ const PAGES = {
   "/en/games/v4": catalogV4,
   "/en/account/wishlist": wishlistV4,
   "/en/game/alpha_game": gameV4,
+  "/en/game/pack_game": () => gameV4({ productId: "9990001", title: "Pack Game" }),
 };
 
 const userDataDir = mkdtempSync(join(tmpdir(), "gog-enhancer-e2e-"));
@@ -94,6 +95,34 @@ try {
     }
     if (url.hostname === "www.cheapshark.com") {
       return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+    }
+    // GOG's own APIs, answered the way the real ones are: JSON with a CORS
+    // header that allows the gog.com page's origin (a content script's fetch
+    // carries that origin, so without the header it would be blocked).
+    const cors = { "access-control-allow-origin": "https://www.gog.com" };
+    if (url.hostname === "images.gog-statics.com") {
+      // The covers our endless-scrolling cards point at: a 1x1 transparent GIF.
+      return route.fulfill({ status: 200, contentType: "image/gif", body: Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64") });
+    }
+    if (url.hostname === "catalog.gog.com") {
+      const page = Number(url.searchParams.get("page") || 1);
+      const product = (slug, title) => ({
+        id: `id_${slug}`, slug, title, productType: "game", coverVertical: "https://images.gog-statics.com/x.jpg", releaseDate: "2020.01.01",
+        genres: [{ name: "RPG" }], reviewsRating: 4.5, reviewsCount: 5,
+        price: { finalMoney: { amount: "9.99", currency: "USD" }, baseMoney: { amount: "19.99", currency: "USD" }, discount: "-50%" },
+      });
+      const products = page === 1 ? V4_TILES.map((t) => product(t[0], t[1])) : page === 2 ? [product("more_one", "More One"), product("more_two", "More Two")] : [];
+      return route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify({ products, pages: 2, productCount: 6 }) });
+    }
+    if (url.hostname === "api.gog.com") {
+      const id = /\/games\/(\d+)/.exec(url.pathname)?.[1];
+      const child = (slug, title) => ({ _embedded: { product: { title } }, _links: { store: { href: `https://www.gog.com/en/game/${slug}` } } });
+      const answers = {
+        9990001: { _links: { includesGames: [{ href: "https://api.gog.com/v2/games/9990002" }, { href: "https://api.gog.com/v2/games/9990003" }] } },
+        9990002: child("child_one", "Child One"),
+        9990003: child("child_two", "Child Two"),
+      };
+      return route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(answers[id] || { _links: {} }) });
     }
     return route.abort();
   });
@@ -426,6 +455,53 @@ try {
     await page.close();
   }
 
+  console.log("v4 — GOG's own APIs: endless scrolling and pack contents (real fetch, real CORS)");
+  {
+    await setSettings({ sync: { endlessCatalog: true, catalogTools: true, packContents: true, targetCurrency: "ILS" }, local: { ownedSlugs: { child_one: "2026-01-01" }, notInterested: {}, packInfo: {}, gameFacts: {}, netLog: [] } });
+    const page = await open("/en/games/v4");
+    const more = await page.waitForFunction(() => document.querySelectorAll("#gog-plus-endless .gog-plus-more-card").length >= 2, null, { timeout: 8000 }).then(() => true, () => false);
+    const e = await page.evaluate(() => ({
+      titles: [...document.querySelectorAll(".gog-plus-more-title")].map((t) => t.textContent),
+      after: document.getElementById("gog-plus-endless")?.previousElementSibling?.classList.contains("paginated-products-grid"),
+      status: document.querySelector(".gog-plus-endless-status")?.textContent,
+      note: document.querySelector(".gog-plus-more-price em")?.textContent.trim(),
+      href: document.querySelector(".gog-plus-more-link")?.getAttribute("href"),
+    }));
+    check("endless scrolling appends the next page, as our own cards, below the site's grid", more && e.after && e.titles.join() === "More One,More Two", JSON.stringify(e));
+    check("…with a link to each game, a converted price, and a note when the list ends", e.href === "/en/game/more_one" && /≈ ₪/.test(e.note || "") && /everything/.test(e.status || ""), JSON.stringify(e));
+    const noPriceNotes = await page.evaluate(() => !document.querySelector("#gog-plus-endless .gog-plus-conv-note"));
+    check("our own cards are never double-converted by the price converter", noPriceNotes);
+    check("no uncaught page errors", page.errors.length === 0, page.errors.join(" | "));
+    await shot(page, "v4-endless");
+    await page.close();
+
+    const pack = await open("/en/game/pack_game");
+    const packText = await pack
+      .waitForFunction(() => /You already own 1 of the 2 games in this pack/.test(document.getElementById("gog-plus-gamepanel")?.textContent || ""), null, { timeout: 8000 })
+      .then(() => true, () => false);
+    const list = await pack.evaluate(() => [...document.querySelectorAll(".gog-plus-pack-list a")].map((a) => a.textContent));
+    check("a pack page asks GOG's product API what it contains and warns about the games you own", packText, "no warning in the panel");
+    check("…and lists them, marking the owned one", list.join() === "✓ Child One,Child Two", list.join());
+    const stored = (await storageGet("local", "packInfo")).packInfo?.pack_game;
+    check("the answer is cached, with the games' slugs", stored?.children?.map((c) => c.slug).join() === "child_one,child_two", JSON.stringify(stored));
+    const rd = (await storageGet("local", "gameFacts")).gameFacts?.pack_game?.rd;
+    check("the game's release date is read from the page", rd === "2015-05-19", String(rd));
+    await pack.close();
+
+    const log = (await storageGet("local", "netLog")).netLog || [];
+    const hosts = [...new Set(log.map((l) => l.host))].sort().join();
+    check("every request is in the local log — host and path, no query", hosts.includes("api.gog.com") && hosts.includes("catalog.gog.com") && log.every((l) => !String(l.path).includes("?")), hosts);
+
+    const opts = await context.newPage();
+    await opts.goto(`chrome-extension://${extId}/options/options.html`);
+    const net = await opts.waitForFunction(() => /catalog\.gog\.com/.test(document.getElementById("privNet")?.textContent || ""), null, { timeout: 6000 }).then(() => true, () => false);
+    const store = await opts.waitForFunction(() => /Total on this device/.test(document.getElementById("privStore")?.textContent || ""), null, { timeout: 6000 }).then(() => true, () => false);
+    check("the options page's privacy dashboard shows what was contacted and what is stored", net && store);
+    await shot(opts, "v4-privacy");
+    await opts.close();
+    await setSettings({ sync: { endlessCatalog: false } });
+  }
+
   console.log("v4 — wishlist (real rows only, smart sort, totals)");
   {
     await setSettings({ sync: { wishlistFilters: true, wishlistSmart: true, targetCurrency: "ILS" }, local: { notInterested: {} } });
@@ -554,6 +630,64 @@ try {
     }
 
     {
+      // GOG's own APIs from a real content script, against the real servers: the
+      // proof that the CORS route (no host permission) works.
+      await setSettings({ sync: { endlessCatalog: true, catalogTools: true }, local: { netLog: [] } });
+      const seenCatalog = [];
+      const onReq = (r) => /catalog\.gog\.com/.test(r.url()) && seenCatalog.push(r.url().replace("https://catalog.gog.com/v1/catalog?", ""));
+      context.on("request", onReq);
+      const page = await open("/en/games");
+      await page.waitForSelector("product-tile", { timeout: 20000 }).catch(() => {});
+      const first = await page.evaluate(() => [...document.querySelectorAll("product-tile a[href*='/game/']")].map((a) => a.getAttribute("href").split("/game/")[1]));
+      // Real catalogs are many screens tall: it loads when the reader gets near the end, so scroll there.
+      await page.waitForSelector("#gog-plus-endless", { timeout: 15000 }).catch(() => {});
+      await page.evaluate(() => document.getElementById("gog-plus-endless")?.scrollIntoView({ block: "end" }));
+      const more = await page.waitForFunction(() => document.querySelectorAll("#gog-plus-endless .gog-plus-more-card").length >= 24, null, { timeout: 25000 }).then(() => true, () => false);
+      const live = await page.evaluate(() => ({
+        n: document.querySelectorAll("#gog-plus-endless .gog-plus-more-card").length,
+        slugs: [...document.querySelectorAll("#gog-plus-endless .gog-plus-more-card")].map((c) => c.dataset.slug),
+        status: document.querySelector(".gog-plus-endless-status")?.textContent,
+        withPrice: document.querySelectorAll("#gog-plus-endless .gog-plus-more-price").length,
+      }));
+      context.off("request", onReq);
+      check("endless scrolling (live): the next catalog page is appended from catalog.gog.com", more && live.n >= 24, JSON.stringify({ ...live, slugs: live.slugs.slice(0, 3), asked: seenCatalog, firstTiles: first.slice(0, 4), url: page.url() }));
+      check("…and none of it repeats what the page already shows", live.slugs.every((s) => !first.includes(s)), live.slugs.filter((s) => first.includes(s)).join());
+      const log = (await storageGet("local", "netLog")).netLog || [];
+      check("…every call is in the request log", log.some((l) => l.host === "catalog.gog.com" && l.ok), JSON.stringify(log.slice(-3)));
+      check("no uncaught page errors", page.errors.length === 0, page.errors.join(" | "));
+      await shot(page, "live-endless");
+      await page.close();
+      await setSettings({ sync: { endlessCatalog: false } });
+
+      // A real bundle: Prince of Persia Bundle contains four games, each with a page of its own.
+      await setSettings({ sync: { packContents: true }, local: { packInfo: {}, ownedSlugs: {} } });
+      const pk = await open("/en/game/prince_of_persia_bundle");
+      await pk.waitForSelector("#gog-plus-gamepanel", { timeout: 20000 }).catch(() => {});
+      const got = await pk.waitForFunction(() => document.querySelectorAll(".gog-plus-pack-list a").length === 4, null, { timeout: 20000 }).then(() => true, () => false);
+      const kids = (await storageGet("local", "packInfo")).packInfo?.prince_of_persia_bundle?.children || [];
+      check("a real bundle page lists its four games, learned from api.gog.com", got && kids.length === 4 && kids.every((k) => k.slug && k.title), JSON.stringify(kids));
+      if (kids.length === 4) {
+        await setSettings({ local: { ownedSlugs: { [kids[0].slug]: "2026-01-01" } } });
+        await pk.reload({ waitUntil: "domcontentloaded" });
+        const warned = await pk.waitForFunction(() => /You already own 1 of the 4 games in this pack/.test(document.getElementById("gog-plus-gamepanel")?.textContent || ""), null, { timeout: 20000 }).then(() => true, () => false);
+        const panelText = await pk.evaluate(() => (document.getElementById("gog-plus-gamepanel")?.textContent || "").replace(/\s+/g, " ").slice(0, 400));
+        check("…and warns when you own one of them", warned, `${panelText} | kid=${kids[0].slug}`);
+      }
+      await pk.close();
+
+      // Many "packs" are one game's own page holding hidden components that point back at it:
+      // those must not be reported as separate games.
+      const ll = await open("/en/game/lands_of_lore_1_2");
+      await ll.waitForSelector("#gog-plus-gamepanel", { timeout: 20000 }).catch(() => {});
+      const settled = await ll.waitForFunction(() => true, null, { timeout: 1000 }).then(() => true, () => false);
+      await new Promise((r) => setTimeout(r, 4000));
+      const llInfo = (await storageGet("local", "packInfo")).packInfo?.lands_of_lore_1_2;
+      const llList = await ll.evaluate(() => document.querySelectorAll(".gog-plus-pack-list a").length);
+      check("a one-game 'pack' (hidden components pointing back at itself) lists nothing to match", settled && !!llInfo && llInfo.children.length === 0 && llList === 0, JSON.stringify(llInfo));
+      await ll.close();
+    }
+
+    {
       const page = await open("/en/game/gris");
       await page.waitForSelector("#gog-plus-gamepanel", { timeout: 20000 }).catch(() => {});
       await new Promise((r) => setTimeout(r, 1500));
@@ -570,6 +704,7 @@ try {
       check("game page: system check found the requirements table", g.sysRows >= 1, JSON.stringify(g));
       const facts = (await storageGet("local", "gameFacts")).gameFacts?.gris;
       check("game page: ratings, tags and release year are read into the facts cache", !!facts && !!facts.rating && (facts.tags || []).length > 0 && typeof facts.year === "number", JSON.stringify(facts || null).slice(0, 300));
+      check("game page: the release date is read from the real page's JSON-LD", /^\d{4}-\d{2}-\d{2}$/.test(facts?.rd || ""), String(facts?.rd));
       const sections = await page.evaluate(() => [...document.querySelectorAll("#gog-plus-gp-body > [data-section-id]")].map((x) => x.dataset.sectionId));
       check("game page: the panel's sections are built and identified", sections.includes("history") && sections.includes("tags"), sections.join());
       check("no uncaught page errors", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));

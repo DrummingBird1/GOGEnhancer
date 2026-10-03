@@ -19,15 +19,21 @@ here, that is a bug — please file an issue.
 
 GOG Enhancer stores all of your data on your own device. It does not have a
 server, does not log anything, does not use analytics, does not show ads, and
-does not share your data with anyone. It makes exactly three kinds of network
-requests, all to public unauthenticated endpoints, all of which transmit
-*no information about you*: (a) currency exchange rates from
+does not share your data with anyone. It makes a small, fixed set of network
+requests, all to public unauthenticated endpoints, none of which transmit
+information about *you*: (a) currency exchange rates from
 `api.frankfurter.app`, (b) a periodic read of the public GOG mods page at
 `gog.com/en/mods`, and (c), if you leave the "Price comparison table" feature
 on, a per-game title search against `cheapshark.com`'s public deals API when
-you open a game page. One further request exists only if *you* set it up: an
-optional webhook to an `https://` address that you type yourself (section 3.7);
-it is off, and has no permission, until you do.
+you open a game page. Two more go to GOG's own public APIs and exist only for
+features you can switch off: (d) `api.gog.com`, asked once per game page which
+games a pack contains (only its numeric product id is sent), and (e)
+`catalog.gog.com`, asked for the next page of a catalog list only if you turn
+on endless scrolling (off by default) — section 3.8. One further request
+exists only if *you* set it up: an optional webhook to an `https://` address
+that you type yourself (section 3.7); it is off, and has no permission, until
+you do. Every request is listed on the Advanced Options page
+(Privacy & transparency).
 
 ---
 
@@ -57,6 +63,9 @@ extension:
 | Which games the site showed you as **already in your library** (a list of game slugs and the date first seen) | `chrome.storage.local` | Read from the "IN LIBRARY" label and owned status that gog.com itself displays on pages **you** open — see the note below. Powers hiding owned games, library statistics and the language / "similar games you own" features |
 | Facts a game page states when you open it: ratings, languages, time to beat, tags, release year, the price shown and when its offer ends (for up to 800 games), plus the previous visit's price and rating | `chrome.storage.local` | To show "what changed since your last visit", the language check and the offer countdown without fetching anything |
 | Games you marked "not interested", saved catalog filter presets, price-drop rules by tag, status-change dates, a monthly "games to finish" goal, and earlier versions of your notes | `chrome.storage.local` | Your own library tools, kept on this device |
+| What a pack contains (game ids, slugs and titles), per game page you opened, for 30 days | `chrome.storage.local` | The answer GOG's product API gave (section 3.8), so the "you already own part of this pack" warning doesn't ask again |
+| The date each game is released on GOG, read from the game page you opened | `chrome.storage.local` (inside the game facts above) | Only to build the optional wishlist release-date calendar you can download |
+| A list of the extension's own recent network requests: when, which address and path (never the query), and whether it worked — at most 120 entries | `chrome.storage.local` | So you can see exactly what it contacted (Advanced Options → Privacy & transparency). Cleared by "Clear the request list" and "Reset everything" |
 | Your computer description if you choose to type one (operating system, processor, graphics card) | `chrome.storage.local` | Compared as plain text with a game's requirements; never read from your machine automatically and never sent anywhere |
 | Notification rules (quiet hours, a one-summary-a-day mode, thresholds, season radar), notifications held back until their time, and display preferences (calm mode, plain look, palette, text size, panel order and fold state, profiles, the tour-seen flag) | `chrome.storage.sync` / `chrome.storage.local` | So the extension behaves the way you asked and notifications arrive when you wanted them |
 | The address of your own webhook, and whether it is switched on | `chrome.storage.local` | Only if you set one up (3.7). It is a secret: it is **never** written to a backup, an export or the sync file, and is ignored if found in one |
@@ -136,6 +145,14 @@ below — and one more exists only if you set up your own webhook (3.7).
 - **Permission:** Nothing is requested at install. When you save the address, the browser asks you — once — to allow access to **that one origin** (this is the manifest's `optional_host_permissions`; it is never granted in advance, and you can revoke it in the browser at any time). The address is stored only on this device and is never included in a backup, an export or the sync file.
 - **Who receives it:** Whoever runs the address you typed. That service's own policy applies; GOG Enhancer has no say in, and no visibility of, what it does with the text. A "Send a test" button in the same place sends a fixed test message.
 
+### 3.8 GOG's own APIs — `api.gog.com` and `catalog.gog.com`
+
+- **What they are:** the same public, unauthenticated endpoints gog.com's own pages call. They are requested from the gog.com page itself, so the browser applies to them the same cross-origin rules as to the site; they need **no additional permission**, and every request is sent without cookies and without a referrer.
+- **`api.gog.com` — pack contents.** `GET https://api.gog.com/v2/games/<numeric product id>?locale=en-US`, once per game page you open (the answer is remembered for 30 days) and, when the page is a pack, once more for each game it includes (at most 12). Only the numeric product id — which is in the page's own address and markup — is sent. It is used to tell you when a pack contains games you already own. Switch it off with "Warn about packs that overlap my library" (on by default).
+- **`catalog.gog.com` — endless scrolling.** `GET https://catalog.gog.com/v1/catalog?…` with the same filter and sort parameters the catalog page you are looking at already uses, plus a page number — only while "Endless scrolling" is on (off by default), once each time you scroll to the end of the list. It continues the list you are already viewing and appends nothing it cannot match to it.
+- **What this could reveal:** your IP address and the product id or catalog filters of pages you are already viewing, to GOG — the company whose site you are on, not a new third party.
+- **Frequency and visibility:** only as described; each request appears in the list under Advanced Options → Privacy & transparency.
+
 ---
 
 ## 4. Permissions we request and why
@@ -152,7 +169,7 @@ below — and one more exists only if you set up your own webhook (3.7).
 
 | Optional host permission for `https://*/*` | **Optional and never granted at install.** Declared as `optional_host_permissions` so that, *only if you enter your own webhook address*, the browser can ask you to allow that single origin. Without it nothing can be sent anywhere new. |
 
-Folder sync (including its automatic and backup modes) and the address-bar keyword need **no additional permission**: folder access is granted per folder by you through the browser's folder picker, and the omnibox keyword is declared in the manifest without a permission.
+GOG's own APIs (3.8), folder sync (including its automatic and backup modes) and the address-bar keyword need **no additional permission**: folder access is granted per folder by you through the browser's folder picker, and the omnibox keyword is declared in the manifest without a permission.
 
 We do not request any other permissions. In particular we do not request
 `tabs` (full tab access), `webRequest` (network interception), `cookies`

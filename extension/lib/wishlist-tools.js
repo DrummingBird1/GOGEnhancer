@@ -238,7 +238,32 @@
     return out.join("\n") + "\n";
   }
 
-  const api = { SORT_MODES, pctAboveLow, nearLow, endingSoon, sortRows, matchesFilter, totals, groupRows, toCsv, toMarkdown, toTarget };
+  /**
+   * Wishlisted games with a KNOWN future release date, soonest first. The date
+   * comes from the facts cache (read off each game's page); a row whose game
+   * the user never opened has none and is left out rather than guessed.
+   * @param {WishRow[]} rows
+   * @param {Record<string, { rd?: string, title?: string }>} facts
+   * @param {number} [now]
+   * @returns {Array<{ slug: string, title: string, date: string }>}
+   */
+  function upcomingReleases(rows, facts, now = Date.now()) {
+    const today = new Date(now).toISOString().slice(0, 10);
+    /** @type {Array<{ slug: string, title: string, date: string }>} */
+    const out = [];
+    const seen = new Set();
+    for (const r of rows) {
+      if (!r.slug || seen.has(r.slug) || r.owned) continue;
+      seen.add(r.slug);
+      const date = facts?.[r.slug]?.rd;
+      if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= today) {
+        out.push({ slug: r.slug, title: facts[r.slug].title || r.title, date });
+      }
+    }
+    return out.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  const api = { upcomingReleases, SORT_MODES, pctAboveLow, nearLow, endingSoon, sortRows, matchesFilter, totals, groupRows, toCsv, toMarkdown, toTarget };
   if (typeof window !== "undefined") window.GOGPlusWishlistTools = api;
   if (typeof self !== "undefined") self.GOGPlusWishlistTools = api;
 })();

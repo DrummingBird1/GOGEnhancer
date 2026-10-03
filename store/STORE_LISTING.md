@@ -203,9 +203,12 @@ code.
   No analytics, no third-party tracking, no Google Fonts, no remote code.
   All your tags, notes, and history stay on your device. Three outbound
   destinations only: exchange rates from frankfurter.app, the public GOG
-  mods catalog, and (optionally, on by default, toggleable) game-title
-  lookups against CheapShark's keyless deals API for the price comparison
-  table. None of these send cookies or account information. Desktop
+  mods catalog, GOG's own product API (api.gog.com — once per game page, to
+  see what a pack contains; toggleable) and catalog API (catalog.gog.com —
+  only if you turn on endless scrolling), and (optionally, on by default,
+  toggleable) game-title lookups against CheapShark's keyless deals API for
+  the price comparison table. None of these send cookies or account
+  information, and a list of every request is shown in Advanced Options. Desktop
   notifications (if you enable them) use the local chrome.notifications
   API — nothing transmitted. The only other possible destination is a
   webhook address you enter yourself (off by default; the browser asks you
@@ -410,6 +413,9 @@ exact answers:
 
 ### No permission for folder sync or the address-bar keyword
 > The optional folder sync uses the browser's own folder picker (File System Access API): the user grants one folder at a time, from a click, and the extension only touches the sync file (and, if the user enables dated backups, backup files) in it. The background auto-sync only runs while the browser still remembers that grant and cannot prompt. The address-bar keyword ("gog") is declared in the manifest and needs no permission. Neither makes a network request.
+
+### No permission for GOG's own APIs (`api.gog.com`, `catalog.gog.com`)
+> Two optional features ask GOG's own public APIs — the same endpoints gog.com's pages call — for data about the page the user is already viewing: which games a pack contains (api.gog.com, only the numeric product id is sent) and the next page of a catalog list (catalog.gog.com, only when the user turns on endless scrolling, which is off by default). They are requested from the gog.com page under its own cross-origin rules, with no cookies and no referrer, so they need no host permission. Every request is listed for the user under Advanced Options → Privacy & transparency.
 
 ### Optional host permission: `https://*/*` (`optional_host_permissions`)
 > Never granted at install and never used unless the user turns on the optional "send notifications to my own webhook" setting and types an https address. At that moment the extension requests access to that single origin through the browser's own permission prompt, and only the notification's title and text are POSTed to it (no cookies, no referrer, no library data). The address is stored locally and excluded from every export and sync. If the user never sets a webhook, no network request is ever made under this permission. A broad optional pattern is required because the address is chosen by the user and cannot be known in advance.

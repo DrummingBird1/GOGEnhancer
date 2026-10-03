@@ -191,13 +191,13 @@ export function wishlistV4() {
   </div></div></body></html>`;
 }
 
-export function gameV4() {
+export function gameV4({ productId = null, title = "Alpha Game" } = {}) {
   const ends = new Date(Date.now() + 2 * 86400e3);
   const timer = `${ends.toISOString().slice(0, 19).replace("T", " ")}.000000+00:00`;
   const tick = '<svg class="ic-svg details__languages-icon details__languages-icon--tick"><use xlink:href="#check_tick"></use></svg>';
   return `<!doctype html><html lang="en" id="pageTop" ng-app="gog" class="ng-scope"><head><meta charset="utf-8"><title>Alpha Game 50% off | GOG.COM</title>
   <meta property="og:title" content="Alpha Game 50% off | GOG.COM">
-  <script type="application/ld+json">{"@type":"Product","name":"Alpha Game","releaseDate":"2015-05-19T00:00:00+02:00"}</script>
+  <script type="application/ld+json">${JSON.stringify({ "@type": "Product", name: title, ...(productId ? { sku: productId } : {}), releaseDate: "2015-05-19T00:00:00+02:00" })}</script>
   <style>${baseCss}
     ._price::before { content: "$ " }
     .gog-patrons-modal { display: none }
@@ -206,8 +206,9 @@ export function gameV4() {
   <body class="productcard _prices-in-usd _price-currency-symbol-before user-logged-in">
   <header><span id="clock">00:00</span> GOG.COM</header>
   <div class="layout ng-scope"><div class="layout-container">
+    ${productId ? `<div card-product="${productId}"></div>` : ""}
     <div class="productcard-basics hide-when-content-is-expanded">
-      <h1 class="productcard-basics__title" selenium-id="ProductTitle">Alpha Game</h1>
+      <h1 class="productcard-basics__title" selenium-id="ProductTitle">${title}</h1>
       <div class="productcard-rating"><p class="rating productcard-rating__score--version-a">4.8/5</p><p class="rating productcard-rating__details">( 2848 Reviews )</p></div>
       <aside><div id="ProductActionsBody" class="product-actions-body" selenium-id="ProductActionsBody">
         <div class="product-actions-price product-actions-price--discounted">

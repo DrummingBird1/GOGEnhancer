@@ -555,12 +555,15 @@
     <section class="card subtle">
       <h2>Privacy &amp; transparency</h2>
       <p class="card-sub">
-        GOG Enhancer talks to three domains and that's it:
+        GOG Enhancer can contact these addresses, and no others. It sends no
+        cookies and no referrer, and no account information:
       </p>
       <ul class="bullet">
-        <li><strong>www.gog.com</strong> — to read what's on the page and inject UI.</li>
-        <li><strong>api.frankfurter.app</strong> — to fetch USD→EUR/ILS/GBP/PLN/RUB rates (no key, no tracking).</li>
+        <li><strong>www.gog.com</strong> — the pages you browse, and the public mods list once a day.</li>
+        <li><strong>api.frankfurter.app</strong> — USD→EUR/ILS/GBP/PLN/RUB exchange rates (no key, no tracking).</li>
         <li><strong>www.cheapshark.com</strong> — the optional price-comparison table on a game page (only the game's title is sent).</li>
+        <li><strong>api.gog.com</strong> — GOG's own product API, asked once per game page which games a pack contains (only its numeric id is sent). Switch it off under Catalog, wishlist &amp; library.</li>
+        <li><strong>catalog.gog.com</strong> — GOG's own catalog API, used only if you turn on endless scrolling, to fetch the next page of the list you're already looking at.</li>
       </ul>
       <p class="card-sub">
         The one other address it can ever contact is a webhook <em>you</em>
@@ -568,6 +571,21 @@
         your permission for that one origin. No analytics. No third-party fonts.
         Tags &amp; notes never leave your machine.
       </p>
+
+      <h3 class="priv-sub">What it contacted recently</h3>
+      <div id="privNet" aria-live="polite"></div>
+
+      <h3 class="priv-sub">What it keeps on this device</h3>
+      <div id="privStore"></div>
+
+      <h3 class="priv-sub">Extra site access the browser has granted it</h3>
+      <div id="privPerms"></div>
+
+      <div class="card-actions wrap">
+        <button id="privClearLog" class="ghost" type="button">Clear the request list</button>
+        <button id="privForget" class="ghost" type="button">Forget what it learned about my library</button>
+        <button id="privDeleteAll" class="danger" type="button">Delete everything…</button>
+      </div>
     </section>
 
     <footer class="page-footer">
@@ -580,6 +598,8 @@
   <script src="../lib/defaults.js"></script>
   <script src="../lib/i18n.js"></script>
   <script src="../lib/storage.js"></script>
+  <script src="../lib/net.js"></script>
+  <script src="../lib/privacy-view.js"></script>
   <script src="../lib/migrations.js"></script>
   <script src="../lib/game-status.js"></script>
   <script src="../lib/backup-crypto.js"></script>
@@ -591,5 +611,6 @@
   <script src="options.js"></script>
   <script src="folder-sync.js"></script>
   <script src="tools-section.js"></script>
+  <script src="privacy-section.js"></script>
 </body>
 </html>

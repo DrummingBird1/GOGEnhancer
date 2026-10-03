@@ -183,7 +183,54 @@
     };
   }
 
-  const api = { WIDTH, HEIGHT, fit, layout, render, toPng, wrappedModel, collectorModel };
+  /**
+   * A card for the wishlist page: how many games, what they cost today, the
+   * best deals, and what's coming. Built from the same rows the page's own
+   * tools use, so the numbers match what the bar above the list shows.
+   * @param {Array<{ slug: string | null, title: string, price: number | null, currency: string | null, discountPct: number, owned: boolean, tba: boolean, free: boolean }>} rows
+   * @param {{ target?: string, rates?: Record<string, number>, history?: Record<string, any[]> }} ctx
+   * @param {{ upcoming?: Array<{ title: string, date: string }> }} [extra]
+   * @returns {CardModel}
+   */
+  function wishlistModel(rows, ctx, extra = {}) {
+    const Tools = window.GOGPlusWishlistTools;
+    const open = rows.filter((r) => !r.owned);
+    const t = Tools.totals(open, ctx);
+    const cur = t.currency || ctx.target || "";
+    /** @param {{ price: number | null, currency: string | null }} r */
+    const priceOf = (r) => {
+      if (r.price == null) return "—";
+      const v = Tools.toTarget(r.price, r.currency, ctx);
+      return v == null ? `${r.price.toFixed(2)} ${r.currency || ""}`.trim() : money(v, cur);
+    };
+    const best = open
+      .filter((r) => r.discountPct > 0 && r.price != null)
+      .sort((a, b) => b.discountPct - a.discountPct)
+      .slice(0, 5)
+      .map((r) => ({ label: r.title, value: `-${r.discountPct}% · ${priceOf(r)}` }));
+    const lows = open
+      .filter((r) => r.price != null && Tools.nearLow(/** @type {any} */ (r), ctx))
+      .slice(0, 5)
+      .map((r) => ({ label: r.title, value: `${priceOf(r)} · near its low` }));
+    const coming = (extra.upcoming || []).slice(0, 5).map((u) => ({ label: u.title, value: u.date }));
+    return {
+      title: "My GOG wishlist",
+      subtitle: `${open.length} game${open.length === 1 ? "" : "s"} waiting`,
+      stats: [
+        { label: "on sale right now", value: String(t.onSale) },
+        { label: "to buy them all today", value: t.priced ? money(t.total, cur) : "—" },
+        ...(t.saving > 0 ? [{ label: "saved by today's discounts", value: money(t.saving, cur) }] : []),
+      ],
+      lists: [
+        // The card has room for two lists: deals first, then what's coming, else what's near its low.
+        { title: "Biggest discounts", rows: best },
+        { title: "Coming soon", rows: coming },
+        { title: "Near their lowest price", rows: lows },
+      ].filter((l) => l.rows.length),
+    };
+  }
+
+  const api = { WIDTH, HEIGHT, fit, layout, render, toPng, wrappedModel, collectorModel, wishlistModel };
   if (typeof window !== "undefined") window.GOGPlusShareCard = api;
   if (typeof self !== "undefined") self.GOGPlusShareCard = api;
 })();

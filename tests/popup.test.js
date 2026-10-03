@@ -4,6 +4,7 @@ await import("../extension/lib/defaults.js");
 await import("../extension/lib/i18n.js");
 await import("../extension/lib/storage.js");
 await import("../extension/lib/changelog.js");
+await import("../extension/lib/digest-html.js");
 
 const BOOLEAN_IDS = [
   "taxEstimator",
@@ -41,6 +42,7 @@ function fixtureHtml() {
       <ul id="dealsList"></ul>
     </div>
     <div id="digestSection" hidden>
+      <button id="digestDownload" type="button">Save as page</button>
       <ul id="digestList"></ul>
     </div>
     <select id="targetCurrency">
@@ -322,6 +324,43 @@ describe("wishlist deals in the popup", () => {
 });
 
 describe("weekly digest ('This week') in the popup", () => {
+  it("saves the digest as a self-contained web page", async () => {
+    await new Promise((r) =>
+      chrome.storage.local.set(
+        { weeklyDigest: { generatedAt: Date.parse("2026-10-03T12:00:00Z"), dropsThisWeek: 0, refundClosing: [{ slug: "hades", daysLeft: 2 }], priceAlertHits: [], wishlistDrops: [] } },
+        r
+      )
+    );
+    await bootPopup();
+    const made = [];
+    const clicked = [];
+    URL.createObjectURL = vi.fn((blob) => {
+      made.push(blob);
+      return "blob:digest";
+    });
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () {
+      clicked.push(this.download);
+    });
+    document.getElementById("digestDownload").click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(clicked).toEqual(["gog-enhancer-digest-2026-10-03.html"]);
+    expect(made[0].type).toBe("text/html");
+    const html = await made[0].text();
+    expect(html).toContain("<!doctype html>");
+    expect(html).toContain("Hades");
+    expect(html).toContain("closes in 2 days");
+    expect(html).not.toMatch(/<script/i);
+  });
+
+  it("does nothing when there is no digest to save", async () => {
+    await bootPopup();
+    URL.createObjectURL = vi.fn();
+    document.getElementById("digestDownload").click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+  });
+
   it("stays hidden when there is no weeklyDigest yet (fresh install, alarm hasn't fired)", async () => {
     await bootPopup();
     expect(document.getElementById("digestSection").hidden).toBe(true);

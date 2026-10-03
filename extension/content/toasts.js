@@ -26,6 +26,9 @@
     if (host) return host;
     host = document.createElement("div");
     host.className = "gog-plus-toasts";
+    // New toasts are read out by screen readers without taking focus.
+    host.setAttribute("role", "status");
+    host.setAttribute("aria-live", "polite");
     document.body.appendChild(host);
     return host;
   }

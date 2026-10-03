@@ -82,6 +82,7 @@
     const tgtCur = state.settings.targetCurrency;
     const tgtRate = tgtCur === "USD" ? 1 : state.settings.rates[tgtCur];
 
+    let converted = 0;
     const convertInto = (/** @type {Element} */ host, /** @type {string} */ text) => {
       const price = window.GOGPlusCurrency.parsePrice(text, state.pageCurrency.code);
       if (!price) return;
@@ -125,6 +126,7 @@
       }
       host.classList.add("gog-plus-converted");
       host.appendChild(note);
+      converted++;
     };
 
     for (const node of targets) {
@@ -145,6 +147,13 @@
       const text = window.GOGPlusGogDom.displayText(el);
       if (text.length > 24 || !priceOnlyRe.test(text)) continue;
       convertInto(el, text);
+    }
+
+    if (converted > 0) {
+      window.GOGPlusAnnounce?.once(
+        `converted:${location.pathname}`,
+        `Prices on this page are also shown in ${state.settings.targetCurrency}, as approximate conversions.`
+      );
     }
   }
 

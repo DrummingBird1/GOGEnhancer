@@ -122,6 +122,7 @@
     ["Hebrew translations", () => applyHebrewTranslations()],
     ["library knowledge", () => window.GOGPlusKnowledge?.learnOwnership()],
     ["catalog tools", () => window.GOGPlusCatalog?.applyCatalog()],
+    ["endless scrolling", () => window.GOGPlusEndless?.applyEndless()],
     ["wishlist tools", () => ensureWishlistFilters()],
     ["game page", () => enhanceGamePage()],
     ["review tools", () => window.GOGPlusReviewTools?.applyReviewFilter()],
@@ -190,7 +191,10 @@
     if (!location.pathname.includes("/account/wishlist")) {
       document.getElementById("gog-plus-wlfilters")?.remove();
     }
-    if (window.GOGPlusGogDom.pageType() !== "store") document.getElementById("gog-plus-catbar")?.remove();
+    if (window.GOGPlusGogDom.pageType() !== "store") {
+      document.getElementById("gog-plus-catbar")?.remove();
+      window.GOGPlusEndless?.reset();
+    }
     window.GOGPlusSiteSignals?.checkPackLink();
     scheduleProcess();
   }
@@ -223,8 +227,12 @@
     "catalogDensity", "ownedDisplay", "hideNotInterested", "noteHistory",
   ]);
 
+  // Bookkeeping the page never renders — a write must not cost a pass.
+  const QUIET_KEYS = new Set(["netLog", "failureLog"]);
+
   window.GOGPlusStorage.onChange(async ({ key, newValue }) => {
     state.settings[key] = newValue;
+    if (QUIET_KEYS.has(key)) return;
     // Features that live outside processAll (the catalog bar, other tabs'
     // writes) listen for this instead of for storage directly.
     document.dispatchEvent(new CustomEvent("gog-plus:data", { detail: { key } }));
@@ -233,8 +241,8 @@
       processAll();
       return;
     }
-    // New facts about a game only change the insights panel.
-    if (key === "gameFacts") {
+    // New facts about a game (or what a pack contains) only change the insights panel.
+    if (key === "gameFacts" || key === "packInfo") {
       document.getElementById("gog-plus-gamepanel")?.remove();
       processAll();
       return;

@@ -227,20 +227,55 @@
     return [...seen];
   }
 
-  /** Release year from the page's JSON-LD, or null. */
-  function readReleaseYear() {
+  /**
+   * The page's schema.org Product (JSON-LD), or null. It carries the product id
+   * (`sku`) and the release date, both far more stable than any class name.
+   * @returns {any | null}
+   */
+  function ldProduct() {
     for (const s of document.querySelectorAll('script[type="application/ld+json"]')) {
       try {
         const data = JSON.parse(s.textContent || "");
         for (const item of Array.isArray(data) ? data : [data]) {
-          const m = typeof item?.releaseDate === "string" ? item.releaseDate.match(/^(\d{4})/) : null;
-          if (m) return parseInt(m[1], 10);
+          if (item && (item.sku || item.releaseDate)) return item;
         }
       } catch {
         // Malformed JSON-LD is the page's problem.
       }
     }
     return null;
+  }
+
+  /** Release year from the page's JSON-LD, or null. */
+  function readReleaseYear() {
+    const d = ldProduct()?.releaseDate;
+    const m = typeof d === "string" ? d.match(/^(\d{4})/) : null;
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  /**
+   * The release date GOG's store page gives ("2011-11-15"), or "". For a game
+   * not out yet this is the planned date. It is the date on GOG, which for an
+   * old game can be later than the original release.
+   * @returns {string}
+   */
+  function readReleaseDate() {
+    const d = ldProduct()?.releaseDate;
+    const m = typeof d === "string" ? d.match(/^(\d{4}-\d{2}-\d{2})/) : null;
+    return m ? m[1] : "";
+  }
+
+  /**
+   * GOG's numeric product id for this page — the `card-product` attribute the
+   * page puts on its product card, or the JSON-LD `sku`. null when neither is
+   * there (which is also what a non-game page gives).
+   * @returns {string | null}
+   */
+  function readProductId() {
+    const attr = document.querySelector("[card-product]")?.getAttribute("card-product")?.trim();
+    if (attr && /^\d{3,12}$/.test(attr)) return attr;
+    const sku = String(ldProduct()?.sku ?? "").trim();
+    return /^\d{3,12}$/.test(sku) ? sku : null;
   }
 
   /** Everything a game page says about the game, for the facts cache and the panel. */
@@ -253,6 +288,7 @@
       timeToBeat: readTimeToBeat(),
       tags: readProductTags(),
       releaseYear: readReleaseYear(),
+      releaseDate: readReleaseDate(),
       promoEnd: promoEndRaw(),
       owned: isGameOwned(),
     };
@@ -440,6 +476,8 @@
     readTimeToBeat,
     readProductTags,
     readReleaseYear,
+    readReleaseDate,
+    readProductId,
     readGameFacts,
     bundleSlugs,
     readReviews,

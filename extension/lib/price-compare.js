@@ -80,7 +80,7 @@
     const url = `${DEALS_URL}?title=${encodeURIComponent(title)}&limit=30`;
     let res;
     try {
-      res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      res = await self.GOGPlusNet.request("compare", url, { timeoutMs: 8000 });
     } catch (_) {
       return [];
     }

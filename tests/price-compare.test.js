@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
+await import("../extension/lib/net.js");
 await import("../extension/lib/price-compare.js");
 
 const { fetchDeals, normalizeTitle, titlesMatch, STORE_NAMES } = window.GOGPlusPriceCompare;

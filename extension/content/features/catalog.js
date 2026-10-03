@@ -454,6 +454,16 @@
     hist.append(histBox, " Only games I've tracked");
     bar.appendChild(hist);
 
+    const endless = /** @type {HTMLLabelElement} */ (el("label", "gog-plus-bar-check"));
+    endless.title = "Add the next page when you reach the end (asks GOG's catalog API; see Advanced Options)";
+    const endlessBox = /** @type {HTMLInputElement} */ (el("input"));
+    endlessBox.type = "checkbox";
+    endlessBox.id = "gog-plus-cat-endless";
+    endlessBox.checked = !!s.endlessCatalog;
+    endlessBox.addEventListener("change", () => window.GOGPlusStorage.set({ endlessCatalog: endlessBox.checked }));
+    endless.append(endlessBox, " Endless scrolling");
+    bar.appendChild(endless);
+
     const selectBtn = button(selectMode ? "Done selecting" : "Select games", () => {
       selectMode = !selectMode;
       if (!selectMode) selected.clear();

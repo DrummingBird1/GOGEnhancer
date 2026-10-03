@@ -313,6 +313,59 @@
   }
 
   /**
+   * What this game's pack structure means for your library: for a pack, which
+   * of its games you already own (from GOG's product API, cached); for a game,
+   * whether a pack you own already contains it. Falls back to the page-text
+   * heuristic when the lookup is off or hasn't answered yet.
+   * @param {HTMLElement} wrap @param {string} slug @param {Record<string, any>} ownedMap
+   */
+  function packSection(wrap, slug, ownedMap) {
+    const s = state.settings;
+    const Deals = window.GOGPlusDeals;
+    const info = s.packInfo?.[slug];
+    const known = Deals.packInfoFresh(info);
+    if (!known && s.packContents) {
+      // Asks once, then the panel is rebuilt when the answer is stored.
+      void window.GOGPlusKnowledge.ensurePackInfo(slug).catch(() => {});
+    }
+
+    /** @type {Array<{ slug: string, title: string }>} */
+    let children = known ? info.children : [];
+    if (!known) {
+      children = Dom.bundleSlugs(slug).map((x) => ({ slug: x, title: s.gameFacts?.[x]?.title || window.GOGPlusLibraryTools.titleFromSlug(x) }));
+    }
+    if (children.length) {
+      const ov = Deals.packOverlap(children, ownedMap);
+      const names = (list) => list.slice(0, 5).map((c) => c.title).join(", ") + (list.length > 5 ? "…" : "");
+      if (ov.allOwned) {
+        wrap.appendChild(line("is-bad", `⚠ You already own all ${ov.total} games in this pack.`));
+      } else if (ov.owned.length) {
+        wrap.appendChild(line("is-bad", `⚠ You already own ${ov.owned.length} of the ${ov.total} games in this pack: ${names(ov.owned)}.`));
+      } else if (known) {
+        wrap.appendChild(line("is-good", `This pack has ${ov.total} games — none of them are in your library yet.`));
+      }
+      if (known) {
+        const p = el("p", "gog-plus-pack-list");
+        p.appendChild(el("span", "gog-plus-lang-label", "In this pack:"));
+        for (const c of children) {
+          const a = /** @type {HTMLAnchorElement} */ (el("a", "gog-plus-similar-link", `${ownedMap[c.slug] ? "✓ " : ""}${c.title}`));
+          a.href = `/en/game/${encodeURIComponent(c.slug)}`;
+          p.appendChild(a);
+        }
+        wrap.appendChild(p);
+      }
+    }
+
+    if (!ownedMap[slug]) {
+      const via = Deals.ownedPacksContaining(slug, s.packInfo, ownedMap);
+      if (via.length) {
+        const names = via.map((x) => s.gameFacts?.[x]?.title || window.GOGPlusLibraryTools.titleFromSlug(x)).join(", ");
+        wrap.appendChild(line("is-good", `✓ Already in your library through ${names}.`));
+      }
+    }
+  }
+
+  /**
    * @param {string} slug
    * @returns {HTMLElement | null}
    */
@@ -326,17 +379,7 @@
       wrap.appendChild(line("is-good", "✓ This game is already in your library."));
     }
 
-    // Pack / bundle overlap — heuristic, see GOGPlusGogDom.bundleSlugs.
-    const inside = Dom.bundleSlugs(slug);
-    if (inside.length) {
-      const have = inside.filter((x) => ownedMap[x]);
-      if (have.length) {
-        const names = have.slice(0, 5).map((x) => s.gameFacts?.[x]?.title || window.GOGPlusLibraryTools.titleFromSlug(x));
-        wrap.appendChild(
-          line("is-bad", `⚠ You already own ${have.length} of the ${inside.length} games in this pack: ${names.join(", ")}${have.length > 5 ? "…" : ""}.`)
-        );
-      }
-    }
+    packSection(wrap, slug, ownedMap);
 
     if (s.similarOwned) {
       const similar = window.GOGPlusLibraryTools.similarOwned(slug, {

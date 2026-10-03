@@ -160,6 +160,8 @@
     ".gog-plus-badges",
     ".gog-plus-conv-note",
     "#gog-plus-catbar",
+    "#gog-plus-endless",
+    "#gog-plus-announcer",
     "#gog-plus-reviewbar",
     "#gog-plus-compare-tray",
     ".gog-plus-modal-overlay",
