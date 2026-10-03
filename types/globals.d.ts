@@ -162,6 +162,14 @@ declare global {
     GOGPlusCatalog?: GogPlusLooseApi;
     GOGPlusReviewTools?: GogPlusLooseApi;
     GOGPlusSiteSignals?: GogPlusLooseApi;
+    GOGPlusBackupCrypto?: GogPlusLooseApi;
+    GOGPlusExportFormats?: GogPlusLooseApi;
+    GOGPlusFolderSyncCore?: GogPlusLooseApi;
+    GOGPlusNotifyPolicy?: GogPlusLooseApi;
+    GOGPlusSettingsProfiles?: GogPlusLooseApi;
+    GOGPlusShareCard?: GogPlusLooseApi;
+    GOGPlusTagsLibraryHub?: GogPlusLooseApi;
+    GOGPlusTagsBoot?: GogPlusLooseApi;
 
     GOGPlusTagsState?: GogPlusLooseApi;
     GOGPlusTagsConstants?: GogPlusLooseApi;

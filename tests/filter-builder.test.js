@@ -7,6 +7,7 @@ await import("../extension/lib/currency-format.js");
 await import("../extension/lib/genres.js");
 await import("../extension/lib/purchases.js");
 await import("../extension/lib/game-status.js");
+await import("../extension/lib/lang-names.js");
 await import("../extension/lib/attachments.js");
 await import("../extension/tags/state.js");
 await import("../extension/tags/features/tag-management.js");

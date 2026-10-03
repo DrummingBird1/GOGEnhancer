@@ -27,30 +27,16 @@ function exportPack() {
       state.activeTag ? `${state.activeTag} pack` : `My GOG pack`
     );
   if (packName === null) return; // user cancelled
-  const usedTagSet = new Set();
-  const games = slugs.map((slug) => {
-    const tags = state.allTags[slug] || [];
-    tags.forEach((t) => usedTagSet.add(t));
-    return {
-      slug,
-      tags,
-      note: state.allNotes[slug] || "",
-      purchaseDate: purchaseDateOf(state.allPurchases[slug]) || null,
-    };
-  });
-  const usedColors = {};
-  for (const t of usedTagSet) {
-    if (state.tagColors[t]) usedColors[t] = state.tagColors[t];
-  }
-  const pack = {
-    format: "gog-enhancer-tag-pack",
-    formatVersion: 1,
-    name: packName.trim() || "Untitled pack",
-    exportedAt: new Date().toISOString(),
-    gameCount: games.length,
-    games,
-    tagColors: usedColors,
-  };
+  const pack = window.GOGPlusPack.buildPack(
+    {
+      slugs,
+      tags: state.allTags,
+      notes: state.allNotes,
+      purchaseLog: state.allPurchases,
+      tagColors: state.tagColors,
+    },
+    packName
+  );
   const blob = new Blob([JSON.stringify(pack, null, 2)], {
     type: "application/json",
   });
@@ -68,13 +54,7 @@ async function importPackFromFile(e) {
   if (!file) return;
   try {
     const text = await file.text();
-    const pack = JSON.parse(text);
-    if (pack?.format !== "gog-enhancer-tag-pack") {
-      throw new Error("Not a recognised tag pack (wrong format field).");
-    }
-    if (!Array.isArray(pack.games)) {
-      throw new Error("Pack has no games array.");
-    }
+    const pack = window.GOGPlusPack.validatePack(JSON.parse(text));
     const summary =
       `Import "${pack.name || "untitled"}"?\n\n` +
       `Pack contains ${pack.games.length} game${pack.games.length === 1 ? "" : "s"}.\n` +
@@ -87,38 +67,21 @@ async function importPackFromFile(e) {
       `Nothing is overwritten.`;
     if (!confirm(summary)) return;
 
-    let tagsAdded = 0;
-    let notesAdded = 0;
-    let purchasesAdded = 0;
-    let colorsAdded = 0;
-    for (const g of pack.games) {
-      if (!g?.slug) continue;
-      if (Array.isArray(g.tags) && g.tags.length) {
-        const existing = new Set(state.allTags[g.slug] || []);
-        const before = existing.size;
-        for (const t of g.tags) existing.add(t);
-        if (existing.size > before) {
-          state.allTags[g.slug] = [...existing];
-          tagsAdded += existing.size - before;
-        }
-      }
-      if (g.note && !state.allNotes[g.slug]) {
-        state.allNotes[g.slug] = g.note;
-        notesAdded++;
-      }
-      if (g.purchaseDate && !state.allPurchases[g.slug]) {
-        state.allPurchases[g.slug] = { date: g.purchaseDate };
-        purchasesAdded++;
-      }
-    }
-    if (pack.state.tagColors && typeof pack.state.tagColors === "object") {
-      for (const [t, c] of Object.entries(pack.state.tagColors)) {
-        if (!state.tagColors[t] && typeof c === "string" && /^#[0-9a-f]{3,8}$/i.test(c)) {
-          state.tagColors[t] = c;
-          colorsAdded++;
-        }
-      }
-    }
+    // The merge itself lives in lib/pack.js (shared with share links). Until
+    // v4 this read the colours from `pack.state.tagColors` — but packs store
+    // them at `pack.tagColors`, so importing a pack ALWAYS threw at this point,
+    // after changing memory but before saving anything.
+    const merged = window.GOGPlusPack.mergePack(pack, {
+      tags: state.allTags,
+      notes: state.allNotes,
+      purchaseLog: state.allPurchases,
+      tagColors: state.tagColors,
+    });
+    state.allTags = merged.tags;
+    state.allNotes = merged.notes;
+    state.allPurchases = merged.purchaseLog;
+    state.tagColors = merged.tagColors;
+    const { tags: tagsAdded, notes: notesAdded, purchases: purchasesAdded, colors: colorsAdded } = merged.counts;
     await window.GOGPlusStorage.set({
       tags: state.allTags,
       notes: state.allNotes,

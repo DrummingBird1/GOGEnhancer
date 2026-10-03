@@ -230,24 +230,36 @@ describe("commands", () => {
 });
 
 describe("onInstalled", () => {
-  it("creates all five alarms and opens onboarding on a fresh install", async () => {
+  it("creates every alarm and opens onboarding on a fresh install", async () => {
     await Promise.all(listeners.onInstalled.map((fn) => fn({ reason: "install" })));
-    expect(chrome.alarms.create).toHaveBeenCalledTimes(5);
+    expect(chrome.alarms.create).toHaveBeenCalledTimes(7);
     expect(chrome.alarms.create.mock.calls.map((c) => c[0])).toEqual([
       "gog-plus-fx",
       "gog-plus-mods",
       "gog-plus-wishlist",
       "gog-plus-daily",
       "gog-plus-digest",
+      "gog-plus-flush",
+      "gog-plus-autosync",
     ]);
     expect(chrome.tabs.create).toHaveBeenCalledWith({
       url: "chrome-extension://test-id/onboarding/onboarding.html",
     });
   });
 
-  it("does not open onboarding on an update", async () => {
-    await Promise.all(listeners.onInstalled.map((fn) => fn({ reason: "update" })));
+  it("does not open onboarding on an update within v4", async () => {
+    await Promise.all(listeners.onInstalled.map((fn) => fn({ reason: "update", previousVersion: "4.0.0" })));
     expect(chrome.tabs.create).not.toHaveBeenCalled();
+  });
+
+  it("shows the v4 tour once to someone updating from an older version", async () => {
+    await Promise.all(listeners.onInstalled.map((fn) => fn({ reason: "update", previousVersion: "3.0.0" })));
+    expect(chrome.tabs.create).toHaveBeenCalledTimes(1);
+    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: "chrome-extension://test-id/tour/tour.html" });
+    expect((await getLocal(["tourSeen"])).tourSeen).toBe("4");
+    chrome.tabs.create.mockClear();
+    await Promise.all(listeners.onInstalled.map((fn) => fn({ reason: "update", previousVersion: "3.0.0" })));
+    expect(chrome.tabs.create).not.toHaveBeenCalled(); // never twice
   });
 
   it("fills in any settings keys missing from storage with defaults", async () => {

@@ -584,3 +584,12 @@ body.disabled .rate-strip { opacity: 0.4; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .section, .whatsnew, .deals, .digest { animation: none; }
 }
+
+/* v4 — colour-vision palettes and calm mode, mirrored from content.css for the extension's own pages */
+html.gog-plus-palette--deuteranopia,
+html.gog-plus-palette--protanopia { --accent-green: #56b4e9; --accent-pink: #e69f00; }
+html.gog-plus-palette--tritanopia { --accent-green: #009e73; --accent-pink: #d55e00; }
+html.gog-plus-palette--high-contrast { --accent-green: #00ff66; --accent-pink: #ff5c5c; --border: rgba(255, 255, 255, 0.45); }
+html.gog-plus-calm *,
+html.gog-plus-calm *::before,
+html.gog-plus-calm *::after { animation: none !important; transition: none !important; }

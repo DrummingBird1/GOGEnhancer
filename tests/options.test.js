@@ -5,6 +5,7 @@ await import("../extension/lib/i18n.js");
 await import("../extension/lib/storage.js");
 await import("../extension/lib/migrations.js");
 await import("../extension/lib/game-status.js");
+await import("../extension/lib/backup-crypto.js");
 
 function fixtureHtml() {
   return `

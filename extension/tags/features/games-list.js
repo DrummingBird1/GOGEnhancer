@@ -39,7 +39,10 @@
   function genreSuggestionFor(slug) {
     if ((state.allTags[slug] || []).length) return null;
     const bucket = state.allGenres[slug] || matchGenrePattern(slug);
-    if (!bucket) return null;
+    if (!bucket) {
+      // No genre bucket — GOG's own first tag for the game (read from its page) will do.
+      return state.allFacts?.[slug]?.tags?.[0] || null;
+    }
     return GENRE_DISPLAY_NAMES[bucket] || bucket;
   }
 
@@ -53,12 +56,15 @@ function parseSearchQuery(input) {
     since: null,
     status: null,
     genre: null,
+    lang: null, // a language the game must support, e.g. lang:hebrew
+    owned: null, // "yes" | "no" — in your library (learned from the site's labels)
+    ends: null, // offer ends within N days, e.g. ends:3
     plain: "",
   };
   if (!input) return f;
   const plain = [];
   for (const tok of input.split(/\s+/)) {
-    const m = tok.match(/^(tag|lowest|snapshots|since|status|genre):(.+)$/i);
+    const m = tok.match(/^(tag|lowest|snapshots|since|status|genre|lang|owned|ends):(.+)$/i);
     if (!m) {
       plain.push(tok);
       continue;
@@ -71,6 +77,13 @@ function parseSearchQuery(input) {
       f.status = val.toLowerCase();
     } else if (key === "genre") {
       f.genre = val.toLowerCase();
+    } else if (key === "lang") {
+      f.lang = val.toLowerCase();
+    } else if (key === "owned" && /^(yes|no)$/i.test(val)) {
+      f.owned = val.toLowerCase();
+    } else if (key === "ends") {
+      const days = parseFloat(val.replace(/^</, ""));
+      if (Number.isFinite(days) && days > 0) f.ends = days;
     } else if (key === "lowest" || key === "snapshots") {
       const cmp = val[0];
       const num = parseFloat(val.slice(1));
@@ -92,6 +105,9 @@ function matchingSlugs() {
     ...Object.keys(state.allNotes),
     ...Object.keys(state.allHistory),
     ...Object.keys(state.allStatus),
+    // The whole learned library only on request — hundreds of owned games with
+    // nothing else to say would drown the list otherwise.
+    ...(f.owned === "yes" ? Object.keys(state.allOwned) : []),
   ]);
   const out = [];
   for (const slug of slugs) {
@@ -108,6 +124,16 @@ function matchingSlugs() {
     if (f.genre) {
       const bucket = state.allGenres[slug] || matchGenrePattern(slug);
       if ((bucket || "").toLowerCase() !== f.genre) continue;
+    }
+    if (f.lang) {
+      const langs = state.allFacts[slug]?.langs;
+      if (!langs || !window.GOGPlusLangNames.findLanguage(langs, f.lang)) continue;
+    }
+    if (f.owned && (f.owned === "yes") !== !!state.allOwned[slug]) continue;
+    if (f.ends !== null) {
+      const end = window.GOGPlusDeals.parsePromoDate(state.allFacts[slug]?.pe);
+      const left = end === null ? 0 : end - Date.now();
+      if (left <= 0 || left > f.ends * 24 * 60 * 60 * 1000) continue;
     }
     if (f.since && !hist.some((e) => (e.d || "").startsWith(f.since))) continue;
     if (f.lowestLt !== null || f.lowestGt !== null) {
@@ -127,7 +153,7 @@ function matchingSlugs() {
     // Even with no plain term, require SOMETHING — tags, note, history, or a
     // set status. (Otherwise the "show every slug we've ever seen" set is
     // overwhelming.)
-    if (!tags.length && !note && !hist.length && !status) continue;
+    if (!tags.length && !note && !hist.length && !status && f.owned !== "yes") continue;
     out.push(slug);
   }
   return applySort(out);

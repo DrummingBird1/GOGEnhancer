@@ -9,6 +9,7 @@ await import("../extension/lib/currency-format.js");
 await import("../extension/lib/genres.js");
 await import("../extension/lib/game-status.js");
 await import("../extension/lib/sysreq.js");
+await import("../extension/lib/deals.js");
 await import("../extension/content/gog-dom.js");
 await import("../extension/content/translations.js");
 await import("../extension/content/currency-detection.js");
@@ -268,5 +269,53 @@ describe("applyCardBadges — quick-add-tag (v3.0.0)", () => {
     expect(host.querySelector(".gog-plus-tag-dot").dataset.gogPlusTip).toContain("already");
     expect(host.querySelector(".gog-plus-tag-dot").dataset.gogPlusTip).not.toContain("already, already");
     setSpy.mockRestore();
+  });
+});
+
+
+describe("applyCardBadges — offer-ending badge", () => {
+  const settings = (gameFacts, extra = {}) =>
+    __setSettingsForTest({
+      ...DEFAULTS,
+      richTooltips: false,
+      designInjection: false,
+      customTags: false,
+      refundBadge: false,
+      modIndicator: false,
+      lowestPriceBadge: false,
+      offerTimer: true,
+      gameFacts,
+      ...extra,
+    });
+  const badge = () => document.querySelector(".gog-plus-badge-ends");
+
+  it("counts down for a game whose offer end the extension saw, inside the last 3 days", () => {
+    settings({ deep_slug: { pe: new Date(Date.now() + 5 * 3600e3).toISOString() } });
+    document.body.innerHTML = deepCardHtml("deep_slug", "h");
+    applyCardBadges(document.body);
+    expect(badge().textContent).toMatch(/^⏳ 4h|^⏳ 5h/);
+    expect(badge().classList.contains("is-soon")).toBe(false); // under 24h: urgent
+    expect(badge().title).toMatch(/^Offer ends in/);
+  });
+
+  it("uses the calmer tier for 1-3 days and a rich tooltip when enabled", () => {
+    settings({ deep_slug: { pe: new Date(Date.now() + 2 * 86400e3).toISOString() } }, { richTooltips: true });
+    document.body.innerHTML = deepCardHtml("deep_slug", "h");
+    applyCardBadges(document.body);
+    expect(badge().classList.contains("is-soon")).toBe(true);
+    expect(badge().dataset.gogPlusTip).toContain("Offer ending");
+  });
+
+  it("never guesses: no badge for far-off, ended or unknown offers, or when switched off", () => {
+    for (const pe of [new Date(Date.now() + 10 * 86400e3).toISOString(), new Date(Date.now() - 1000).toISOString(), undefined, "garbage"]) {
+      settings({ deep_slug: { pe } });
+      document.body.innerHTML = deepCardHtml("deep_slug", "h");
+      applyCardBadges(document.body);
+      expect(badge()).toBeNull();
+    }
+    settings({ deep_slug: { pe: new Date(Date.now() + 3600e3).toISOString() } }, { offerTimer: false });
+    document.body.innerHTML = deepCardHtml("deep_slug", "h");
+    applyCardBadges(document.body);
+    expect(badge()).toBeNull();
   });
 });

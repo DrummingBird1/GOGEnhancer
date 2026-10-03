@@ -50,6 +50,19 @@ describe("manifest.json content script", () => {
       "GOGPlusGamePage",
       "GOGPlusWishlistFeature",
       "GOGPlusCommandPalette",
+      "GOGPlusDeals",
+      "GOGPlusKnowledge",
+      "GOGPlusPanelChrome",
+      "GOGPlusGameExtras",
+      "GOGPlusCatalog",
+      "GOGPlusReviewTools",
+      "GOGPlusSiteSignals",
+      "GOGPlusWishlistTools",
+      "GOGPlusCatalogTools",
+      "GOGPlusLibraryTools",
+      "GOGPlusPack",
+      "GOGPlusLinks",
+      "GOGPlusLangNames",
     ]) {
       expect(window[g], `window.${g}`).toBeTruthy();
     }
@@ -61,7 +74,7 @@ describe("manifest.json content script", () => {
 });
 
 describe("extension pages load their scripts in a working order", () => {
-  for (const page of ["options/options.html", "tags/tags.html", "popup/popup.html", "onboarding/onboarding.html"]) {
+  for (const page of ["options/options.html", "tags/tags.html", "popup/popup.html", "onboarding/onboarding.html", "tour/tour.html"]) {
     it(page, async () => {
       const files = pageScripts(page);
       expect(files.length).toBeGreaterThan(0);
@@ -79,5 +92,8 @@ describe("background service worker", () => {
     await import("../extension/background/background.js");
     expect(self.GOGPlusSyncCore).toBeTruthy();
     expect(self.GOGPlusLibrarySearch).toBeTruthy();
+    expect(self.GOGPlusNotifyPolicy).toBeTruthy();
+    expect(self.GOGPlusFolderSyncCore).toBeTruthy();
+    expect(self.GOGPlusBackupCrypto).toBeTruthy();
   });
 });

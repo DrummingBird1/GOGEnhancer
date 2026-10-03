@@ -28,6 +28,14 @@
     allGenres: {}, // { slug: genre bucket } — confirmed from a real visit, see lib/genres.js
     monthlyBudget: null, // { amount: number, currency: string } | null, set in Advanced Options
     achievements: {}, // { achievementId: unlockedAt ISO date } — see lib/achievements.js
+    allFacts: {}, // { slug: GameFacts } — what game pages said (languages, ratings, tags, offer end…), see content/features/knowledge.js
+    allOwned: {}, // { slug: date first seen in the library } — learned from the site's own "IN LIBRARY" labels
+    statusDates: {}, // { slug: { playing?: date, finished?: date } } — stamped by the service worker
+    rates: {}, // units per USD, for converting money figures
+    targetCurrency: "ILS",
+    monthlyGoal: 0, // games to finish per month; 0 = no goal
+    preferredLanguages: [],
+    uiLanguage: "en",
     tagColors: {}, // { tagName: "#hex" }
     tagOrder: [], // explicit order of tags after drag-reorder; unordered = end
     density: "comfortable", // "comfortable" | "compact"

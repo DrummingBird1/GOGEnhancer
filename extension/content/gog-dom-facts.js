@@ -161,12 +161,17 @@
     for (const nameEl of host.querySelectorAll(".details__languages-row--language-name")) {
       const name = text(nameEl);
       if (!name) continue;
-      const row = nameEl.parentElement;
-      const supported = (/** @type {string} */ cls) => {
-        const cell = row?.querySelector(`.details__languages-row--${cls}`);
-        return !!cell?.querySelector('[class*="tick"], use[href="#check_tick"], use[*|href="#check_tick"]');
-      };
-      out[name] = { audio: supported("audio-support"), text: supported("text-support") };
+      // The audio / text cells are the siblings that follow the name cell, up to
+      // the next language's name cell — correct whether each language sits in
+      // its own row container or all share one.
+      let audio = false;
+      let hasText = false;
+      for (let n = nameEl.nextElementSibling; n && !n.classList.contains("details__languages-row--language-name"); n = n.nextElementSibling) {
+        const ticked = !!n.querySelector('[class*="tick"]');
+        if (n.classList.contains("details__languages-row--audio-support")) audio = ticked;
+        else if (n.classList.contains("details__languages-row--text-support")) hasText = ticked;
+      }
+      out[name] = { audio, text: hasText };
     }
     return Object.keys(out).length ? out : null;
   }
@@ -215,7 +220,8 @@
     if (!host || !G.isSiteElement(host)) return [];
     const seen = new Set();
     for (const a of host.querySelectorAll("a.details__link--tag, a[href*='/games/']")) {
-      const t = text(a);
+      // The anchor also holds the ", " separator after the name.
+      const t = text(a.querySelector(".details__link-text") || a);
       if (t) seen.add(t);
     }
     return [...seen];

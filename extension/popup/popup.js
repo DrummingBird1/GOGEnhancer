@@ -25,6 +25,10 @@ const ALL_BOOLEAN_KEYS = [
   "priceCompareTable",
   "hebrewTranslations",
   "rtlLayout",
+  "plainLook",
+  "calmMode",
+  "catalogTools",
+  "wishlistSmart",
 ];
 
 const ID_OVERRIDES = {
@@ -49,6 +53,13 @@ async function load() {
     const el = $(id);
     if (el) el.checked = !!s[k];
   });
+
+  // The popup's own look follows the same accessibility switches as the site UI.
+  document.documentElement.classList.toggle("gog-plus-calm", !!s.calmMode);
+  [...document.documentElement.classList]
+    .filter((c) => c.startsWith("gog-plus-palette--"))
+    .forEach((c) => document.documentElement.classList.remove(c));
+  if (s.palette && s.palette !== "default") document.documentElement.classList.add(`gog-plus-palette--${s.palette}`);
 
   renderWhatsNew(s);
   renderRateStrip(s);

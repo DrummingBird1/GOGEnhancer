@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What's new in GOG Enhancer 4</title>
+  <link rel="stylesheet" href="tour.css" />
+</head>
+<body>
+  <main class="tour" aria-live="polite">
+    <header class="tour-head">
+      <span class="tour-pill">GOG Enhancer 4</span>
+      <button id="tourSkip" class="tour-link" type="button">Skip the tour</button>
+    </header>
+
+    <section class="slide" data-slide="0" aria-labelledby="s0">
+      <h1 id="s0">Rebuilt for the new gog.com</h1>
+      <p>gog.com changed its design — and parts of the old extension quietly stopped working. This version reads the new pages the way they are now (with several strategies per lookup, so the next redesign degrades gracefully instead of silently), and fixes what the redesign had broken: prices on game pages, genres, badges on the new catalog.</p>
+      <p class="tour-note">If something stops working after a future gog.com update, <strong>Advanced Options → Check this page</strong> tells you exactly which lookup failed.</p>
+    </section>
+
+    <section class="slide" data-slide="1" aria-labelledby="s1" hidden>
+      <h1 id="s1">Is the discount real?</h1>
+      <p>The game page now compares the advertised “−50%” with GOG's own “lowest price in the last 30 days” and with the prices <em>you've</em> seen — and says plainly when a sale isn't cheaper than it recently was. It also shows how long the offer has left, the price per hour of play, the price in other currencies, and whether the game speaks your language.</p>
+      <p class="tour-note">Every section of the panel can be collapsed, dragged into your own order (or moved with Alt+↑/↓), or docked beside the page on a wide screen.</p>
+    </section>
+
+    <section class="slide" data-slide="2" aria-labelledby="s2" hidden>
+      <h1 id="s2">It learns your library</h1>
+      <p>While you browse signed in, the extension reads the site's own “IN LIBRARY” labels — so catalogs can dim or hide games you own, you can mark games “not interested”, sort a page by discount or by closeness to your tracked low, compare games side by side, and save searches. The wishlist gets sorting, a live total, “near my low” and “ending soon” filters and exports.</p>
+      <p class="tour-note">All of it stays on this device. The Library hub in the tag dashboard adds a monthly goal, a weighted backlog roulette, a yearly Wrapped card and an Obsidian export.</p>
+    </section>
+
+    <section class="slide" data-slide="3" aria-labelledby="s3" hidden>
+      <h1 id="s3">Sync, backups and calmer alerts</h1>
+      <p>Point the extension at a folder your cloud client already syncs and it keeps your tags, notes and history in step across browsers — automatically, with a list of anything two browsers disagreed about. It can write dated backups there too. Notifications can honour quiet hours, arrive as one summary a day, ignore small drops, and fire for a whole tag at once.</p>
+      <p class="tour-note">Nothing is sent to us. The only optional outbound channel is a webhook <em>you</em> choose, off by default.</p>
+    </section>
+
+    <section class="slide" data-slide="4" aria-labelledby="s4" hidden>
+      <h1 id="s4">Make it yours</h1>
+      <p>Pick a profile (Minimal, Full or Accessible), switch to a colour-vision friendly palette, scale the text, turn on calm mode, or flip to the plain look to see gog.com without any of our styling — the features keep working.</p>
+      <div class="tour-actions">
+        <button id="tourOptions" class="tour-btn" type="button">Open the settings</button>
+        <button id="tourCheck" class="tour-btn tour-btn--primary" type="button">Check my gog.com tab</button>
+      </div>
+      <p id="tourCheckStatus" class="tour-note" role="status"></p>
+      <pre id="tourCheckOutput" class="tour-output" hidden></pre>
+    </section>
+
+    <footer class="tour-foot">
+      <button id="tourPrev" class="tour-btn" type="button">Back</button>
+      <div class="tour-dots" id="tourDots" role="tablist" aria-label="Tour progress"></div>
+      <button id="tourNext" class="tour-btn tour-btn--primary" type="button">Next</button>
+    </footer>
+  </main>
+
+  <script src="../lib/browser-compat.js"></script>
+  <script src="../options/tools-section.js"></script>
+  <script src="tour.js"></script>
+</body>
+</html>

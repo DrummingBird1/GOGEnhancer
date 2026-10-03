@@ -20,7 +20,8 @@ const { renderTonightPicker } = window.GOGPlusTagsRecommendations;
 const { toggleFilterBuilder, closeFilterBuilder } = window.GOGPlusTagsFilterBuilder;
 const { evaluateAndPersist, renderAchievements } = window.GOGPlusTagsAchievements;
 
-async function init() {
+/** Reads everything the dashboard shows from storage into the shared state. */
+async function loadData() {
   const data = await window.GOGPlusStorage.get({
     tags: {},
     notes: {},
@@ -38,6 +39,16 @@ async function init() {
     customThemeColors: null,
     dyslexiaFont: false,
     achievements: {},
+    gameFacts: {},
+    ownedSlugs: {},
+    statusDates: {},
+    rates: {},
+    targetCurrency: "ILS",
+    monthlyGoal: 0,
+    preferredLanguages: [],
+    syncFolderName: "",
+    calmMode: false,
+    palette: "default",
   });
   window.GOGPlusI18n?.apply(data.uiLanguage || "en");
   state.allTags = data.tags || {};
@@ -51,10 +62,27 @@ async function init() {
   state.allGenres = data.gameGenres || {};
   state.monthlyBudget = data.monthlyBudget || null;
   state.achievements = data.achievements || {};
+  state.allFacts = data.gameFacts || {};
+  state.allOwned = data.ownedSlugs || {};
+  state.statusDates = data.statusDates || {};
+  state.rates = data.rates || {};
+  state.targetCurrency = data.targetCurrency || "ILS";
+  state.monthlyGoal = Number(data.monthlyGoal) || 0;
+  state.preferredLanguages = Array.isArray(data.preferredLanguages) ? data.preferredLanguages : [];
+  state.uiLanguage = data.uiLanguage || "en";
+  state.syncFolderName = data.syncFolderName || "";
   state.density = data.tagDashboardDensity === "compact" ? "compact" : "comfortable";
   applyDensityClass();
   applyThemeClassToHtml(data.theme, data.customThemeColors);
   document.documentElement.classList.toggle("gog-plus-dyslexia-font", !!data.dyslexiaFont);
+  document.documentElement.classList.toggle("gog-plus-calm", !!data.calmMode);
+  [...document.documentElement.classList]
+    .filter((c) => c.startsWith("gog-plus-palette--"))
+    .forEach((c) => document.documentElement.classList.remove(c));
+  if (data.palette && data.palette !== "default") document.documentElement.classList.add(`gog-plus-palette--${data.palette}`);
+}
+
+async function renderAll() {
   await renderStats();
   renderYearReview();
   renderSaleHeatmap();
@@ -64,7 +92,16 @@ async function init() {
   renderTonightPicker();
   await evaluateAndPersist();
   renderAchievements();
+  window.GOGPlusTagsLibraryHub?.renderHub();
+}
+
+async function init() {
+  await loadData();
+  await renderAll();
   bind();
+  // Syncs / backs up by itself when the browser allows it without asking
+  // (see lib/folder-sync-core.js); redraws the hub with what happened.
+  window.GOGPlusTagsLibraryHub?.runAutoSync().catch((err) => console.warn("[GOG+] auto-sync failed:", err));
 }
 
 function applyDensityClass() {
@@ -139,6 +176,9 @@ function bind() {
     }
   });
 }
+
+// Lets the Library hub reload the dashboard after a sync pulled newer data.
+window.GOGPlusTagsBoot = { refresh: async () => { await loadData(); await renderAll(); } };
 
 // Test-only surface — see tests/tags-internals.test.js. Individual functions
 // now live in tags/features/*.js (see the split above); this re-assembles

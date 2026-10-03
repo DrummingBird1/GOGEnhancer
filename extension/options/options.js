@@ -18,91 +18,11 @@ const PRESETS = {
 
 const DEFAULTS = window.GOG_PLUS_DEFAULTS;
 
-// Encrypted-backup helpers (Web Crypto — no dependency, no data ever leaves
-// the device). PBKDF2-derived AES-256-GCM key; salt + IV travel in plaintext
-// alongside the ciphertext in the exported file, which is normal — they're
-// not secret, only the password is. 250k PBKDF2 iterations is OWASP's 2023
-// baseline for PBKDF2-SHA256.
-const ENCRYPTED_BACKUP_FORMAT = "gog-enhancer-encrypted-backup";
-const PBKDF2_ITERATIONS = 250000;
-
-function bufToBase64(buf) {
-  let binary = "";
-  const bytes = new Uint8Array(buf);
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
-}
-function base64ToBuf(b64) {
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes.buffer;
-}
-
-/**
- * @param {string} password
- * @param {Uint8Array} salt
- * @returns {Promise<CryptoKey>}
- */
-async function deriveBackupKey(password, salt) {
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveKey"]
-  );
-  return crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
-  );
-}
-
-/**
- * @param {string} plaintext
- * @param {string} password
- * @returns {Promise<{format: string, formatVersion: number, exportedAt: string, salt: string, iv: string, ciphertext: string}>}
- */
-async function encryptBackup(plaintext, password) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveBackupKey(password, salt);
-  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(plaintext));
-  return {
-    format: ENCRYPTED_BACKUP_FORMAT,
-    formatVersion: 1,
-    exportedAt: new Date().toISOString(),
-    salt: bufToBase64(salt),
-    iv: bufToBase64(iv),
-    ciphertext: bufToBase64(ciphertext),
-  };
-}
-
-/**
- * @param {{ salt: string, iv: string, ciphertext: string }} envelope
- * @param {string} password
- * @returns {Promise<string>} the decrypted plaintext
- */
-async function decryptBackup(envelope, password) {
-  const salt = new Uint8Array(base64ToBuf(envelope.salt));
-  const iv = new Uint8Array(base64ToBuf(envelope.iv));
-  const key = await deriveBackupKey(password, salt);
-  let plainBuf;
-  try {
-    plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, base64ToBuf(envelope.ciphertext));
-  } catch (_) {
-    throw new Error("Wrong password, or the file is corrupted.");
-  }
-  return new TextDecoder().decode(plainBuf);
-}
-
-// folder-sync.js (a separate script, so it can't see this file's top-level
-// functions in a module-loading test harness) encrypts/decrypts its sync
-// file with the same envelope as the encrypted backup export.
-window.GOGPlusBackupCrypto = { ENCRYPTED_BACKUP_FORMAT, encryptBackup, decryptBackup };
+// Encrypted-backup helpers (PBKDF2 + AES-256-GCM) live in lib/backup-crypto.js
+// since v4 — the folder sync, the automatic backups and this page all use the
+// same envelope. folder-sync.js and the tag dashboard find them on
+// window.GOGPlusBackupCrypto.
+const { ENCRYPTED_BACKUP_FORMAT, encryptBackup, decryptBackup } = window.GOGPlusBackupCrypto;
 
 // customColors, when the resolved theme is "custom": {magenta, cyan, bg}.
 // Applied as inline custom properties on <html> so no CSS class covers the
@@ -210,6 +130,11 @@ async function load() {
   if ($("customColorBg")) $("customColorBg").value = cc?.bg || "#0a0612";
   if ($("dyslexiaFont")) $("dyslexiaFont").checked = !!s.dyslexiaFont;
   document.documentElement.classList.toggle("gog-plus-dyslexia-font", !!s.dyslexiaFont);
+  document.documentElement.classList.toggle("gog-plus-calm", !!s.calmMode);
+  [...document.documentElement.classList]
+    .filter((c) => c.startsWith("gog-plus-palette--"))
+    .forEach((c) => document.documentElement.classList.remove(c));
+  if (s.palette && s.palette !== "default") document.documentElement.classList.add(`gog-plus-palette--${s.palette}`);
 
   // Background sync statuses
   $("status-fx").textContent = formatTimeSince(s.ratesUpdatedAt);
@@ -441,10 +366,23 @@ function bind() {
     chrome.runtime.sendMessage({ type: "force-digest-refresh" }, () => setTimeout(load, 400));
   });
 
+  // Items that describe THIS browser (its sync folder, queues) or are secrets
+  // (the webhook address) — never written into a backup file and never taken
+  // from one. A backup that carried them could be shared by accident, or point
+  // a second browser at a folder it has no access to.
+  const PER_BROWSER_KEYS = [
+    "syncFolderName", "lastFolderSyncAt", "syncBaseMeta", "syncConflicts", "autoSync", "autoBackup",
+    "lastAutoBackupAt", "webhookUrl", "webhookEnabled", "notifyQueue", "tourSeen",
+  ];
+  const withoutPerBrowser = (obj) => Object.fromEntries(Object.entries(obj || {}).filter(([k]) => !PER_BROWSER_KEYS.includes(k)));
+  const readAreas = async () => ({
+    sync: withoutPerBrowser(await new Promise((r) => chrome.storage.sync.get(null, r))),
+    local: withoutPerBrowser(await new Promise((r) => chrome.storage.local.get(null, r))),
+  });
+
   // Export everything
   $("exportAll").addEventListener("click", async () => {
-    const sync = await new Promise((r) => chrome.storage.sync.get(null, r));
-    const local = await new Promise((r) => chrome.storage.local.get(null, r));
+    const { sync, local } = await readAreas();
     const blob = new Blob(
       [JSON.stringify({ exportedAt: new Date().toISOString(), version: 2, sync, local }, null, 2)],
       { type: "application/json" }
@@ -466,8 +404,7 @@ function bind() {
         "There is no way to recover a lost password — the file is useless without it."
     );
     if (!password) return;
-    const sync = await new Promise((r) => chrome.storage.sync.get(null, r));
-    const local = await new Promise((r) => chrome.storage.local.get(null, r));
+    const { sync, local } = await readAreas();
     const plaintext = JSON.stringify({ exportedAt: new Date().toISOString(), version: 2, sync, local });
     const envelope = await encryptBackup(plaintext, password);
     const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: "application/json" });
@@ -503,14 +440,11 @@ function bind() {
             else resolve();
           });
         });
-      if (data.sync) await setArea(chrome.storage.sync, data.sync);
-      if (data.local) {
-        // Which folder this browser syncs to (and when it last did) belongs to
-        // THIS browser — a backup from another device must not claim a folder
-        // this one has no access to.
-        const { syncFolderName: _folder, lastFolderSyncAt: _last, ...portable } = data.local;
-        await setArea(chrome.storage.local, portable);
-      }
+      // Which folder this browser syncs to (and when it last did), its webhook
+      // and queues belong to THIS browser — a backup from another device must
+      // not claim a folder this one has no access to, or replace a webhook.
+      if (data.sync) await setArea(chrome.storage.sync, withoutPerBrowser(data.sync));
+      if (data.local) await setArea(chrome.storage.local, withoutPerBrowser(data.local));
       // The import may come from an older version of the extension (e.g. a
       // pre-v2 export where tags/notes still lived in sync) — run the same
       // migration pass an upgrade would, instead of loading the old shape as-is.

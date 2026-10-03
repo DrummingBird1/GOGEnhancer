@@ -36,12 +36,13 @@
 
   /* ---------------- pack share links ---------------- */
 
-  let packPromptOpen = false;
-
   /** @param {string} message @param {() => void} onYes */
   function confirmDialog(message, onYes) {
+    // One prompt at a time: a newer link replaces an unanswered older one.
+    document.querySelector("[data-gog-plus-pack]")?.remove();
     const overlay = document.createElement("div");
     overlay.className = "gog-plus-modal-overlay";
+    overlay.dataset.gogPlusPack = "";
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-label", "Import a shared tag pack");
@@ -59,10 +60,7 @@
     no.type = "button";
     no.className = "gog-plus-bar-btn";
     no.textContent = "No thanks";
-    const close = () => {
-      overlay.remove();
-      packPromptOpen = false;
-    };
+    const close = () => overlay.remove();
     yes.addEventListener("click", () => {
       close();
       onYes();
@@ -78,8 +76,7 @@
   async function checkPackLink() {
     const Pack = window.GOGPlusPack;
     const value = Pack?.shareValueFromHash(location.hash);
-    if (!value || packPromptOpen) return;
-    packPromptOpen = true;
+    if (!value) return;
     // The fragment has been read; take it out of the address bar so a reload
     // or a bookmark doesn't ask again.
     history.replaceState(null, "", location.pathname + location.search);
@@ -87,12 +84,10 @@
     try {
       pack = await Pack.decodeShare(value);
     } catch (err) {
-      packPromptOpen = false;
       window.GOGPlusToasts?.show(err instanceof Error ? err.message : "That share link couldn't be read", { variant: "muted", duration: 5000 });
       return;
     }
     if (!pack.games.length) {
-      packPromptOpen = false;
       window.GOGPlusToasts?.show("That shared pack has no tags in it", { variant: "muted" });
       return;
     }

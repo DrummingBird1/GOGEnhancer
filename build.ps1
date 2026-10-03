@@ -49,6 +49,7 @@ $include = @(
     "options",
     "popup",
     "tags",
+    "tour",
     "manifest.json"
 )
 

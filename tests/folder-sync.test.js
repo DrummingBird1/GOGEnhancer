@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 await import("../extension/lib/defaults.js");
 await import("../extension/lib/storage.js");
 await import("../extension/lib/sync-core.js");
+await import("../extension/lib/folder-sync-core.js");
 
 // Stand-in for options.js's real PBKDF2/AES-GCM helpers (covered in
 // options.test.js) so these tests can assert on the sync flow, not the crypto.

@@ -80,6 +80,15 @@
       (g) => `<button type="button" class="filter-builder-chip" data-token="genre:${g}">genre:${g}</button>`
     );
 
+    const libraryChips = [
+      `<button type="button" class="filter-builder-chip" data-token="owned:yes">owned:yes</button>`,
+      `<button type="button" class="filter-builder-chip" data-token="owned:no">owned:no</button>`,
+      `<button type="button" class="filter-builder-chip" data-token="ends:3">ends:3 (offer ends within 3 days)</button>`,
+      ...window.GOGPlusLangNames.preferredNames(state.preferredLanguages, state.uiLanguage).map(
+        (l) => `<button type="button" class="filter-builder-chip" data-token="lang:${escapeHtml(l.toLowerCase())}">lang:${escapeHtml(l.toLowerCase())}</button>`
+      ),
+    ];
+
     const miscChips = [
       `<button type="button" class="filter-builder-chip" data-token="lowest:&lt;10">lowest:&lt;10</button>`,
       `<button type="button" class="filter-builder-chip" data-token="snapshots:&gt;5">snapshots:&gt;5</button>`,
@@ -90,6 +99,7 @@
       buildGroup("Tags", tagChips) +
       buildGroup("Play status", statusChips) +
       buildGroup("Genre", genreChips) +
+      buildGroup("Library & offers", libraryChips) +
       buildGroup("Other", miscChips) ||
       `<p class="filter-builder-empty">No tags yet — tag a game to see tag filters here.</p>`;
 

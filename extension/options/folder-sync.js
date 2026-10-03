@@ -2,65 +2,31 @@
  * GOG+ folder sync (options page).
  *
  * The user picks a folder their own cloud client already syncs (Dropbox,
- * OneDrive, Google Drive, Syncthing…). This script reads and writes ONE file
- * in it, gog-enhancer-sync.json, merging with whatever other browsers have put
- * there (merge rules live in lib/sync-core.js). The extension itself makes no
- * network request for this — the folder is the whole transport.
+ * OneDrive, Google Drive, Syncthing…). The work of reading and writing the
+ * ONE file in it, gog-enhancer-sync.json, and merging with other browsers
+ * lives in lib/folder-sync-core.js (merge rules in lib/sync-core.js); this
+ * script is the options-page face of it: choosing the folder, the buttons,
+ * the conflict list, auto-sync and dated backups. The extension itself makes no
+ * network request for any of this — the folder is the whole transport.
  *
  * Needs the File System Access API (Chrome / Edge / Brave); on browsers
  * without it the UI says so rather than offering a button that can't work.
  * Folder access can only be (re)granted from a user gesture on an
- * extension page, which is why syncing is a button here rather than a
- * background job.
+ * extension page, which is why the first sync is a button here; once the
+ * browser remembers the grant, the dashboard and the service worker can keep
+ * it in sync on their own (see "Sync automatically").
  */
 
 (() => {
   "use strict";
 
-  const FILE_NAME = "gog-enhancer-sync.json";
-  const DB_NAME = "gog-plus-sync";
-  const STORE = "handles";
-  const KEY = "folder";
-
-  /* ---------- persisted directory handle (IndexedDB) ---------- */
-
-  /** @returns {Promise<IDBDatabase>} */
-  function openDb() {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, 1);
-      req.onupgradeneeded = () => req.result.createObjectStore(STORE);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
-
-  /**
-   * @template T
-   * @param {"readonly" | "readwrite"} mode
-   * @param {(store: IDBObjectStore) => IDBRequest<T>} fn
-   * @returns {Promise<T>}
-   */
-  async function withStore(mode, fn) {
-    const db = await openDb();
-    try {
-      return await new Promise((resolve, reject) => {
-        const req = fn(db.transaction(STORE, mode).objectStore(STORE));
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    } finally {
-      db.close();
-    }
-  }
+  const core = window.GOGPlusFolderSyncCore;
+  const FILE_NAME = core.FILE_NAME;
 
   // An object (not three bare functions) so a test can swap in an in-memory
   // store: a stand-in directory handle isn't structured-cloneable the way a
   // real FileSystemDirectoryHandle is.
-  const store = {
-    get: () => withStore("readonly", (s) => s.get(KEY)),
-    set: (h) => withStore("readwrite", (s) => s.put(h, KEY)),
-    clear: () => withStore("readwrite", (s) => s.delete(KEY)),
-  };
+  const store = { ...core.defaultStore };
 
   const isSupported = () => typeof window.showDirectoryPicker === "function";
 
@@ -77,125 +43,26 @@
     if (!isSupported()) throw new Error("This browser can't pick a folder for sync.");
     const handle = await window.showDirectoryPicker({ mode: "readwrite", id: "gog-enhancer-sync" });
     await store.set(handle);
-    await window.GOGPlusStorage.set({ syncFolderName: handle.name, lastFolderSyncAt: 0 });
+    await window.GOGPlusStorage.set({ syncFolderName: handle.name, lastFolderSyncAt: 0, syncBaseMeta: {}, syncConflicts: [] });
     return handle.name;
   }
 
   async function forget() {
     await store.clear();
-    await window.GOGPlusStorage.set({ syncFolderName: "", lastFolderSyncAt: 0 });
-  }
-
-  /** @param {any} handle */
-  async function ensurePermission(handle) {
-    const opts = { mode: "readwrite" };
-    if ((await handle.queryPermission(opts)) === "granted") return;
-    if ((await handle.requestPermission(opts)) !== "granted") {
-      throw new Error("Permission to use the sync folder was not granted.");
-    }
+    await window.GOGPlusStorage.set({ syncFolderName: "", lastFolderSyncAt: 0, syncBaseMeta: {}, syncConflicts: [], autoSync: false, autoBackup: false });
   }
 
   /**
-   * Reads the remote snapshot, or null when the file doesn't exist yet. When
-   * the file is encrypted, also returns the passphrase that opened it so the
-   * write-back doesn't ask a second time.
-   * @param {any} dir
-   * @returns {Promise<{ snapshot: { data: any, meta: any } | null, encrypted: boolean, passphrase: string }>}
-   */
-  async function readRemote(dir) {
-    let file;
-    try {
-      file = await (await dir.getFileHandle(FILE_NAME)).getFile();
-    } catch (err) {
-      if (err && err.name === "NotFoundError") return { snapshot: null, encrypted: false, passphrase: "" };
-      throw err;
-    }
-    let text = await file.text();
-    const crypto = window.GOGPlusBackupCrypto;
-
-    let parsed = null;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      // Not JSON at all — parseSnapshotFile below reports that clearly.
-    }
-    let passphrase = "";
-    const encrypted = !!parsed && parsed.format === crypto.ENCRYPTED_BACKUP_FORMAT;
-    if (encrypted) {
-      passphrase = ui.askPassphrase("The sync file is encrypted. Enter its passphrase.") || "";
-      if (!passphrase) throw new Error("Sync cancelled — the sync file is encrypted and no passphrase was given.");
-      text = await crypto.decryptBackup(parsed, passphrase);
-    }
-    return { snapshot: window.GOGPlusSyncCore.parseSnapshotFile(text), encrypted, passphrase };
-  }
-
-  /**
-   * One full sync: read the folder's file, merge, write back whichever side
-   * changed. Throws an Error with a user-presentable message on any failure,
-   * having changed nothing it couldn't finish.
+   * One full sync (see core.syncNow). Throws an Error with a user-presentable
+   * message on any failure, having changed nothing it couldn't finish.
    * @returns {Promise<{ pulled: boolean, pushed: boolean, created: boolean }>}
    */
-  async function syncNow() {
-    const handle = await store.get();
-    if (!handle) throw new Error("Choose a sync folder first.");
-    await ensurePermission(handle);
+  const syncNow = () => core.syncNow({ store, askPassphrase: (m) => ui.askPassphrase(m), interactive: true });
 
-    const Core = window.GOGPlusSyncCore;
-    const Storage = window.GOGPlusStorage;
-    const { snapshot: remote, encrypted: remoteEncrypted, passphrase: openedWith } = await readRemote(handle);
+  /** @returns {Promise<{ file: string, removed: string[] }>} */
+  const backupNow = () => core.writeBackup({ store, askPassphrase: (m) => ui.askPassphrase(m), interactive: true });
 
-    const stored = await Storage.get([...Core.SYNCED_KEYS, "syncMeta", "historyMaxEntries", "syncEncrypt"]);
-    const local = { data: stored, meta: stored.syncMeta || {} };
-    const merged = Core.mergeSnapshots(local, remote || { data: {}, meta: {} }, {
-      historyMax: stored.historyMaxEntries,
-    });
-
-    // Once a file is encrypted it stays encrypted, whatever this browser's
-    // setting says — otherwise a second browser that never ticked the box
-    // would quietly rewrite the shared file as plaintext. Turning the setting
-    // ON for a plaintext file forces a rewrite so it's encrypted right away.
-    const encryptOut = remoteEncrypted || !!stored.syncEncrypt;
-    const pushed = merged.remoteChanged || !remote || (encryptOut && !remoteEncrypted);
-
-    // Passphrase BEFORE touching anything, so cancelling leaves both sides as they were.
-    let passphrase = openedWith;
-    if (pushed && encryptOut && !passphrase) {
-      passphrase =
-        ui.askPassphrase(
-          "Choose a passphrase for the encrypted sync file.\nThere is no way to recover it if lost."
-        ) || "";
-      if (!passphrase) throw new Error("Sync cancelled — no passphrase given.");
-    }
-
-    if (merged.localChanged) {
-      // ONE write containing the data and its timestamps: the service worker
-      // reads "syncMeta arrived with it" as "a sync is being applied" and does
-      // not re-stamp the records as fresh local edits (see background.js).
-      await Storage.set({ ...merged.data, syncMeta: merged.meta });
-    }
-
-    if (pushed) {
-      let body = JSON.stringify(Core.toSnapshotFile(merged.data, merged.meta), null, 2);
-      if (encryptOut) {
-        body = JSON.stringify(await window.GOGPlusBackupCrypto.encryptBackup(body, passphrase), null, 2);
-      }
-      const writable = await (await handle.getFileHandle(FILE_NAME, { create: true })).createWritable();
-      await writable.write(body);
-      await writable.close();
-    }
-
-    await Storage.set({ lastFolderSyncAt: Date.now() });
-    return { pulled: merged.localChanged, pushed, created: !remote };
-  }
-
-  /** @param {{ pulled: boolean, pushed: boolean, created: boolean }} r */
-  function describeResult(r) {
-    if (r.created) return "Created the sync file and uploaded this browser's library to it.";
-    if (r.pulled && r.pushed) return "Merged: this browser and the sync file were both updated.";
-    if (r.pulled) return "Updated this browser from the sync file.";
-    if (r.pushed) return "Updated the sync file with this browser's changes.";
-    return "Already in sync.";
-  }
+  const describeResult = core.describeResult;
 
   /* ---------- page wiring ---------- */
 
@@ -210,14 +77,70 @@
     return h < 24 ? `${h}h ago` : `${Math.round(h / 24)}d ago`;
   }
 
+  /** What a conflicting value looks like, in one short line. @param {any} v */
+  function brief(v) {
+    if (v === undefined) return "(deleted)";
+    const s = typeof v === "string" ? v : JSON.stringify(v);
+    return s.length > 60 ? `${s.slice(0, 57)}…` : s;
+  }
+
+  async function renderConflicts() {
+    const host = $("syncConflicts");
+    if (!host) return;
+    const { syncConflicts = [] } = await window.GOGPlusStorage.get(["syncConflicts"]);
+    host.replaceChildren();
+    host.hidden = !syncConflicts.length;
+    if (!syncConflicts.length) return;
+    const intro = document.createElement("p");
+    intro.className = "hint";
+    intro.textContent = `${syncConflicts.length} record${syncConflicts.length === 1 ? " was" : "s were"} changed in two places since the last sync. The newest edit won; overrule it here if you prefer the other.`;
+    host.appendChild(intro);
+    for (const c of syncConflicts) {
+      const row = document.createElement("div");
+      row.className = "sync-conflict";
+      const name = document.createElement("strong");
+      name.textContent = `${c.key} · ${c.id}`;
+      const detail = document.createElement("span");
+      detail.className = "hint";
+      detail.textContent = `This browser: ${brief(c.local)}  |  Other browser: ${brief(c.remote)}  — kept: ${c.kept === "local" ? "this browser's" : "the other's"}`;
+      row.append(name, detail);
+      for (const side of /** @type {const} */ (["local", "remote"])) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn";
+        b.dataset.use = side;
+        b.textContent = side === "local" ? "Use this browser's" : "Use the other's";
+        b.addEventListener("click", async () => {
+          await core.resolveConflict(c, side);
+          await renderConflicts();
+        });
+        row.appendChild(b);
+      }
+      host.appendChild(row);
+    }
+  }
+
   async function refreshStatus() {
-    const s = await window.GOGPlusStorage.get(["syncFolderName", "lastFolderSyncAt", "syncEncrypt"]);
+    const s = await window.GOGPlusStorage.get(["syncFolderName", "lastFolderSyncAt", "syncEncrypt", "autoSync", "autoBackup", "autoBackupKeep", "lastAutoBackupAt"]);
     $("syncFolderName").textContent = s.syncFolderName || "None chosen";
     $("syncLast").textContent = formatAgo(s.lastFolderSyncAt);
     $("syncEncrypt").checked = !!s.syncEncrypt;
     const has = !!s.syncFolderName;
     $("syncNow").disabled = !has;
     $("syncForget").disabled = !has;
+    if ($("syncAuto")) {
+      $("syncAuto").checked = !!s.autoSync;
+      $("syncAuto").disabled = !has;
+    }
+    if ($("backupAuto")) {
+      $("backupAuto").checked = !!s.autoBackup;
+      $("backupAuto").disabled = !has;
+      $("backupKeep").value = String(s.autoBackupKeep || 7);
+      $("backupKeep").disabled = !has;
+      $("backupNow").disabled = !has;
+      $("backupLast").textContent = formatAgo(s.lastAutoBackupAt);
+    }
+    await renderConflicts();
   }
 
   /** @param {string} msg @param {boolean} [isError] */
@@ -237,7 +160,7 @@
 
     /** @param {() => Promise<string | void>} work */
     const run = async (work) => {
-      const buttons = [$("syncChoose"), $("syncNow"), $("syncForget")];
+      const buttons = [$("syncChoose"), $("syncNow"), $("syncForget"), $("backupNow")].filter(Boolean);
       buttons.forEach((b) => (b.disabled = true));
       try {
         const msg = await work();
@@ -269,8 +192,21 @@
     $("syncEncrypt").addEventListener("change", () =>
       window.GOGPlusStorage.set({ syncEncrypt: $("syncEncrypt").checked })
     );
+    $("syncAuto")?.addEventListener("change", () => window.GOGPlusStorage.set({ autoSync: $("syncAuto").checked }));
+    $("backupAuto")?.addEventListener("change", () => window.GOGPlusStorage.set({ autoBackup: $("backupAuto").checked }));
+    $("backupKeep")?.addEventListener("change", () => {
+      const n = Math.max(1, Math.min(60, parseInt($("backupKeep").value, 10) || 7));
+      $("backupKeep").value = String(n);
+      window.GOGPlusStorage.set({ autoBackupKeep: n });
+    });
+    $("backupNow")?.addEventListener("click", () =>
+      run(async () => {
+        const r = await backupNow();
+        return `Wrote ${r.file}${r.removed.length ? ` and removed ${r.removed.length} older backup${r.removed.length === 1 ? "" : "s"}` : ""}.`;
+      })
+    );
     window.GOGPlusStorage.onChange(({ key }) => {
-      if (key === "syncFolderName" || key === "lastFolderSyncAt") refreshStatus();
+      if (["syncFolderName", "lastFolderSyncAt", "syncConflicts", "lastAutoBackupAt"].includes(key)) refreshStatus();
     });
   }
 
@@ -282,6 +218,7 @@
     chooseFolder,
     forget,
     syncNow,
+    backupNow,
     describeResult,
     formatAgo,
     init,

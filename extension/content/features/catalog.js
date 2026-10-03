@@ -565,8 +565,10 @@
     if (type === "store") {
       ensureCatalogBar();
       applyTiles();
-    } else if (type === "home" || type === "promo") {
-      applyTilesVisibilityOnly();
+    } else {
+      // Not a catalog page: the bar must not outlive its page.
+      document.getElementById("gog-plus-catbar")?.remove();
+      if (type === "home" || type === "promo") applyTilesVisibilityOnly();
     }
   }
 

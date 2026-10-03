@@ -347,9 +347,50 @@
           </span>
         </span>
       </label>
+      <label class="dev-toggle">
+        <input type="checkbox" id="syncAuto" disabled />
+        <span class="dev-toggle-text">
+          <span class="dev-toggle-title">Sync automatically</span>
+          <span class="dev-toggle-sub">
+            Syncs whenever you open the tag dashboard and, when your browser
+            remembers the folder permission (Chrome: choose “Allow on every
+            visit” when it asks), every 30 minutes in the background. Where it
+            would need to ask you something — a permission, or the passphrase of
+            an encrypted file — it waits for you to press “Sync now” instead.
+          </span>
+        </span>
+      </label>
+      <div class="status-grid">
+        <div class="status-row">
+          <span class="status-label">Last backup</span>
+          <span class="status-value" id="backupLast">Never</span>
+        </div>
+      </div>
+      <label class="dev-toggle">
+        <input type="checkbox" id="backupAuto" disabled />
+        <span class="dev-toggle-text">
+          <span class="dev-toggle-title">Keep dated backups in the folder</span>
+          <span class="dev-toggle-sub">
+            Once a day, while the dashboard or this page is open, writes
+            <code>gog-enhancer-backup-YYYY-MM-DD.json</code> (your whole library
+            and settings, without per-browser items and without the webhook
+            address) and keeps the newest few. Encrypted if you ticked “Encrypt
+            the sync file” — it asks for the passphrase.
+          </span>
+        </span>
+      </label>
+      <div class="dev-row">
+        <div class="dev-toggle-text">
+          <span class="dev-toggle-title">Backups to keep</span>
+          <span class="dev-toggle-sub">Older ones are deleted from the folder. 1–60.</span>
+        </div>
+        <input type="number" id="backupKeep" min="1" max="60" step="1" class="dev-num" disabled />
+      </div>
+      <div class="sync-conflicts" id="syncConflicts" hidden></div>
       <div class="card-actions wrap">
         <button id="syncChoose" class="primary">Choose folder…</button>
         <button id="syncNow" class="ghost" disabled>Sync now</button>
+        <button id="backupNow" class="ghost" disabled>Back up now</button>
         <button id="syncForget" class="danger" disabled>Stop syncing</button>
       </div>
       <p class="card-sub" id="syncResult" role="status"></p>
@@ -484,14 +525,18 @@
     <section class="card subtle">
       <h2>Privacy &amp; transparency</h2>
       <p class="card-sub">
-        GOG Enhancer talks to two domains and that's it:
+        GOG Enhancer talks to three domains and that's it:
       </p>
       <ul class="bullet">
         <li><strong>www.gog.com</strong> — to read what's on the page and inject UI.</li>
         <li><strong>api.frankfurter.app</strong> — to fetch USD→EUR/ILS/GBP/PLN/RUB rates (no key, no tracking).</li>
+        <li><strong>www.cheapshark.com</strong> — the optional price-comparison table on a game page (only the game's title is sent).</li>
       </ul>
       <p class="card-sub">
-        No analytics. No third-party fonts. Tags &amp; notes never leave your machine.
+        The one other address it can ever contact is a webhook <em>you</em>
+        enter under Notification rules — off by default, and the browser asks
+        your permission for that one origin. No analytics. No third-party fonts.
+        Tags &amp; notes never leave your machine.
       </p>
     </section>
 
@@ -507,7 +552,12 @@
   <script src="../lib/storage.js"></script>
   <script src="../lib/migrations.js"></script>
   <script src="../lib/game-status.js"></script>
+  <script src="../lib/backup-crypto.js"></script>
   <script src="../lib/sync-core.js"></script>
+  <script src="../lib/folder-sync-core.js"></script>
+  <script src="../lib/notify-policy.js"></script>
+  <script src="../lib/settings-profiles.js"></script>
+  <script src="settings-v4.js"></script>
   <script src="options.js"></script>
   <script src="folder-sync.js"></script>
   <script src="tools-section.js"></script>
