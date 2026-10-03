@@ -64,7 +64,39 @@ describe("learnOwnership", () => {
 });
 
 describe("recordGameFacts", () => {
-  beforeEach(() => resetEnv({ path: "/en/game/the_witcher_3", bodyClass: "productcard _prices-in-usd user-logged-in" }));
+  beforeEach(() => {
+    resetEnv({ path: "/en/game/the_witcher_3", bodyClass: "productcard _prices-in-usd user-logged-in" });
+    K()._internals.writeLog.length = 0;
+  });
+
+  it("does not see a record as changed just because its keys come back in another order (chrome.storage sorts them)", async () => {
+    document.body.innerHTML = gamePageHtml();
+    await K().recordGameFacts("the_witcher_3", NOW);
+    const sorted = (o) => (Array.isArray(o) ? o.map(sorted) : o && typeof o === "object" ? Object.fromEntries(Object.keys(o).sort().map((k) => [k, sorted(o[k])])) : o);
+    // exactly what chrome.storage returns: same data, alphabetical keys
+    state.settings.gameFacts = { the_witcher_3: sorted(state.settings.gameFacts.the_witcher_3) };
+    globalThis.__resetChromeStores();
+    await K().recordGameFacts("the_witcher_3", NOW + 1000);
+    expect(await getLocal("gameFacts")).toEqual({}); // nothing rewritten
+    expect(K()._internals.canonical({ b: 1, a: [{ d: 1, c: undefined }] })).toBe('{"a":[{"d":1}],"b":1}');
+    expect(K()._internals.canonical(undefined)).toBe("null");
+  });
+
+  it("never writes more than a handful of times a minute, whatever it believes has changed", async () => {
+    let writes = 0;
+    for (let i = 0; i < 12; i++) {
+      document.body.innerHTML = gamePageHtml({ final: `${10 + i}.00` });
+      globalThis.__resetChromeStores();
+      await K().recordGameFacts("the_witcher_3", NOW + i * 1000);
+      if (Object.keys(await getLocal("gameFacts")).length) writes++;
+    }
+    expect(writes).toBe(K()._internals.MAX_WRITES_PER_MINUTE);
+    // a minute later it may write again
+    document.body.innerHTML = gamePageHtml({ final: "99.00" });
+    globalThis.__resetChromeStores();
+    await K().recordGameFacts("the_witcher_3", NOW + 5 * 60 * 1000);
+    expect(Object.keys(await getLocal("gameFacts"))).toEqual(["gameFacts"]);
+  });
 
   it("stores what the page says about the game", async () => {
     document.body.innerHTML = gamePageHtml();

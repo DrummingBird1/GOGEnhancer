@@ -298,3 +298,16 @@ describe("live refresh", () => {
     }
   });
 });
+
+describe("the converter leaves the extension's own UI alone", () => {
+  it("does not append a conversion note to the filter bar's '< $10' label (but still converts the site's prices)", () => {
+    state.settings.targetCurrency = "ILS";
+    state.settings.rates = { ILS: 4 };
+    state.settings.currencyConverter = true;
+    W().ensureWishlistFilters();
+    document.body.insertAdjacentHTML("beforeend", '<span id="site-price">$5.00</span>');
+    window.GOGPlusCurrencyFeature.applyCurrencyConversion();
+    expect(bar().querySelector(".gog-plus-conv-note")).toBeNull();
+    expect(document.getElementById("site-price").querySelector(".gog-plus-conv-note")).not.toBeNull();
+  });
+});

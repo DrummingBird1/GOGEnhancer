@@ -141,7 +141,43 @@
     return { columns: items.map((it) => ({ slug: it.slug, title: it.title || it.slug })), rows };
   }
 
-  const api = { tileVisibility, sanitizePresetUrl, addPreset, suggestPresetName, buildComparison };
+  /**
+   * Price-history lines for a comparison chart: every game's snapshots converted
+   * to ONE currency (so the lines are comparable), plus the shared extents.
+   * Snapshots that can't be converted are left out rather than guessed.
+   * @param {Array<{ slug: string, title: string }>} items
+   * @param {{ history?: Record<string, Array<{ d: string, p: number, c: string }>>, rates?: Record<string, number>, target: string }} ctx
+   * @returns {{ series: Array<{ slug: string, title: string, points: Array<{ t: number, p: number }> }>, minT: number, maxT: number, minP: number, maxP: number } | null}
+   */
+  function buildChartSeries(items, ctx) {
+    const rates = ctx.rates || {};
+    const to = ctx.target === "USD" ? 1 : rates[ctx.target];
+    if (!(to > 0)) return null;
+    const series = items
+      .map((it) => {
+        const points = [];
+        for (const e of ctx.history?.[it.slug] || []) {
+          const from = e.c === "USD" ? 1 : rates[e.c];
+          const t = Date.parse(`${e.d}T00:00:00Z`);
+          if (!(from > 0) || !Number.isFinite(t) || !(e.p > 0)) continue;
+          points.push({ t, p: (e.p / from) * to });
+        }
+        points.sort((a, b) => a.t - b.t);
+        return { slug: it.slug, title: it.title || it.slug, points };
+      })
+      .filter((s) => s.points.length >= 2);
+    if (series.length < 1) return null;
+    const all = series.flatMap((s) => s.points);
+    return {
+      series,
+      minT: Math.min(...all.map((p) => p.t)),
+      maxT: Math.max(...all.map((p) => p.t)),
+      minP: Math.min(...all.map((p) => p.p)),
+      maxP: Math.max(...all.map((p) => p.p)),
+    };
+  }
+
+  const api = { tileVisibility, sanitizePresetUrl, addPreset, suggestPresetName, buildComparison, buildChartSeries };
   if (typeof window !== "undefined") window.GOGPlusCatalogTools = api;
   if (typeof self !== "undefined") self.GOGPlusCatalogTools = api;
 })();

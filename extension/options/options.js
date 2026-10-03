@@ -14,6 +14,14 @@ const PRESETS = {
   uk: { targetCurrency: "GBP", vatPercent: 20, vatLabel: "incl. VAT" },
   pl: { targetCurrency: "PLN", vatPercent: 23, vatLabel: "z VAT" },
   us: { targetCurrency: "USD", vatPercent: 0, vatLabel: "" },
+  // v4: national VAT rates inside the euro area (the "EU" preset keeps the
+  // 20% many countries share) and Russia — currencies the rate table has.
+  de: { targetCurrency: "EUR", vatPercent: 19, vatLabel: "inkl. MwSt." },
+  fr: { targetCurrency: "EUR", vatPercent: 20, vatLabel: "TTC" },
+  es: { targetCurrency: "EUR", vatPercent: 21, vatLabel: "IVA incl." },
+  it: { targetCurrency: "EUR", vatPercent: 22, vatLabel: "IVA incl." },
+  nl: { targetCurrency: "EUR", vatPercent: 21, vatLabel: "incl. btw" },
+  ru: { targetCurrency: "RUB", vatPercent: 20, vatLabel: "с НДС" },
 };
 
 const DEFAULTS = window.GOG_PLUS_DEFAULTS;

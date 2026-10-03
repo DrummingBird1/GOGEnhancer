@@ -301,3 +301,66 @@ describe("automatic sync alarm", () => {
     await settle();
   });
 });
+
+describe("note history", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-02T12:00:00Z"));
+  });
+
+  it("keeps the old text of a replaced note, but not within the same editing session", async () => {
+    await setLocal({ notes: { hades: "first" } }); // nothing before it: no version
+    await settle();
+    expect((await getLocal(["noteHistory"])).noteHistory).toBeUndefined();
+    vi.setSystemTime(new Date("2026-10-02T12:30:00Z"));
+    await setLocal({ notes: { hades: "second" } });
+    await vi.waitFor(async () => expect((await getLocal(["noteHistory"])).noteHistory.hades.map((v) => v.text)).toEqual(["first"]));
+    vi.setSystemTime(new Date("2026-10-02T12:32:00Z"));
+    await setLocal({ notes: { hades: "third" } }); // two minutes later: same session
+    await settle();
+    expect((await getLocal(["noteHistory"])).noteHistory.hades).toHaveLength(1);
+    vi.setSystemTime(new Date("2026-10-02T13:30:00Z"));
+    await setLocal({ notes: {} }); // deleting the note keeps it too
+    await vi.waitFor(async () => expect((await getLocal(["noteHistory"])).noteHistory.hades.map((v) => v.text)).toEqual(["third", "first"]));
+  });
+
+  it("does not version a note that arrives with a sync", async () => {
+    await setLocal({ notes: { a: "mine" } });
+    vi.setSystemTime(new Date("2026-10-02T14:00:00Z"));
+    await setLocal({ notes: { a: "theirs" }, syncMeta: { "notes:a": { t: 5 } } });
+    await settle();
+    expect((await getLocal(["noteHistory"])).noteHistory).toBeUndefined();
+  });
+});
+
+describe("weekly digest: offers ending soon", () => {
+  it("lists wishlisted games whose offer end was seen on their page and falls inside the week", async () => {
+    const now = Date.now();
+    await setLocal({
+      wishlistSlugs: ["soon", "later", "over", "unknown", "also_soon"],
+      gameFacts: {
+        soon: { pe: new Date(now + 2 * 86400e3).toISOString() },
+        also_soon: { pe: new Date(now + 1 * 86400e3).toISOString() },
+        later: { pe: new Date(now + 20 * 86400e3).toISOString() },
+        over: { pe: new Date(now - 1000).toISOString() },
+        not_wishlisted: { pe: new Date(now + 3600e3).toISOString() },
+      },
+    });
+    await fireMessage({ type: "force-digest-refresh" });
+    const { weeklyDigest } = await getLocal(["weeklyDigest"]);
+    expect(weeklyDigest.endingSoon.map((e) => e.slug)).toEqual(["also_soon", "soon"]);
+  });
+
+  it("includes them in the digest notification", async () => {
+    await setSync({ desktopNotifications: true });
+    await setLocal({ wishlistSlugs: ["soon"], gameFacts: { soon: { pe: new Date(Date.now() + 86400e3).toISOString() } } });
+    await fireMessage({ type: "force-digest-refresh" });
+    await vi.waitFor(() => expect(created()).toHaveLength(1));
+    expect(created()[0][1].message).toContain("1 wishlist offer ending soon");
+  });
+
+  it("is empty without wishlist data", async () => {
+    await fireMessage({ type: "force-digest-refresh" });
+    expect((await getLocal(["weeklyDigest"])).weeklyDigest.endingSoon).toEqual([]);
+  });
+});

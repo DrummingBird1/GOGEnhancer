@@ -302,6 +302,26 @@ describe("comparison", () => {
     expect(overlay.querySelector("a").getAttribute("href")).toBe("/en/game/alpha");
   });
 
+  it("draws a price-history chart for games that have history, in the target currency", () => {
+    state.settings.targetCurrency = "USD";
+    state.settings.priceHistory = { alpha: [{ d: "2026-01-01", p: 30, c: "USD" }, { d: "2026-02-01", p: 20, c: "USD" }], gamma: [{ d: "2026-01-10", p: 8, c: "USD" }, { d: "2026-02-10", p: 9, c: "USD" }] };
+    document.querySelectorAll(".gog-plus-tilectl-compare")[0].click();
+    document.querySelectorAll(".gog-plus-tilectl-compare")[2].click();
+    btn("Compare").click();
+    const svg = document.querySelector(".gog-plus-compare-chart svg");
+    expect(svg.getAttribute("role")).toBe("img");
+    expect(svg.querySelectorAll("polyline")).toHaveLength(2);
+    expect(document.querySelector(".gog-plus-compare-legend").textContent).toContain("Alpha");
+  });
+
+  it("shows no chart when none of the games has two snapshots", () => {
+    document.querySelectorAll(".gog-plus-tilectl-compare")[1].click();
+    document.querySelectorAll(".gog-plus-tilectl-compare")[2].click();
+    state.settings.priceHistory = {};
+    btn("Compare").click();
+    expect(document.querySelector(".gog-plus-compare-chart")).toBeNull();
+  });
+
   it("closes with the button, Escape or a click on the backdrop", () => {
     document.querySelectorAll(".gog-plus-tilectl-compare")[0].click();
     document.querySelectorAll(".gog-plus-tilectl-compare")[1].click();

@@ -350,7 +350,9 @@
     const discount = text(t.querySelector("price-discount")).match(/(\d{1,2})\s*%/);
     const final = priceOf(t.querySelector("price-value .final-value, .final-value"), code);
     const base = priceOf(t.querySelector("price-value .base-value, .base-value"), code);
-    const titleEl = t.querySelector("product-title, #productTileGameTitle, [selenium-id='productTileGameTitle']");
+    // <product-title> first: the #productTileGameTitle wrapper around it also holds
+    // the tile's labels ("IN LIBRARY", "NEW"), which are not part of the name.
+    const titleEl = t.querySelector("product-title") || t.querySelector("#productTileGameTitle, [selenium-id='productTileGameTitle']");
     return {
       slug: tile.slug,
       title: text(titleEl),

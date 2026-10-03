@@ -17,10 +17,12 @@ import "../lib/defaults.js";
 import "../lib/storage.js";
 import "../lib/migrations.js";
 import "../lib/purchases.js";
+import "../lib/deals.js";
 import "../lib/sync-core.js";
 import "../lib/backup-crypto.js";
 import "../lib/folder-sync-core.js";
 import "../lib/notify-policy.js";
+import "../lib/note-history.js";
 import "../lib/library-search.js";
 
 const DEFAULTS = self.GOG_PLUS_DEFAULTS;
@@ -600,6 +602,7 @@ async function buildWeeklyDigest() {
     wishlistSlugs = [],
     rates = {},
     desktopNotifications,
+    gameFacts = {},
   } = await self.GOGPlusStorage.get({
     purchaseLog: {},
     priceAlerts: {},
@@ -609,6 +612,7 @@ async function buildWeeklyDigest() {
     wishlistSlugs: [],
     rates: {},
     desktopNotifications: false,
+    gameFacts: {},
   });
 
   const now = Date.now();
@@ -675,16 +679,26 @@ async function buildWeeklyDigest() {
     }
   }
 
+  // Wishlisted games whose offer ends within the week — only where the end
+  // date was seen on the game's own page (the `timer` attribute), never guessed.
+  const endingSoon = [];
+  for (const slug of wishlistSlugs) {
+    const endsAt = self.GOGPlusDeals.parsePromoDate(gameFacts[slug]?.pe);
+    if (endsAt && endsAt > now && endsAt - now <= WEEK_MS) endingSoon.push({ slug, endsAt });
+  }
+  endingSoon.sort((a, b) => a.endsAt - b.endsAt);
+
   const digest = {
     generatedAt: now,
     dropsThisWeek,
     refundClosing: refundClosing.slice(0, 10),
     priceAlertHits: priceAlertHits.slice(0, 10),
     wishlistDrops: wishlistDrops.slice(0, 10),
+    endingSoon: endingSoon.slice(0, 10),
   };
   await self.GOGPlusStorage.set({ weeklyDigest: digest });
 
-  const totalHighlights = refundClosing.length + priceAlertHits.length + wishlistDrops.length;
+  const totalHighlights = refundClosing.length + priceAlertHits.length + wishlistDrops.length + endingSoon.length;
   if ((desktopNotifications || (await self.GOGPlusStorage.get(["webhookEnabled"])).webhookEnabled) && totalHighlights > 0) {
     const parts = [];
     if (refundClosing.length) {
@@ -695,6 +709,9 @@ async function buildWeeklyDigest() {
     }
     if (wishlistDrops.length) {
       parts.push(`${wishlistDrops.length} wishlist drop${wishlistDrops.length === 1 ? "" : "s"}`);
+    }
+    if (endingSoon.length) {
+      parts.push(`${endingSoon.length} wishlist offer${endingSoon.length === 1 ? "" : "s"} ending soon`);
     }
     await emit({
       id: "weekly-digest",
@@ -892,6 +909,25 @@ chrome.storage.onChanged.addListener((changes, area) => {
   statusStampQueue = statusStampQueue
     .then(() => stampStatusDates(changes.gameStatus.oldValue, changes.gameStatus.newValue))
     .catch((err) => console.error("[GOG+] status dating failed:", err));
+});
+
+/* ---------------- note history ----------------
+ * The old text of a note that is being replaced is kept as a version (rules in
+ * lib/note-history.js), stamped here from storage.onChanged so the note box,
+ * a CSV import and a restore all get it without knowing. A change that carries
+ * syncMeta is a sync being applied — the other browser keeps its own history. */
+
+let noteHistoryQueue = Promise.resolve();
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || !changes.notes || changes.syncMeta) return;
+  noteHistoryQueue = noteHistoryQueue
+    .then(async () => {
+      const { noteHistory = {} } = await self.GOGPlusStorage.get({ noteHistory: {} });
+      const next = self.GOGPlusNoteHistory.recordChanges(noteHistory, changes.notes.oldValue, changes.notes.newValue, Date.now());
+      if (next !== noteHistory) await self.GOGPlusStorage.set({ noteHistory: next });
+    })
+    .catch((err) => console.error("[GOG+] note history failed:", err));
 });
 
 /* ---------------- omnibox ----------------

@@ -134,6 +134,7 @@
    * @property {string} webhookUrl the user's own webhook (Discord / generic JSON); stays on this device
    * @property {string} tourSeen version whose intro tour was shown
    * @property {string} lastSaleSeen headline of the last store-wide sale already announced
+   * @property {Record<string, Array<{t: number, text: string}>>} noteHistory slug -> earlier versions of the note, newest first (see lib/note-history.js)
    */
 
   /**
@@ -194,6 +195,7 @@
    * @property {Array<{slug: string, daysLeft: number}>} refundClosing purchases whose 30-day refund window closes within 7 days
    * @property {Array<{slug: string, price: number, currency: string, threshold: number}>} priceAlertHits per-game price alerts currently past their threshold
    * @property {Array<{slug: string, price: number, currency: string, dropPct: number}>} wishlistDrops wishlisted games currently past the wishlist-wide drop threshold
+   * @property {Array<{slug: string, endsAt: number}>} [endingSoon] wishlisted games whose offer ends within 7 days (the end date comes from a game page the user opened)
    */
 
   /** @type {Settings} */
@@ -325,6 +327,7 @@
     webhookUrl: "",
     tourSeen: "",
     lastSaleSeen: "",
+    noteHistory: {},
   };
 
   if (typeof window !== "undefined") {

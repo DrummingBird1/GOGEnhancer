@@ -122,12 +122,39 @@
     };
   }
 
+  /**
+   * JSON with object keys sorted. chrome.storage hands objects back with their
+   * keys in alphabetical order, while a freshly built record has them in
+   * insertion order — plain JSON.stringify calls those "different", which made
+   * every pass rewrite the record, which re-rendered the panel, which wrote the
+   * record… (found by the end-to-end suite; happy-dom keeps insertion order and
+   * never showed it).
+   * @param {any} v @returns {string}
+   */
+  function canonical(v) {
+    if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
+    if (v && typeof v === "object") {
+      return `{${Object.keys(v)
+        .sort()
+        .filter((k) => v[k] !== undefined)
+        .map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`)
+        .join(",")}}`;
+    }
+    return JSON.stringify(v) ?? "null";
+  }
+
   /** @param {any} a @param {any} b */
   const sameFacts = (a, b) => {
     if (!a) return false;
-    const strip = (/** @type {any} */ f) => JSON.stringify({ ...f, t: 0, prev: undefined });
+    const strip = (/** @type {any} */ f) => canonical({ ...f, t: 0, prev: undefined });
     return strip(a) === strip(b);
   };
+
+  // Belt and braces: whatever makes a record look "new" on every pass, a page
+  // session never writes the facts more than a handful of times a minute.
+  /** @type {number[]} */
+  const writeLog = [];
+  const MAX_WRITES_PER_MINUTE = 6;
 
   /**
    * Reads the current game page and stores what changed. A "visit" boundary
@@ -149,6 +176,11 @@
     if (!newVisit && sameFacts(old, next)) return;
     next.prev = newVisit && old ? snapshotOf(old) : old?.prev;
     if (!next.prev) delete next.prev;
+
+    const recent = writeLog.filter((t) => now - t < 60 * 1000);
+    if (recent.length >= MAX_WRITES_PER_MINUTE) return;
+    writeLog.length = 0;
+    writeLog.push(...recent, now);
 
     const merged = { ...all, [slug]: next };
     const slugs = Object.keys(merged);
@@ -216,6 +248,6 @@
     recordGameFacts,
     changesSince,
     setNotInterested,
-    _internals: { buildFacts, sameFacts, snapshotOf, MAX_FACTS, VISIT_GAP_MS },
+    _internals: { buildFacts, sameFacts, canonical, snapshotOf, MAX_FACTS, VISIT_GAP_MS, MAX_WRITES_PER_MINUTE, writeLog },
   };
 })();

@@ -17,7 +17,7 @@ import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { storeLegacy, storeVariant, gameLegacy, gameVariant } from "./fixtures.mjs";
-import { homeReal, catalogReal, gameReal, realTile } from "./fixtures-real.mjs";
+import { homeReal, catalogReal, gameReal, realTile, catalogV4, wishlistV4, gameV4 } from "./fixtures-real.mjs";
 
 // E2E_LIVE=1 runs the extension against the REAL gog.com (public pages, logged
 // out, a handful of page loads) instead of fixtures — the only way to know the
@@ -61,6 +61,9 @@ const PAGES = {
   "/en": homeReal,
   "/en/games/real": catalogReal,
   "/en/game/gris": gameReal,
+  "/en/games/v4": catalogV4,
+  "/en/account/wishlist": wishlistV4,
+  "/en/game/alpha_game": gameV4,
 };
 
 const userDataDir = mkdtempSync(join(tmpdir(), "gog-enhancer-e2e-"));
@@ -362,6 +365,141 @@ try {
     check("content added after load is processed even though the page's only <main> is hidden", lateNote);
     await page.close();
   }
+
+  console.log("v4 — catalog tools (sort by CSS order, hide owned, not interested, compare)");
+  {
+    await setSettings({ local: { ownedSlugs: {}, notInterested: {}, priceHistory: {}, gameFacts: {} }, sync: { ownedDisplay: "show", catalogTools: true } });
+    const page = await open("/en/games/v4");
+    await page.waitForSelector("#gog-plus-catbar", { timeout: 6000 }).catch(() => {});
+    const titlesInVisualOrder = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll("product-tile")]
+          .filter((t) => getComputedStyle(t).display !== "none")
+          .map((t) => ({ title: t.querySelector("product-title")?.textContent.trim(), x: t.getBoundingClientRect().left, y: t.getBoundingClientRect().top }))
+          .sort((a, b) => a.y - b.y || a.x - b.x)
+          .map((t) => t.title)
+      );
+    const bar = await page.evaluate(() => ({ bar: !!document.getElementById("gog-plus-catbar"), beforeGrid: document.getElementById("gog-plus-catbar")?.nextElementSibling?.classList.contains("paginated-products-grid") }));
+    check("the catalog bar mounts directly above the grid", bar.bar && bar.beforeGrid, JSON.stringify(bar));
+    const learned = (await storageGet("local", "ownedSlugs")).ownedSlugs || {};
+    check("the 'IN LIBRARY' label teaches the extension which game is owned", Object.keys(learned).join() === "gamma_game", JSON.stringify(learned));
+
+    await page.selectOption("#gog-plus-cat-sort", "price-asc");
+    const asc = await titlesInVisualOrder();
+    check("sorting by price re-orders the tiles on screen (CSS order on the grid items)", asc.join() === "Beta Game,Gamma Game,Delta Game,Alpha Game", asc.join());
+    await page.selectOption("#gog-plus-cat-sort", "discount");
+    const disc = await titlesInVisualOrder();
+    check("sorting by discount puts the biggest first", disc[0] === "Gamma Game" && disc[1] === "Alpha Game", disc.join());
+    await page.selectOption("#gog-plus-cat-sort", "default");
+
+    await page.selectOption("#gog-plus-cat-owned", "hide");
+    const hid = await page.waitForFunction(() => getComputedStyle([...document.querySelectorAll("product-tile")][2]).display === "none", null, { timeout: 4000 }).then(() => true, () => false);
+    check("'Hide owned games' removes the owned tile and the grid closes up", hid && (await titlesInVisualOrder()).length === 3);
+    await page.selectOption("#gog-plus-cat-owned", "dim");
+    const dim = await page.waitForFunction(() => Number(getComputedStyle([...document.querySelectorAll("product-tile")][2]).opacity) < 0.6, null, { timeout: 4000 }).then(() => true, () => false);
+    check("'Dim' keeps the owned tile but fades it", dim);
+    await page.selectOption("#gog-plus-cat-owned", "show");
+
+    // Hover reveals the per-tile controls (inside the cover host, not on the card).
+    const first = page.locator("product-tile").first();
+    await first.hover();
+    await page.locator("product-tile").first().locator(".gog-plus-tilectl-hide").click({ force: true });
+    const hiddenNow = await page.waitForFunction(() => getComputedStyle(document.querySelectorAll("product-tile")[0]).display === "none", null, { timeout: 4000 }).then(() => true, () => false);
+    const ni = (await storageGet("local", "notInterested")).notInterested || {};
+    check("✕ on a tile hides that game and remembers it", hiddenNow && "alpha_game" in ni, JSON.stringify(ni));
+    const reload = await page.evaluate(() => (location.reload(), true));
+    void reload;
+    await page.waitForSelector("#gog-plus-catbar", { timeout: 6000 }).catch(() => {});
+    const stillHidden = await page.waitForFunction(() => getComputedStyle(document.querySelectorAll("product-tile")[0]).display === "none", null, { timeout: 4000 }).then(() => true, () => false);
+    check("…and it stays hidden after a reload", stillHidden);
+
+    // Compare two tiles → a modal with a table.
+    await page.locator("product-tile").nth(1).hover();
+    await page.locator("product-tile").nth(1).locator(".gog-plus-tilectl-compare").click({ force: true });
+    await page.locator("product-tile").nth(3).hover();
+    await page.locator("product-tile").nth(3).locator(".gog-plus-tilectl-compare").click({ force: true });
+    await page.locator(".gog-plus-compare-tray button", { hasText: "Compare" }).click();
+    const cmp = await page.evaluate(() => ({ rows: document.querySelectorAll(".gog-plus-compare-table tr").length, dialog: document.querySelector(".gog-plus-modal-overlay")?.getAttribute("role") }));
+    check("comparing two tiles opens a side-by-side table", cmp.rows >= 8 && cmp.dialog === "dialog", JSON.stringify(cmp));
+    await shot(page, "v4-catalog-compare");
+    check("no uncaught page errors", page.errors.length === 0, page.errors.join(" | "));
+    await page.close();
+  }
+
+  console.log("v4 — wishlist (real rows only, smart sort, totals)");
+  {
+    await setSettings({ sync: { wishlistFilters: true, wishlistSmart: true, targetCurrency: "ILS" }, local: { notInterested: {} } });
+    const page = await open("/en/account/wishlist");
+    await page.waitForSelector("#gog-plus-wlfilters", { timeout: 6000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 1200));
+    const w = await page.evaluate(() => ({
+      all: document.querySelector('#gog-plus-wlfilters button[data-f="all"] .gog-plus-wlfilter-count')?.textContent,
+      sale: document.querySelector('#gog-plus-wlfilters button[data-f="sale"] .gog-plus-wlfilter-count')?.textContent,
+      total: document.querySelector("#gog-plus-wlfilters [data-wl-total]")?.textContent,
+      barInList: !!document.querySelector(".account__products > #gog-plus-wlfilters"),
+    }));
+    check("the filter bar counts the 4 real rows, not the header's menu tiles", w.all === "4" && w.sale === "2", JSON.stringify(w));
+    check("the live total adds up what is left to buy (owned excluded)", /3 games|4 games/.test(w.total || "") && /₪/.test(w.total || ""), w.total);
+    await page.selectOption('#gog-plus-wlfilters select[data-wl="sort"]', "discount");
+    const order = await page.evaluate(() => [...document.querySelectorAll(".product-row-wrapper")].filter((r) => getComputedStyle(r).display !== "none").sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top).map((r) => r.querySelector(".product-row__title").textContent.trim()));
+    check("sort by discount re-orders the rows on screen", order[0] === "Deal Game" && order[1] === "Cheap Game", order.join());
+    await page.click('#gog-plus-wlfilters button[data-wl-filter="hide-owned"]');
+    const noOwned = await page.waitForFunction(() => [...document.querySelectorAll(".product-row-wrapper")].filter((r) => getComputedStyle(r).display !== "none").length === 3, null, { timeout: 4000 }).then(() => true, () => false);
+    check("'Hide owned' hides the owned row", noOwned);
+    check("no uncaught page errors", page.errors.length === 0, page.errors.join(" | "));
+    await shot(page, "v4-wishlist");
+    await page.close();
+  }
+
+  console.log("v4 — game page (deal check, offer timer, languages, collapsible panel, review filter)");
+  {
+    await setSettings({ sync: { targetCurrency: "ILS", preferredLanguages: ["English", "Hebrew"], realDiscountCheck: true, offerTimer: true, languageMeter: true, reviewTools: true, priceCompareTable: false }, local: { priceHistory: {}, gameFacts: {}, panelCollapsed: {} } });
+    const page = await open("/en/game/alpha_game");
+    await page.waitForSelector("#gog-plus-gamepanel", { timeout: 6000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 800));
+    const g = await page.evaluate(() => {
+      const t = (sel) => document.querySelector(sel)?.textContent.replace(/\s+/g, " ").trim() || "";
+      return {
+        deal: t('[data-section-id="deal"]'),
+        timer: !!document.querySelector(".gog-plus-deal-timer"),
+        chips: [...document.querySelectorAll(".gog-plus-lang-chip")].map((c) => c.textContent),
+        ids: [...document.querySelectorAll("#gog-plus-gp-body > [data-section-id]")].map((s) => s.dataset.sectionId),
+        reviewBar: !!document.getElementById("gog-plus-reviewbar"),
+      };
+    });
+    check("the deal check compares the advertised discount with GOG's own 30-day low", /−50% off the list price/.test(g.deal) && /not cheaper than it was recently/.test(g.deal), g.deal.slice(0, 260));
+    check("the offer countdown comes from the page's machine-readable timer", g.timer && /Offer ends in 1d|Offer ends in 2d|Offer ends in 4\dh/.test(g.deal), g.deal.slice(0, 120));
+    check("the language check finds English (text + audio) and flags a missing Hebrew", g.chips[0] === "English: text + audio ✓" && g.chips[1] === "Hebrew: not supported", JSON.stringify(g.chips));
+    check("price per hour uses GOG's time-to-beat figure", /\$0\.25 \(Main, 100 h\)/.test(g.deal), g.deal.slice(0, 300));
+    check("every section has a stable id", g.ids.includes("deal") && g.ids.includes("facts") && g.ids.includes("tags"), g.ids.join());
+    check("the review filter mounts above the reviews", g.reviewBar);
+
+    // Collapse a section → its content is really hidden by CSS, and it is remembered.
+    await page.click('[data-section-id="deal"] .gog-plus-gp-toggle');
+    const hidden = await page.evaluate(() => getComputedStyle(document.querySelector('[data-section-id="deal"] .gog-plus-deal-line, [data-section-id="deal"] .gog-plus-deal-timer')).display === "none");
+    await new Promise((r) => setTimeout(r, 300));
+    const saved = (await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get("panelCollapsed", r)))).panelCollapsed || {};
+    check("collapsing a section hides its content and remembers the choice", hidden && saved.deal === true, JSON.stringify(saved));
+
+    // 5★ filter hides the 2★ review.
+    await page.click('#gog-plus-reviewbar button[data-stars="5"]');
+    const hid = await page.evaluate(() => [...document.querySelectorAll("article.review__item")].map((a) => getComputedStyle(a).display !== "none"));
+    check("the review filter shows only the chosen number of stars", hid[0] === true && hid[1] === false, JSON.stringify(hid));
+
+    // Facts are cached for later: language, rating, offer end.
+    const facts = (await storageGet("local", "gameFacts")).gameFacts?.alpha_game;
+    check("the page's facts are cached (languages, rating, offer end, release year)", !!facts && facts.langs?.English?.a === true && facts.rating?.score === 4.8 && !!facts.pe && facts.year === 2015, JSON.stringify(facts));
+    check("no uncaught page errors", page.errors.length === 0, page.errors.join(" | "));
+    await shot(page, "v4-game");
+
+    // Plain look: all of our decoration goes away, the panel's features stay.
+    await setSettings({ sync: { plainLook: true } });
+    const plain = await page.waitForFunction(() => document.documentElement.classList.contains("gog-plus-plain") && !document.documentElement.classList.contains("gog-plus-design"), null, { timeout: 4000 }).then(() => true, () => false);
+    const stillThere = await page.evaluate(() => !!document.getElementById("gog-plus-gamepanel"));
+    check("'Plain look' drops the injected styling but keeps the panel working", plain && stillThere);
+    await setSettings({ sync: { plainLook: false } });
+    await page.close();
+  }
   } else {
     console.log("LIVE mode — real gog.com, public pages, logged out");
     // The live site prices different page types in different currencies for
@@ -393,6 +531,24 @@ try {
       check(`${label}: tiles are stamped`, info.stamped > 5, JSON.stringify(info));
       check(`${label}: badges sit on the tile's cover wrapper`, info.tileHosts > 5, JSON.stringify(info));
       check(`${label}: prices get conversion notes`, info.notes > 5, JSON.stringify(info));
+      if (label === "catalog") {
+        await new Promise((r) => setTimeout(r, 800));
+        const v4 = await page.evaluate(() => ({
+          bar: !!document.getElementById("gog-plus-catbar"),
+          barBeforeGrid: !!document.getElementById("gog-plus-catbar")?.nextElementSibling?.className.includes("paginated-products-grid"),
+          controls: document.querySelectorAll(".gog-plus-tilectl").length,
+        }));
+        check("catalog: the tools bar mounts above the grid and tiles get their controls", v4.bar && v4.barBeforeGrid && v4.controls > 5, JSON.stringify(v4));
+        // The local sort must really re-order what is on screen.
+        await page.selectOption("#gog-plus-cat-sort", "title").catch(() => {});
+        const sorted = await page.evaluate(() => {
+          const t = [...document.querySelectorAll("product-tile")].filter((e) => getComputedStyle(e).display !== "none")
+            .map((e) => ({ title: (e.querySelector("product-title")?.textContent || "").replace(/\s+/g, " ").trim(), x: e.getBoundingClientRect().left, y: Math.round(e.getBoundingClientRect().top / 20) }))
+            .sort((a, b) => a.y - b.y || a.x - b.x).map((e) => e.title);
+          return { n: t.length, ordered: t.every((x, i) => i === 0 || t[i - 1].localeCompare(x) <= 0), sample: t.slice(0, 4) };
+        });
+        check("catalog: sorting this page by title re-orders the live grid", sorted.n > 5 && sorted.ordered, JSON.stringify(sorted));
+      }
       await shot(page, `live-${label}`);
       await page.close();
     }
@@ -412,6 +568,10 @@ try {
       const hist = (await storageGet("local", "priceHistory")).priceHistory || {};
       check("game page: a price is recorded in the history", (hist.gris || []).length === 1 && hist.gris[0].p > 0, JSON.stringify(hist));
       check("game page: system check found the requirements table", g.sysRows >= 1, JSON.stringify(g));
+      const facts = (await storageGet("local", "gameFacts")).gameFacts?.gris;
+      check("game page: ratings, tags and release year are read into the facts cache", !!facts && !!facts.rating && (facts.tags || []).length > 0 && typeof facts.year === "number", JSON.stringify(facts || null).slice(0, 300));
+      const sections = await page.evaluate(() => [...document.querySelectorAll("#gog-plus-gp-body > [data-section-id]")].map((x) => x.dataset.sectionId));
+      check("game page: the panel's sections are built and identified", sections.includes("history") && sections.includes("tags"), sections.join());
       check("no uncaught page errors", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
       await shot(page, "live-game");
       await page.close();

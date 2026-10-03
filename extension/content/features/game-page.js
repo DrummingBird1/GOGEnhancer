@@ -825,6 +825,7 @@
       </div>
       <div id="gog-plus-tag-list" class="gog-plus-tag-list"></div>
       <textarea id="gog-plus-note" placeholder="Personal note…">${escapeHtml(note)}</textarea>
+      <div id="gog-plus-note-history"></div>
       <button type="button" class="gog-plus-tag-dashboard-link" id="gog-plus-open-dashboard">
         Open tag dashboard →
       </button>
@@ -901,14 +902,45 @@
       });
 
       const noteEl = /** @type {HTMLTextAreaElement} */ (wrap.querySelector("#gog-plus-note"));
-      noteEl.addEventListener(
-        "input",
-        debounce(async () => {
-          const { notes: cur = {} } = await window.GOGPlusStorage.get({ notes: {} });
-          cur[slug] = noteEl.value;
-          await window.GOGPlusStorage.set({ notes: cur });
-        }, 400)
-      );
+      const saveNote = async () => {
+        const { notes: cur = {} } = await window.GOGPlusStorage.get({ notes: {} });
+        cur[slug] = noteEl.value;
+        await window.GOGPlusStorage.set({ notes: cur });
+      };
+      noteEl.addEventListener("input", debounce(saveNote, 400));
+
+      // Earlier versions of this note (kept by the service worker — see
+      // lib/note-history.js), with a one-click restore.
+      const versions = state.settings.noteHistory?.[slug] || [];
+      const histHost = wrap.querySelector("#gog-plus-note-history");
+      if (histHost && versions.length) {
+        const details = document.createElement("details");
+        details.className = "gog-plus-note-history";
+        const summary = document.createElement("summary");
+        summary.textContent = `Earlier versions of this note (${versions.length})`;
+        details.appendChild(summary);
+        for (const v of versions) {
+          const row = document.createElement("div");
+          row.className = "gog-plus-note-version";
+          const when = document.createElement("span");
+          when.className = "gog-plus-gp-muted";
+          when.textContent = window.GOGPlusNoteHistory ? window.GOGPlusNoteHistory.ago(v.t) : new Date(v.t).toLocaleString();
+          const text = document.createElement("span");
+          text.className = "gog-plus-note-version-text";
+          text.textContent = v.text.length > 90 ? `${v.text.slice(0, 89)}…` : v.text;
+          const restore = document.createElement("button");
+          restore.type = "button";
+          restore.textContent = "Restore";
+          restore.addEventListener("click", async () => {
+            noteEl.value = v.text;
+            await saveNote();
+            window.GOGPlusToasts?.show("Earlier version restored");
+          });
+          row.append(when, text, restore);
+          details.appendChild(row);
+        }
+        histHost.appendChild(details);
+      }
 
       // Open tag dashboard via background — avoids needing the page in
       // web_accessible_resources (which would let any gog.com page iframe it).

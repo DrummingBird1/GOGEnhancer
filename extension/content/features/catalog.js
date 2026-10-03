@@ -282,10 +282,54 @@
       t.appendChild(tr);
     }
     card.appendChild(t);
+    const chart = priceChart(items);
+    if (chart) card.appendChild(chart);
     card.appendChild(el("p", "gog-plus-gp-muted", "Prices are what each tile showed when you picked it; history, ratings and languages come from game pages you have opened."));
     overlay.appendChild(card);
     document.body.appendChild(overlay);
     close.focus();
+  }
+
+  const CHART_COLORS = ["#00f0ff", "#c64fff", "#7fffa6", "#ffbf47"];
+
+  /**
+   * An inline-SVG chart of the compared games' price history, all in the
+   * user's target currency (null when nobody has two recorded snapshots).
+   * @param {Array<{ slug: string, title: string }>} items
+   */
+  function priceChart(items) {
+    const target = state.settings.targetCurrency && state.settings.targetCurrency !== "none" ? state.settings.targetCurrency : "USD";
+    const data = window.GOGPlusCatalogTools.buildChartSeries(items, { history: state.settings.priceHistory, rates: state.settings.rates, target });
+    if (!data) return null;
+    const NS = "http://www.w3.org/2000/svg";
+    const W = 560;
+    const H = 150;
+    const pad = 8;
+    const x = (/** @type {number} */ t) => pad + (data.maxT === data.minT ? 0 : ((t - data.minT) / (data.maxT - data.minT)) * (W - pad * 2));
+    const y = (/** @type {number} */ p) => H - pad - (data.maxP === data.minP ? 0.5 : (p - data.minP) / (data.maxP - data.minP)) * (H - pad * 2);
+    const wrap = el("div", "gog-plus-compare-chart");
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", `Price history of the compared games in ${target}`);
+    data.series.forEach((s, i) => {
+      const line = document.createElementNS(NS, "polyline");
+      line.setAttribute("points", s.points.map((p) => `${x(p.t).toFixed(1)},${y(p.p).toFixed(1)}`).join(" "));
+      line.setAttribute("fill", "none");
+      line.setAttribute("stroke", CHART_COLORS[i % CHART_COLORS.length]);
+      line.setAttribute("stroke-width", "2");
+      svg.appendChild(line);
+    });
+    wrap.appendChild(svg);
+    const legend = el("div", "gog-plus-compare-legend");
+    data.series.forEach((s, i) => {
+      const item = el("span", "", s.title);
+      item.style.setProperty("--swatch", CHART_COLORS[i % CHART_COLORS.length]);
+      legend.appendChild(item);
+    });
+    legend.appendChild(el("span", "gog-plus-gp-muted", `${data.minP.toFixed(0)}–${data.maxP.toFixed(0)} ${target}`));
+    wrap.appendChild(legend);
+    return wrap;
   }
 
   /* ---------------- bulk actions ---------------- */

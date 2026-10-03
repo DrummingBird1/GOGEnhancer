@@ -120,3 +120,33 @@ describe("openInLinks", () => {
     expect(window.GOGPlusLinks.openInLinks("", "")).toEqual([]);
   });
 });
+
+describe("buildChartSeries", () => {
+  const items = [{ slug: "a", title: "Alpha" }, { slug: "b", title: "" }, { slug: "c", title: "Gamma" }];
+  const history = {
+    a: [{ d: "2026-02-01", p: 8, c: "USD" }, { d: "2026-01-01", p: 20, c: "USD" }, { d: "2026-03-01", p: 40, c: "ILS" }, { d: "2026-04-01", p: 5, c: "XXX" }],
+    b: [{ d: "2026-01-15", p: 10, c: "USD" }, { d: "bad", p: 1, c: "USD" }, { d: "2026-02-15", p: 0, c: "USD" }, { d: "2026-03-15", p: 6, c: "USD" }],
+    c: [{ d: "2026-01-01", p: 3, c: "USD" }],
+  };
+  const C = window.GOGPlusCatalogTools;
+  const chart = C.buildChartSeries(items, { history, rates: { ILS: 4 }, target: "USD" });
+
+  it("converts every snapshot to one currency, sorts by date and drops what can't be drawn", () => {
+    expect(chart.series.map((s) => s.slug)).toEqual(["a", "b"]);
+    expect(chart.series[0].points.map((p) => p.p)).toEqual([20, 8, 10]);
+    expect(chart.series[1].title).toBe("b");
+    expect(chart.series[1].points).toHaveLength(2);
+    expect(chart.minP).toBe(6);
+    expect(chart.maxP).toBe(20);
+    expect(chart.minT).toBe(Date.parse("2026-01-01T00:00:00Z"));
+  });
+  it("converts into a non-USD target and refuses an unknown one", () => {
+    const il = C.buildChartSeries(items, { history, rates: { ILS: 4 }, target: "ILS" });
+    expect(il.series[0].points[0].p).toBe(80);
+    expect(C.buildChartSeries(items, { history, rates: {}, target: "ILS" })).toBeNull();
+  });
+  it("is null when nobody has two usable snapshots", () => {
+    expect(C.buildChartSeries([items[2]], { history, rates: {}, target: "USD" })).toBeNull();
+    expect(C.buildChartSeries(items, { rates: {}, target: "USD" })).toBeNull();
+  });
+});

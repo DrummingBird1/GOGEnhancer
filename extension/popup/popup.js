@@ -146,7 +146,7 @@ function renderDigest(s) {
   if (!section) return;
   const digest = s.weeklyDigest;
   const highlightCount = digest
-    ? digest.refundClosing.length + digest.priceAlertHits.length + digest.wishlistDrops.length
+    ? digest.refundClosing.length + digest.priceAlertHits.length + digest.wishlistDrops.length + (digest.endingSoon?.length || 0)
     : 0;
   if (!highlightCount) {
     section.hidden = true;
@@ -183,6 +183,10 @@ function renderDigest(s) {
   });
   digest.wishlistDrops.forEach((w) => {
     addItem(w.slug, `📉 -${w.dropPct}% off peak`);
+  });
+  (digest.endingSoon || []).forEach((e) => {
+    const days = Math.max(0, Math.ceil((e.endsAt - Date.now()) / 86400000));
+    addItem(e.slug, `⏳ offer ends in ${days <= 1 ? "under a day" : `${days}d`}`);
   });
 
   section.hidden = false;

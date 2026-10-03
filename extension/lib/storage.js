@@ -136,6 +136,7 @@
     "webhookUrl",
     "tourSeen",
     "lastSaleSeen",
+    "noteHistory",
   ]);
 
   /**

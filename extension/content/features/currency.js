@@ -62,6 +62,11 @@
         if (parent.classList.contains("gog-plus-converted")) return NodeFilter.FILTER_REJECT;
         if (parent.closest(".gog-plus-banner, .gog-plus-tooltip, .gog-plus-toasts"))
           return NodeFilter.FILTER_REJECT;
+        // Everything else the extension injects (the filter bars, the insights
+        // panel, dialogs) already shows what it means to show — converting its
+        // text again would put a "≈ ₪36" next to the "< $10" filter label.
+        if (window.GOGPlusGogDom.isSiteElement && !window.GOGPlusGogDom.isSiteElement(parent))
+          return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       },
     });

@@ -228,3 +228,38 @@ describe("the panel built by the game page", () => {
     C().addHeaderTools(document.createElement("div"));
   });
 });
+
+describe("earlier versions of the note", () => {
+  const panel = () => document.getElementById("gog-plus-gamepanel");
+  beforeEach(() => {
+    document.body.innerHTML = gamePageHtml();
+  });
+
+  it("lists them with a restore button, and not at all when there are none", async () => {
+    await window.GOGPlusGamePage.ensureGamePagePanel(SLUG);
+    expect(panel().querySelector(".gog-plus-note-history")).toBeNull();
+    panel().remove();
+    state.settings.noteHistory = { [SLUG]: [{ t: Date.now() - 5 * 60 * 1000, text: "older note" }, { t: Date.now() - 3 * 3600 * 1000, text: "x".repeat(200) }] };
+    await window.GOGPlusGamePage.ensureGamePagePanel(SLUG);
+    await tick(5);
+    const details = panel().querySelector(".gog-plus-note-history");
+    expect(details.querySelector("summary").textContent).toBe("Earlier versions of this note (2)");
+    const rows = [...details.querySelectorAll(".gog-plus-note-version")];
+    expect(rows[0].textContent).toContain("5 min ago");
+    expect(rows[0].textContent).toContain("older note");
+    expect(rows[1].querySelector(".gog-plus-note-version-text").textContent).toHaveLength(90); // long text is shortened
+  });
+
+  it("puts the chosen version back in the box and saves it", async () => {
+    await window.GOGPlusStorage.set({ notes: { [SLUG]: "current" } });
+    state.settings.noteHistory = { [SLUG]: [{ t: Date.now() - 60000, text: "older note" }] };
+    await window.GOGPlusGamePage.ensureGamePagePanel(SLUG);
+    await tick(5);
+    panel().querySelector(".gog-plus-note-version button").click();
+    await tick(10);
+    expect(document.getElementById("gog-plus-note").value).toBe("older note");
+    const saved = await new Promise((r) => chrome.storage.local.get(["notes"], r));
+    expect(saved.notes[SLUG]).toBe("older note");
+    expect(document.querySelector(".gog-plus-toast").textContent).toContain("Earlier version restored");
+  });
+});

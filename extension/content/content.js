@@ -220,7 +220,7 @@
     "wishlistCache", "wishlistCacheUpdatedAt", "wishlistSlugs", "weeklyDigest", "achievements", "lastSeenVersion",
     "notifyMode", "quietHours", "notifyMinDiscount", "notifyMaxPrice", "notifyOnlyAtLow", "seasonRadar", "monthlyGoal",
     "panelCollapsed", "panelOrder", "panelSticky", "calmMode", "uiScale", "palette", "plainLook",
-    "catalogDensity", "ownedDisplay", "hideNotInterested",
+    "catalogDensity", "ownedDisplay", "hideNotInterested", "noteHistory",
   ]);
 
   window.GOGPlusStorage.onChange(async ({ key, newValue }) => {

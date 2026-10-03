@@ -226,3 +226,17 @@ describe("login", () => {
     expect(G().isLoggedIn()).toBe(false);
   });
 });
+
+describe("tile titles", () => {
+  beforeEach(() => resetEnv({ path: "/en/games" }));
+  it("do not include the labels that share the title wrapper (found on the live catalog)", () => {
+    document.body.innerHTML = `<product-tile><a class="product-tile" href="/en/game/hom3">
+      <div class="product-tile__title" id="productTileGameTitle"><product-label class="product-tile__release-label--list"><div class="product-label product-label--owned"><span class="product-label__text">IN LIBRARY</span></div></product-label>
+      <product-title><span>Heroes of Might and Magic 3</span></product-title></div></a></product-tile>`;
+    expect(G().readTile(G().catalogTiles()[0]).title).toBe("Heroes of Might and Magic 3");
+  });
+  it("fall back to the wrapper when there is no <product-title>", () => {
+    document.body.innerHTML = `<product-tile><a class="product-tile" href="/en/game/x"><div id="productTileGameTitle">Plain Title</div></a></product-tile>`;
+    expect(G().readTile(G().catalogTiles()[0]).title).toBe("Plain Title");
+  });
+});

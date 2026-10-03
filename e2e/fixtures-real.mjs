@@ -117,3 +117,125 @@ export function gameReal() {
     </div>
   </div></div></body></html>`;
 }
+
+// ---- v4: shapes recorded on 2026-10-03 from a signed-in session -----------
+// (structure only). What they add to the ones above:
+//   catalog tile   `.product-label--owned` ("IN LIBRARY") inside an owned tile
+//   game page      `PromoEndDate[timer]`, `LowestPriceBeforeDiscount`,
+//                  `DetailsLanguages`, `ProductTags`, `CriticsReviews`, the
+//                  HowLongToBeat section, `.owned-status`, review articles
+//   wishlist       legacy rows `.product-row--wishlist` with ALWAYS-present
+//                  state flags hidden by CSS, plus the header's own
+//                  wishlist-looking menu tiles that must not be counted
+
+const ownedLabel =
+  '<product-label class="product-tile__release-label--grid"><div class="product-label product-label--owned"><span class="product-label__text">IN LIBRARY</span></div></product-label>';
+
+const tileV4 = (slug, title, hue, base, final, owned) =>
+  tile(slug, title, hue, base, final).replace("</store-picture>", `</store-picture>${owned ? ownedLabel : ""}`);
+
+export const V4_TILES = [
+  ["alpha_game", "Alpha Game", 200, "40.00", "20.00", false],
+  ["beta_game", "Beta Game", 340, null, "5.00", false],
+  ["gamma_game", "Gamma Game", 20, "32.00", "8.00", true],
+  ["delta_game", "Delta Game", 100, "20.00", "15.00", false],
+];
+
+export function catalogV4() {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Best Video games, DRM-free | GOG.COM</title><style>${baseCss}</style></head>
+  <body><header><span id="clock">00:00</span> GOG.COM</header>
+  <app-root ng-version="17.3.0"><div class="wrapper"><div class="app__container"><router-outlet></router-outlet>
+    <app-page><h1 class="page-header">PC games / All Games</h1>
+      <catalog><catalog-content id="Catalog"><div class="catalog__content"><paginated-products-grid>
+        <div class="paginated-products-grid grid">${V4_TILES.map((t) => tileV4(...t)).join("")}</div>
+      </paginated-products-grid></div></catalog-content></catalog>
+    </app-page></div></div></app-root></body></html>`;
+}
+
+const rowV4 = (slug, title, price, discount, owned) => `
+  <div class="product-row-wrapper">
+    <div class="product-state-holder product-row product-row--wishlist product-row--has-card" gog-product="1">
+      <div class="product-row__price"><div class="price-btn"><span class="price-btn__text">
+        <span class="price-btn__text--owned product-state__is-owned" style="display:${owned ? "inline" : "none"}">Owned</span>
+        <span class="product-state__is-tba" style="display:none">TBA</span>
+        <span class="product-state__is-free" style="display:none">Free</span>
+        ${price ? `<span class="_price product-state__price">${price}</span>` : ""}
+      </span></div></div>
+      <a class="product-row__link" href="/en/game/${slug}" style="display:block">
+        ${discount ? `<div class="product-row__discount product-state__discount"><span class="price-text--discount"><span>${discount}</span></span></div>` : ""}
+        <div class="product-row__title">${title}</div>
+      </a>
+    </div>
+  </div>`;
+
+export function wishlistV4() {
+  return `<!doctype html><html lang="en" ng-app="gog" class="ng-scope"><head><meta charset="utf-8"><title>Wishlist | GOG.COM</title>
+  <style>${baseCss}
+    ._price::before { content: "$ " }
+    .product-row-wrapper { display: block; padding: 6px 0; border-bottom: 1px solid #333 }
+  </style></head>
+  <body class="_prices-in-usd user-logged-in">
+  <header><span id="clock">00:00</span> GOG.COM
+    <div class="menu-v3__games-grid">
+      <a class="menu-v3__games-tile" href="/en/game/menu_one">menu one</a>
+      <a class="menu-v3__games-tile" href="/en/game/menu_two">menu two</a>
+    </div>
+  </header>
+  <div class="layout ng-scope"><div class="layout-container" style="padding-top:70px">
+    <div class="list cf account__products list--rows"><div class="list-inner">
+      ${rowV4("slow_game", "Slow Game", "20.00", 0, false)}
+      ${rowV4("deal_game", "Deal Game", "8.00", 75, false)}
+      ${rowV4("mine_game", "Mine Game", null, 0, true)}
+      ${rowV4("cheap_game", "Cheap Game", "5.00", 50, false)}
+    </div></div>
+  </div></div></body></html>`;
+}
+
+export function gameV4() {
+  const ends = new Date(Date.now() + 2 * 86400e3);
+  const timer = `${ends.toISOString().slice(0, 19).replace("T", " ")}.000000+00:00`;
+  const tick = '<svg class="ic-svg details__languages-icon details__languages-icon--tick"><use xlink:href="#check_tick"></use></svg>';
+  return `<!doctype html><html lang="en" id="pageTop" ng-app="gog" class="ng-scope"><head><meta charset="utf-8"><title>Alpha Game 50% off | GOG.COM</title>
+  <meta property="og:title" content="Alpha Game 50% off | GOG.COM">
+  <script type="application/ld+json">{"@type":"Product","name":"Alpha Game","releaseDate":"2015-05-19T00:00:00+02:00"}</script>
+  <style>${baseCss}
+    ._price::before { content: "$ " }
+    .gog-patrons-modal { display: none }
+    .layout-container { max-width: 1100px; margin: 0 auto }
+  </style></head>
+  <body class="productcard _prices-in-usd _price-currency-symbol-before user-logged-in">
+  <header><span id="clock">00:00</span> GOG.COM</header>
+  <div class="layout ng-scope"><div class="layout-container">
+    <div class="productcard-basics hide-when-content-is-expanded">
+      <h1 class="productcard-basics__title" selenium-id="ProductTitle">Alpha Game</h1>
+      <div class="productcard-rating"><p class="rating productcard-rating__score--version-a">4.8/5</p><p class="rating productcard-rating__details">( 2848 Reviews )</p></div>
+      <aside><div id="ProductActionsBody" class="product-actions-body" selenium-id="ProductActionsBody">
+        <div class="product-actions-price product-actions-price--discounted">
+          <span class="product-actions-price__base-amount _price" selenium-id="ProductBasePrice">49.99</span>
+          <span class="product-actions-price__final-amount _price" selenium-id="ProductFinalPrice">24.99</span>
+        </div>
+        <div class="product-actions__lowest-price-before-discount" selenium-id="LowestPriceBeforeDiscount"> Lowest price in the last 30 days before discount: <span class="_price">24.99</span></div>
+        <div class="product-actions__promo-end-date" selenium-id="PromoEndDate" timer="${timer}"><span class="product-actions__time">soon</span></div>
+      </div><button class="buy add-to-cart-button" selenium-id="AddToCartButton">Add to cart</button></aside>
+    </div>
+    <div class="owned-status" style="display:none"><span class="owned-status__label">in library</span></div>
+    <div class="details">
+      <div selenium-id="ProductGenres"><span>Genre:</span> <a href="/en/games?genres=role-playing">Role-playing</a></div>
+      <div class="table__row details__row" selenium-id="ProductTags"><div class="details__category">Tags:</div><div class="details__content">
+        <a href="/games/x" class="details__link details__link--tag"><span class="details__link-text">Adventure</span><span>, </span></a>
+        <a href="/games/y" class="details__link details__link--tag"><span class="details__link-text">Fantasy</span><span>, </span></a></div></div>
+      <div class="table__row details__row details__row--first" selenium-id="DetailsLanguages"><div class="details__category">Languages</div><div class="details__content details__languages-row">
+        <div class="details__languages-row--cell details__languages-row--language-name">English</div>
+        <div class="details__languages-row--cell details__languages-row--audio-support">${tick}</div>
+        <div class="details__languages-row--cell details__languages-row--text-support">${tick}</div>
+      </div></div>
+    </div>
+    <div class="content-summary-item" id="HowLongToBeatSection"><div class="howlongtobeat-section"><div class="howlongtobeat-wrapper">
+      <div class="howlongtobeat-box"><span class="howlongtobeat-box__time">100 h</span><span class="howlongtobeat-box__name">Main</span></div>
+    </div></div></div>
+    <div selenium-id="ReviewsList"><div class="reviews__main-col">
+      <article class="review__item"><span class="review__stars"><span class="rati__star is-full"></span><span class="rati__star is-full"></span><span class="rati__star is-full"></span><span class="rati__star is-full"></span><span class="rati__star is-full"></span></span><span class="review__profile-verified-owner">Verified owner</span></article>
+      <article class="review__item"><span class="review__stars"><span class="rati__star is-full"></span><span class="rati__star is-empty"></span></span></article>
+    </div></div>
+  </div></div></body></html>`;
+}

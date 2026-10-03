@@ -170,6 +170,7 @@ declare global {
     GOGPlusShareCard?: GogPlusLooseApi;
     GOGPlusTagsLibraryHub?: GogPlusLooseApi;
     GOGPlusTagsBoot?: GogPlusLooseApi;
+    GOGPlusNoteHistory?: GogPlusLooseApi;
 
     GOGPlusTagsState?: GogPlusLooseApi;
     GOGPlusTagsConstants?: GogPlusLooseApi;

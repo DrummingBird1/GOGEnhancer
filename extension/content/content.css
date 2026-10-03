@@ -1762,3 +1762,13 @@ html.gog-plus-palette--high-contrast {
   --gp-text-dim: #ffffff;
   --gp-text-muted: #e8e8e8;
 }
+
+.gog-plus-note-history { margin: 6px 0 0; font-size: 12.5px; color: var(--gp-text-dim); }
+.gog-plus-note-history summary { cursor: pointer; }
+.gog-plus-note-version { display: flex; gap: 10px; align-items: baseline; padding: 4px 0; }
+.gog-plus-note-version-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gog-plus-note-version button { font: inherit; font-size: 12px; cursor: pointer; background: transparent; color: var(--gp-cyan); border: 1px solid var(--gp-border-strong); border-radius: 6px; padding: 1px 8px; }
+.gog-plus-compare-chart { margin: 14px 0 4px; }
+.gog-plus-compare-chart svg { width: 100%; height: auto; background: rgba(255, 255, 255, 0.03); border-radius: 8px; }
+.gog-plus-compare-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; font-size: 12px; color: var(--gp-text-dim); }
+.gog-plus-compare-legend > span:not(.gog-plus-gp-muted)::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-inline-end: 6px; border-radius: 2px; background: var(--swatch, currentColor); }

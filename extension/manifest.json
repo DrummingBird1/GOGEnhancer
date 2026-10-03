@@ -55,6 +55,7 @@
         "lib/library-tools.js",
         "lib/ics.js",
         "lib/pack.js",
+        "lib/note-history.js",
         "content/gog-dom.js",
         "content/gog-dom-facts.js",
         "content/translations.js",
