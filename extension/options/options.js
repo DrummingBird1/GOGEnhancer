@@ -68,6 +68,9 @@ function applyThemeClassToHtml(theme, customColors) {
   }
 }
 
+/** The text of a dialog (confirm / alert / prompt) in the page's language — see lib/i18n-pages.js. */
+const tx = (/** @type {string} */ s) => window.GOGPlusPageI18n?.tx(s) ?? s;
+
 let saveStatusTimer = null;
 function flashSaved() {
   const el = $("saveStatus");
@@ -411,8 +414,10 @@ function bind() {
   // comment for why salt/IV travel in plaintext but the password never does.
   $("exportAllEncrypted").addEventListener("click", async () => {
     const password = prompt(
-      "Choose a password to encrypt this backup with.\n\n" +
-        "There is no way to recover a lost password — the file is useless without it."
+      tx(
+        "Choose a password to encrypt this backup with.\n\n" +
+          "There is no way to recover a lost password — the file is useless without it."
+      )
     );
     if (!password) return;
     const { sync, local } = await readAreas();
@@ -438,12 +443,12 @@ function bind() {
       const text = await file.text();
       let data = JSON.parse(text);
       if (data?.format === ENCRYPTED_BACKUP_FORMAT) {
-        const password = prompt("This backup is encrypted. Enter the password to decrypt it.");
+        const password = prompt(tx("This backup is encrypted. Enter the password to decrypt it."));
         if (!password) return;
         data = JSON.parse(await decryptBackup(data, password));
       }
       if (!data || (!data.sync && !data.local)) throw new Error("invalid format");
-      if (!confirm("Import will OVERWRITE current settings. Continue?")) return;
+      if (!confirm(tx("Import will OVERWRITE current settings. Continue?"))) return;
       const setArea = (area, items) =>
         new Promise((resolve, reject) => {
           area.set(items, () => {
@@ -462,9 +467,9 @@ function bind() {
       await window.GOGPlusMigrations.run();
       flashSaved();
       load();
-      alert("Imported successfully.");
+      alert(tx("Imported successfully."));
     } catch (err) {
-      alert("Import failed: " + err.message);
+      alert(tx("Import failed: " + err.message));
     } finally {
       e.target.value = "";
     }
@@ -478,14 +483,14 @@ function bind() {
     try {
       const text = await file.text();
       const rows = parseCsv(text);
-      if (!rows.length) throw new Error("Empty CSV.");
+      if (!rows.length) throw new Error(tx("Empty CSV."));
       // Header row check (case-insensitive); accept any column order.
       const header = rows[0].map((c) => c.trim().toLowerCase());
       const slugIdx = header.indexOf("slug");
       const tagsIdx = header.indexOf("tags");
       const noteIdx = header.indexOf("note");
       const statusIdx = header.indexOf("status");
-      if (slugIdx === -1) throw new Error("CSV needs a 'slug' column.");
+      if (slugIdx === -1) throw new Error(tx("CSV needs a 'slug' column."));
 
       const validStatusIds = new Set(window.GOGPlusGameStatus.STATUSES.map((s) => s.id));
       const incomingTags = {};
@@ -514,10 +519,12 @@ function bind() {
       const noteCount = Object.keys(incomingNotes).length;
       const statusCount = Object.keys(incomingStatus).length;
       const mode = confirm(
-        `Import ${tagCount} tag(s) across ${Object.keys(incomingTags).length} game(s), ` +
-          `${noteCount} note(s), and ${statusCount} play status(es).\n\n` +
-          `OK = merge (add to existing without losing current).\n` +
-          `Cancel = abort.`
+        tx(
+          `Import ${tagCount} tag(s) across ${Object.keys(incomingTags).length} game(s), ` +
+            `${noteCount} note(s), and ${statusCount} play status(es).\n\n` +
+            `OK = merge (add to existing without losing current).\n` +
+            `Cancel = abort.`
+        )
       );
       if (!mode) return;
 
@@ -540,9 +547,9 @@ function bind() {
       await window.GOGPlusStorage.set({ tags, notes, gameStatus });
       flashSaved();
       load();
-      alert(`Imported. Tags now span ${Object.keys(tags).length} game(s).`);
+      alert(tx(`Imported. Tags now span ${Object.keys(tags).length} game(s).`));
     } catch (err) {
-      alert("CSV import failed: " + err.message);
+      alert(tx("CSV import failed: " + err.message));
     } finally {
       e.target.value = "";
     }
@@ -575,13 +582,13 @@ function bind() {
 
   // Dangerous resets
   $("clearHistory").addEventListener("click", async () => {
-    if (!confirm("Clear ALL price history? This cannot be undone.")) return;
+    if (!confirm(tx("Clear ALL price history? This cannot be undone."))) return;
     await window.GOGPlusStorage.set({ priceHistory: {} });
     flashSaved();
     load();
   });
   $("clearTags").addEventListener("click", async () => {
-    if (!confirm("Clear ALL tags and notes? This cannot be undone.")) return;
+    if (!confirm(tx("Clear ALL tags and notes? This cannot be undone."))) return;
     await window.GOGPlusStorage.set({ tags: {}, notes: {} });
     flashSaved();
     load();
@@ -589,15 +596,17 @@ function bind() {
   $("clearAll").addEventListener("click", async () => {
     if (
       !confirm(
-        "RESET EVERYTHING?\n\nThis wipes all settings, tags, notes, price history, " +
-          "and refund-window entries from both sync and local storage. Cannot be undone."
+        tx(
+          "RESET EVERYTHING?\n\nThis wipes all settings, tags, notes, price history, " +
+            "and refund-window entries from both sync and local storage. Cannot be undone."
+        )
       )
     ) {
       return;
     }
-    const phrase = prompt('Type RESET (uppercase, no quotes) to confirm:');
+    const phrase = prompt(tx("Type RESET (uppercase, no quotes) to confirm:"));
     if (phrase !== "RESET") {
-      if (phrase !== null) alert("Phrase didn't match. Nothing was deleted.");
+      if (phrase !== null) alert(tx("Phrase didn't match. Nothing was deleted."));
       return;
     }
     await new Promise((r) => chrome.storage.sync.clear(() => r(undefined)));

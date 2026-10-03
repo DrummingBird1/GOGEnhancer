@@ -78,6 +78,19 @@ interface GogPlusI18nApi {
   t(key: string, lang?: string): string;
 }
 
+/** lib/i18n-pages.js — translates the dashboard / options pages by their English text. */
+interface GogPlusPageI18nApi {
+  ORDER: string[];
+  add(rows: string[][]): void;
+  translate(text: string, lang: string): string | null;
+  tx(english: string, lang?: string): string;
+  covers(text: string, lang?: string): boolean;
+  apply(root?: Node, lang?: string): void;
+  strings(root: Node): string[];
+  rows(): string[][];
+  pluralIndex(n: number, lang: string): number;
+}
+
 interface GogPlusGameStatusEntry {
   id: string;
   label: string;
@@ -217,6 +230,7 @@ declare global {
     GOGPlusGenres?: GogPlusGenresApi;
     GOGPlusChangelog?: GogPlusChangelogApi;
     GOGPlusI18n?: GogPlusI18nApi;
+    GOGPlusPageI18n?: GogPlusPageI18nApi;
     GOGPlusGameStatus?: GogPlusGameStatusApi;
   }
   // eslint-disable-next-line no-var

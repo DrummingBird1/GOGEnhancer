@@ -99,7 +99,7 @@ function renderTagList() {
     pill.innerHTML = `
       <span class="tag-pill-grip" aria-hidden="true">⋮⋮</span>
       <button class="tag-pill-swatch" type="button" aria-label="Pick color for ${escapeHtml(tag)}"></button>
-      <span class="tag-pill-name">${escapeHtml(tag)}</span>
+      <span class="tag-pill-name" data-no-i18n>${escapeHtml(tag)}</span>
       <span class="tag-pill-count">${count}</span>
       <button class="tag-pill-menu" type="button" aria-label="Tag actions">⋯</button>
     `;
@@ -200,8 +200,11 @@ function openTagMenu(tag, anchor) {
   });
 }
 
+/** A dialog's text in the page's language — see lib/i18n-pages.js. */
+const tx = (/** @type {string} */ s) => window.GOGPlusPageI18n?.tx(s) ?? s;
+
 async function renameTag(oldName) {
-  const newName = prompt(`Rename "${oldName}" to:`, oldName);
+  const newName = prompt(tx(`Rename "${oldName}" to:`), oldName);
   if (!newName || newName === oldName) return;
   const trimmed = newName.trim();
   if (!trimmed) return;
@@ -225,13 +228,10 @@ async function mergeTag(fromName) {
   const all = Object.keys(buildUniqueTags().reduce((a, [t]) => ((a[t] = 1), a), {}))
     .filter((t) => t !== fromName);
   if (!all.length) {
-    alert("No other tags to merge into.");
+    alert(tx("No other tags to merge into."));
     return;
   }
-  const toName = prompt(
-    `Merge "${fromName}" into which tag?\n\nExisting: ${all.join(", ")}`,
-    all[0]
-  );
+  const toName = prompt(tx(`Merge "${fromName}" into which tag?\n\nExisting: ${all.join(", ")}`), all[0]);
   if (!toName || toName === fromName) return;
   const trimmed = toName.trim();
   if (!trimmed) return;
@@ -283,11 +283,11 @@ async function deleteTag(name) {
 
   await commitDeletion();
 
-  window.GOGPlusToasts?.show(`Deleted "${name}"`, {
+  window.GOGPlusToasts?.show(tx(`Deleted "${name}"`), {
     variant: "muted",
     duration: 5000,
     action: {
-      label: "Undo",
+      label: tx("Undo"),
       onClick: async () => {
         for (const [slug, tags] of Object.entries(snapshot.tagsBySlug)) {
           state.allTags[slug] = tags;

@@ -223,6 +223,64 @@ try {
     await page.close();
   }
 
+
+  console.log("Interface language — the dashboard and the options page are translated, live");
+  {
+    await setSettings({
+      sync: { uiLanguage: "he" },
+      local: { tags: { alpha_game: ["rpg", "retro"], beta_quest: ["rpg"] }, notes: { alpha_game: "Backlog" }, gameStatus: { alpha_game: "playing" }, priceHistory: { alpha_game: [{ d: "2026-08-01", p: 20, c: "USD" }, { d: "2026-09-01", p: 14, c: "USD" }] } },
+    });
+    const options = await context.newPage();
+    await options.goto(`chrome-extension://${extId}/options/options.html`);
+    await options.waitForSelector("#privNet", { timeout: 6000 });
+    await options.waitForTimeout(600);
+    const o = await options.evaluate(() => ({
+      dir: document.documentElement.dir,
+      title: document.querySelector("h1")?.textContent,
+      // a sentence with a link inside it is translated as one piece and the link survives
+      link: document.querySelector('a[href*="frankfurter"]')?.textContent,
+      sentence: document.querySelector('a[href*="frankfurter"]')?.parentElement?.textContent,
+      pickerLeftAlone: document.getElementById("uiLanguage").options[0].textContent,
+    }));
+    check("options: the page is right-to-left and its heading is Hebrew", o.dir === "rtl" && /הגדרות מתקדמות/.test(o.title || ""), JSON.stringify(o));
+    check("options: a sentence with a link in it is translated as a whole, link intact", /כל 12 שעות/.test(o.sentence || "") && o.link === "frankfurter.app", o.sentence);
+    check("options: the language picker keeps each language's own name", o.pickerLeftAlone === "English", o.pickerLeftAlone);
+    // what the page draws later is translated too, and switching back restores the English
+    await options.selectOption("#uiLanguage", "de");
+    await options.waitForTimeout(300);
+    const de = await options.evaluate(() => document.querySelector("h1")?.textContent);
+    check("options: switching language re-translates from the original English", /Erweiterte Einstellungen/.test(de || ""), de);
+    await options.selectOption("#uiLanguage", "en");
+    await options.waitForTimeout(300);
+    const en = await options.evaluate(() => ({ h: document.querySelector("h1")?.textContent, dir: document.documentElement.dir }));
+    check("options: back to English puts the original text back", en.h === "Advanced settings" && en.dir === "ltr", JSON.stringify(en));
+    await setSettings({ sync: { uiLanguage: "he" } });
+    await options.close();
+
+    const dash = await context.newPage();
+    await dash.goto(`chrome-extension://${extId}/tags/tags.html`);
+    await dash.waitForSelector(".game-card", { timeout: 6000 });
+    await dash.waitForTimeout(600);
+    const d = await dash.evaluate(() => ({
+      heading: document.querySelector("h1, h2")?.textContent,
+      statLabels: [...document.querySelectorAll(".stat-label")].map((e) => e.textContent),
+      tagName: document.querySelector(".tag-pill-name")?.textContent,
+      note: document.querySelector(".game-card-note")?.textContent,
+      statusTitle: document.querySelector(".game-card-status-btn")?.getAttribute("title"),
+      skip: document.querySelector(".skip-link")?.textContent,
+    }));
+    check("dashboard: headings, stat cards and the skip link are Hebrew", /התגיות/.test(d.heading || "") && d.statLabels.includes("משחקים מתויגים") && /דלג/.test(d.skip || ""), JSON.stringify(d));
+    check("dashboard: what the user wrote (tag names, notes) is never translated", ["rpg", "retro", "strategy"].includes(d.tagName) && d.note?.trim() === "Backlog", `${d.tagName} / ${d.note}`);
+    check("dashboard: attributes (titles, labels) are translated as well", d.statusTitle && !/^[A-Za-z]+$/.test(d.statusTitle), d.statusTitle);
+    // a tag menu opened afterwards is translated as it appears
+    await dash.locator(".tag-pill-menu").first().click();
+    await dash.waitForTimeout(300);
+    const menu = await dash.evaluate(() => [...document.querySelectorAll("#tagActionMenu button")].map((b) => b.textContent));
+    check("dashboard: a menu opened later is translated as it appears", menu.length === 3 && menu.every((m) => /[\u0590-\u05FF]/.test(m)), menu.join(" | "));
+    await dash.close();
+    await setSettings({ sync: { uiLanguage: "en" }, local: { tags: {}, notes: {}, gameStatus: {}, priceHistory: {} } });
+  }
+
   } // E2E_ONLY=real skips everything above (lets the same checks run against an older build)
 
   // ---- Markup shapes recorded from the live site (see fixtures-real.mjs) ----

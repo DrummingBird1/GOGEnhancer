@@ -14,17 +14,22 @@
   const { renderTagList } = window.GOGPlusTagsManagement;
   const { purchaseDateOf } = window.GOGPlusPurchases;
 
+/** A dialog's text in the page's language — see lib/i18n-pages.js. */
+const tx = (/** @type {string} */ s) => window.GOGPlusPageI18n?.tx(s) ?? s;
+
 function exportPack() {
   const slugs = matchingSlugs();
   if (!slugs.length) {
-    alert("No games match the current filter — nothing to export.");
+    alert(tx("No games match the current filter — nothing to export."));
     return;
   }
   const packName =
     prompt(
-      `Name this pack (e.g. "RPG backlog 2026").\n\n` +
-        `Will include ${slugs.length} game${slugs.length === 1 ? "" : "s"}.`,
-      state.activeTag ? `${state.activeTag} pack` : `My GOG pack`
+      tx(
+        `Name this pack (e.g. "RPG backlog 2026").\n\n` +
+          `Will include ${slugs.length} game${slugs.length === 1 ? "" : "s"}.`
+      ),
+      state.activeTag ? tx(`${state.activeTag} pack`) : tx(`My GOG pack`)
     );
   if (packName === null) return; // user cancelled
   const pack = window.GOGPlusPack.buildPack(
@@ -65,7 +70,7 @@ async function importPackFromFile(e) {
       `• Purchase dates are only set if you don't already have one\n` +
       `• Tag colors are only set if you don't already have one\n\n` +
       `Nothing is overwritten.`;
-    if (!confirm(summary)) return;
+    if (!confirm(tx(summary))) return;
 
     // The merge itself lives in lib/pack.js (shared with share links). Until
     // v4 this read the colours from `pack.state.tagColors` — but packs store
@@ -94,14 +99,16 @@ async function importPackFromFile(e) {
     renderTagList();
     renderGames();
     alert(
-      `Pack "${pack.name}" imported:\n` +
-        `• ${tagsAdded} tag${tagsAdded === 1 ? "" : "s"} added\n` +
-        `• ${notesAdded} note${notesAdded === 1 ? "" : "s"} added\n` +
-        `• ${purchasesAdded} purchase date${purchasesAdded === 1 ? "" : "s"} added\n` +
-        `• ${colorsAdded} tag color${colorsAdded === 1 ? "" : "s"} added`
+      tx(
+        `Pack "${pack.name}" imported:\n` +
+          `• ${tagsAdded} tag${tagsAdded === 1 ? "" : "s"} added\n` +
+          `• ${notesAdded} note${notesAdded === 1 ? "" : "s"} added\n` +
+          `• ${purchasesAdded} purchase date${purchasesAdded === 1 ? "" : "s"} added\n` +
+          `• ${colorsAdded} tag color${colorsAdded === 1 ? "" : "s"} added`
+      )
     );
   } catch (err) {
-    alert("Pack import failed: " + err.message);
+    alert(tx("Pack import failed: " + err.message));
   } finally {
     e.target.value = "";
   }
@@ -162,7 +169,7 @@ function exportCsv() {
 function exportWishlistCsv() {
   const slugs = (state.allWishlistSlugs || []).filter((slug) => state.allHistory[slug]?.length);
   if (!slugs.length) {
-    alert("No wishlisted games with tracked price history yet — visit a few game pages first.");
+    alert(tx("No wishlisted games with tracked price history yet — visit a few game pages first."));
     return;
   }
   const rows = [["slug", "title", "latest_price", "currency", "all_time_low", "above_low_pct"]];
@@ -198,7 +205,7 @@ function exportStaticHtml() {
   const { escapeHtml } = window.GOGPlusDomSafety;
   const slugs = matchingSlugs();
   if (!slugs.length) {
-    alert("No games match the current filter — nothing to export.");
+    alert(tx("No games match the current filter — nothing to export."));
     return;
   }
   const { slugToTitle, renderMarkdown } = window.GOGPlusTagsGamesList;
@@ -271,7 +278,7 @@ function exportIcs() {
   });
   if (!ics) {
     alert(
-      "No open refund windows to export. Log a purchase date on a game's page first — GOG's refund window closes 30 days after purchase."
+      tx("No open refund windows to export. Log a purchase date on a game's page first — GOG's refund window closes 30 days after purchase.")
     );
     return;
   }
@@ -283,7 +290,7 @@ function exportIcs() {
 function exportMarkdown() {
   const slugs = matchingSlugs();
   if (!slugs.length) {
-    alert("No games match the current filter — nothing to export.");
+    alert(tx("No games match the current filter — nothing to export."));
     return;
   }
   const { slugToTitle } = window.GOGPlusTagsGamesList;

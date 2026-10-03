@@ -556,6 +556,9 @@
           if (v != null) el.setAttribute(attr, v);
         }
       });
+      // Pages whose English is plain markup (the dashboard, the options page) are
+      // translated by their text — see lib/i18n-pages.js. A no-op where it isn't loaded.
+      /** @type {any} */ (window).GOGPlusPageI18n?.apply(document.body, lang);
     },
   };
 

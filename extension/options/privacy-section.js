@@ -183,11 +183,9 @@
   }
 
   async function forgetLearned() {
-    if (
-      !window.confirm(
-        "Forget what GOG Enhancer learned about your library?\n\nThis removes the list of games it saw marked as yours, the facts it read from game pages (ratings, languages, last prices) and the cached pack contents. It will be learned again as you browse. Your tags, notes, price history and lists are not touched."
-      )
-    ) {
+    const ask =
+      "Forget what GOG Enhancer learned about your library?\n\nThis removes the list of games it saw marked as yours, the facts it read from game pages (ratings, languages, last prices) and the cached pack contents. It will be learned again as you browse. Your tags, notes, price history and lists are not touched.";
+    if (!window.confirm(window.GOGPlusPageI18n?.tx(ask) ?? ask)) {
       return;
     }
     await new Promise((r) => chrome.storage.local.remove(View().LEARNED_KEYS, () => r(undefined)));

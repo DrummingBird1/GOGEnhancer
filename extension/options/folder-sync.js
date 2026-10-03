@@ -35,7 +35,7 @@
   /** Overridable so tests (and a future nicer dialog) don't need window.prompt. */
   const ui = {
     /** @param {string} message @returns {string | null} */
-    askPassphrase: (message) => window.prompt(message),
+    askPassphrase: (message) => window.prompt(window.GOGPlusPageI18n?.tx(message) ?? message),
   };
 
   /** @returns {Promise<string>} the chosen folder's name */
@@ -185,7 +185,7 @@
     $("syncNow").addEventListener("click", () => run(async () => describeResult(await syncNow())));
     $("syncForget").addEventListener("click", () =>
       run(async () => {
-        if (!confirm("Stop syncing with this folder? The file in the folder is left untouched.")) return;
+        if (!confirm(window.GOGPlusPageI18n?.tx("Stop syncing with this folder? The file in the folder is left untouched.") ?? "Stop syncing with this folder? The file in the folder is left untouched.")) return;
         await forget();
         return "Stopped syncing.";
       })

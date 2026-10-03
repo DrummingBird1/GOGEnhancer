@@ -211,24 +211,24 @@ function renderGames() {
     }).join("");
     card.innerHTML = `
       <div class="game-card-header">
-        <h3 class="game-card-title">${escapeHtml(title)}</h3>
+        <h3 class="game-card-title" data-no-i18n>${escapeHtml(title)}</h3>
         ${hasChart ? `<button class="game-card-chart-toggle" type="button" title="Show price-history chart" aria-label="Show price-history chart for ${escapeHtml(title)}" aria-expanded="false">📈</button>` : ""}
         <button class="game-card-export" type="button" data-slug="${escapeHtml(slug)}" title="Export this game's data as JSON" aria-label="Export ${escapeHtml(title)}">↓</button>
       </div>
       <div class="game-card-status" role="group" aria-label="Play status">${statusButtons}</div>
-      <span class="game-card-slug">${escapeHtml(slug)}</span>
+      <span class="game-card-slug" data-no-i18n>${escapeHtml(slug)}</span>
       <div class="game-card-tags">
         ${tags
           .map((t) => {
             const c = safeHexColor(state.tagColors[t]);
             const style = c ? ` style="--tag-accent:${c}"` : "";
-            return `<span class="game-card-chip ${t === state.activeTag ? "highlight" : ""}"${style}>${escapeHtml(t)}</span>`;
+            return `<span class="game-card-chip ${t === state.activeTag ? "highlight" : ""}"${style} data-no-i18n>${escapeHtml(t)}</span>`;
           })
           .join("")}
       </div>
       ${suggestion ? `<button class="game-card-tag-suggestion" type="button" data-suggest="${escapeHtml(suggestion)}">+ Suggested tag: ${escapeHtml(suggestion)}</button>` : ""}
       <div class="game-card-attachment-slot"></div>
-      ${note ? `<div class="game-card-note">${renderMarkdown(note)}</div>` : ""}
+      ${note ? `<div class="game-card-note" data-no-i18n>${renderMarkdown(note)}</div>` : ""}
       ${hasChart ? `<div class="game-card-chart" hidden></div>` : ""}
       <a class="game-card-link" href="https://www.gog.com/en/game/${encodeURIComponent(slug)}" target="_blank" rel="noopener">
         Open on GOG →
