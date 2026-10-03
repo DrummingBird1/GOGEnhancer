@@ -41,6 +41,8 @@
         "lib/defaults.js",
         "lib/storage.js",
         "lib/net.js",
+        "lib/failure-log.js",
+        "lib/streak.js",
         "lib/dom-safety.js",
         "lib/currency-format.js",
         "lib/genres.js",

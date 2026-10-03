@@ -106,6 +106,7 @@ interface GogPlusContentStateApi {
   pageCurrency: { code: string; symbol: string };
   observers: any[];
   failures: Record<string, { count: number; message: string; at: number }>;
+  perf: { passes: number; lastMs: number; maxMs: number; features: Record<string, { lastMs: number; maxMs: number }> };
 }
 
 interface GogPlusContentUtilsApi {
@@ -172,6 +173,19 @@ declare global {
     GOGPlusTagsBoot?: GogPlusLooseApi;
     GOGPlusNoteHistory?: GogPlusLooseApi;
     GOGPlusNet?: GogPlusLooseApi;
+    GOGPlusStreak?: GogPlusLooseApi;
+    GOGPlusTagsA11y?: GogPlusLooseApi;
+    GOGPlusChallenges?: GogPlusLooseApi;
+    GOGPlusFolderSync?: GogPlusLooseApi;
+    GOGPlusSettingsV4?: GogPlusLooseApi;
+    GOGPlusToolsSection?: GogPlusLooseApi;
+    GOGPlusPrivacySection?: GogPlusLooseApi;
+    GOGPlusTour?: GogPlusLooseApi;
+    /** File System Access API (Chromium only). */
+    showDirectoryPicker?: (options?: { mode?: "read" | "readwrite"; id?: string }) => Promise<any>;
+    GOGPlusFailureLog?: GogPlusLooseApi;
+    GOGPlusPrivacyView?: GogPlusLooseApi;
+    GOGPlusDigestHtml?: GogPlusLooseApi;
     GOGPlusGogApi?: GogPlusLooseApi;
     GOGPlusEndless?: GogPlusLooseApi;
     GOGPlusAnnounce?: GogPlusLooseApi;

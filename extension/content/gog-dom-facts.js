@@ -296,6 +296,28 @@
 
   /* ---------------- bundles ---------------- */
 
+  /**
+   * The games a BUNDLE page shows as its covers, from the site's own hook:
+   * `<a selenium-id="BundleCoverItem" href="/en/game/<slug>" title="<title>">`
+   * (inspected on the live Prince of Persia Bundle page, 2026-10-03). This is a
+   * stable hook and costs no request; other kinds of pack have no such block
+   * (they are asked of GOG's product API instead — see knowledge.ensurePackInfo).
+   * @param {string} [currentSlug] left out of the result
+   * @returns {Array<{ slug: string, title: string }>}
+   */
+  function readBundleItems(currentSlug = "") {
+    const out = [];
+    const seen = new Set();
+    for (const a of document.querySelectorAll('[selenium-id="BundleCoverItem"]')) {
+      if (!G.isSiteElement(a)) continue;
+      const slug = G.slugFromHref(a.getAttribute("href"));
+      if (!slug || slug === currentSlug || seen.has(slug)) continue;
+      seen.add(slug);
+      out.push({ slug, title: (a.getAttribute("title") || "").trim().slice(0, 140) || slug.replace(/_/g, " ") });
+    }
+    return out;
+  }
+
   const INCLUDES_RE = /^(?:this (?:pack|bundle|collection) )?(?:includes|contains)\b|^(?:pack|bundle|collection) contents?\b/i;
 
   /**
@@ -307,6 +329,8 @@
    * @returns {string[]}
    */
   function bundleSlugs(currentSlug = "") {
+    const covers = readBundleItems(currentSlug);
+    if (covers.length) return covers.map((c) => c.slug);
     for (const h of document.querySelectorAll("h2, h3, h4, .title__underline-text, [class*='title']")) {
       if (h.children.length || !G.isSiteElement(h)) continue;
       const t = text(h);
@@ -480,6 +504,7 @@
     readProductId,
     readGameFacts,
     bundleSlugs,
+    readBundleItems,
     readReviews,
     reviewsMount,
     catalogTiles,

@@ -87,7 +87,19 @@
    */
   function mapGenreLabel(labelText) {
     if (!labelText) return null;
-    return GENRE_LABEL_TO_BUCKET[String(labelText).trim().toLowerCase()] || null;
+    const text = String(labelText).trim();
+    const direct = GENRE_LABEL_TO_BUCKET[text.toLowerCase()];
+    if (direct) return direct;
+    // With Hebrew translations on, this extension may already have rewritten the
+    // page's "Strategy" into its Hebrew name before this runs. Map that back, so
+    // genre detection doesn't depend on whether translations are switched on.
+    const dict = typeof window !== "undefined" ? window.GOG_PLUS_TRANSLATIONS?.exact : undefined;
+    if (dict) {
+      for (const [english, translated] of Object.entries(dict)) {
+        if (translated === text && GENRE_LABEL_TO_BUCKET[english.toLowerCase()]) return GENRE_LABEL_TO_BUCKET[english.toLowerCase()];
+      }
+    }
+    return null;
   }
 
   const api = { GENRE_PATTERNS, GENRE_LABEL_TO_BUCKET, matchGenrePattern, mapGenreLabel };

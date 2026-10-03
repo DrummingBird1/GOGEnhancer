@@ -140,6 +140,10 @@
     "lastSaleSeen",
     "noteHistory",
     "netLog",
+    "failureLog",
+    "streak",
+    "challengesDone",
+    "failureSeenAt",
     "packInfo",
   ]);
 

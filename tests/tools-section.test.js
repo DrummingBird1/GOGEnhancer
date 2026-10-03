@@ -37,6 +37,12 @@ describe("pickTab", () => {
 });
 
 describe("formatReport", () => {
+  it("reports how fast the passes are, naming the slowest feature", () => {
+    const text = Tools.formatReport(report({ perf: { passes: 7, lastMs: 3, maxMs: 41.6, features: { "card badges": { lastMs: 2, maxMs: 30.2 }, "game page": { lastMs: 1, maxMs: 4 } } } }));
+    expect(text).toContain("Speed: 7 passes, slowest 42 ms (card badges 30 ms)");
+    expect(Tools.formatReport(report())).not.toContain("Speed:");
+  });
+
   it("summarises a healthy page", () => {
     const text = Tools.formatReport(report());
     expect(text).toContain("GOG Enhancer diagnostics (v4.0.0)");

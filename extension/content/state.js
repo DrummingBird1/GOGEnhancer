@@ -32,6 +32,10 @@
     // feature name -> { count, message, at } for features whose last run threw
     // (see runFeatures in content.js); read by "Check this page".
     failures: {},
+    // How long the feature passes take (ms), per feature and overall — the
+    // content script's own performance budget, read by "Check this page" and
+    // the end-to-end suite. See runFeatures in content.js.
+    perf: { passes: 0, lastMs: 0, maxMs: 0, features: {} },
   };
 
   window.GOGPlusContentState = state;

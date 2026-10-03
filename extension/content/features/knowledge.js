@@ -233,9 +233,10 @@
   const packLookups = new Set();
 
   /**
-   * Learns what the current game page's product contains, from GOG's own
-   * product API, and caches it for 30 days (an ordinary game caches as []).
-   * Only the numeric product id leaves the page. Does nothing when the
+   * Learns what the current game page's product contains and caches it for 30
+   * days (an ordinary game caches as []). A bundle page names its games itself
+   * (`BundleCoverItem`), which costs nothing; any other page is asked of GOG's
+   * own product API, and only the numeric product id leaves the page. Does nothing when the
    * "packContents" switch is off, when the answer is still fresh, or when a
    * lookup for this slug already ran this session; a failed lookup is not
    * cached, so nothing is guessed.
@@ -246,11 +247,16 @@
     const s = state.settings;
     if (!s.packContents || !slug || Dom.pageType() !== "game") return false;
     if (window.GOGPlusDeals.packInfoFresh(s.packInfo?.[slug]) || packLookups.has(slug)) return false;
-    const id = Dom.readProductId();
-    if (!id) return false;
-    packLookups.add(slug);
-    const children = await window.GOGPlusGogApi.fetchPackContents(id, slug);
-    if (!children) return false;
+    // A bundle page lists its games itself — no request needed. Other packs ask GOG's API.
+    let children = Dom.readBundleItems(slug);
+    if (!children.length) {
+      const id = Dom.readProductId();
+      if (!id) return false; // the page hasn't rendered it yet — a later pass tries again
+      packLookups.add(slug);
+      const asked = await window.GOGPlusGogApi.fetchPackContents(id, slug);
+      if (!asked) return false;
+      children = asked;
+    }
     /** @type {Record<string, any>} */
     const next = { ...(s.packInfo || {}), [slug]: { t: Date.now(), children } };
     const keys = Object.keys(next);

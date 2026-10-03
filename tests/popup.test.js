@@ -152,6 +152,37 @@ describe("What's new panel", () => {
     expect(document.getElementById("whatsNewList").children.length).toBeGreaterThan(0);
   });
 
+  it("lists the headline changes only, with a link to the rest, so the popup stays short", async () => {
+    const many = Array.from({ length: 11 }, (_, i) => `change ${i + 1}`);
+    window.GOGPlusChangelog.CHANGELOG["9.9.9"] = many;
+    chrome.runtime.getManifest = () => ({ version: "9.9.9" });
+    await new Promise((r) => chrome.storage.local.set({ lastSeenVersion: "" }, r));
+    try {
+      await bootPopup();
+      const items = [...document.getElementById("whatsNewList").children];
+      expect(items.filter((li) => !li.classList.contains("whatsnew-more")).map((li) => li.textContent)).toEqual(many.slice(0, 6));
+      const more = items.find((li) => li.classList.contains("whatsnew-more"));
+      expect(more.textContent).toBe("…and 5 more changes — see the full changelog");
+      expect(more.querySelector("a").href).toBe("https://drummingbird1.github.io/GOGEnhancer/changelog.html");
+      expect(more.querySelector("a").rel).toContain("noopener");
+    } finally {
+      delete window.GOGPlusChangelog.CHANGELOG["9.9.9"];
+    }
+  });
+
+  it("shows a short entry in full, with no link", async () => {
+    window.GOGPlusChangelog.CHANGELOG["9.9.8"] = ["only one"];
+    chrome.runtime.getManifest = () => ({ version: "9.9.8" });
+    await new Promise((r) => chrome.storage.local.set({ lastSeenVersion: "" }, r));
+    try {
+      await bootPopup();
+      expect(document.getElementById("whatsNewList").children).toHaveLength(1);
+      expect(document.querySelector(".whatsnew-more")).toBeNull();
+    } finally {
+      delete window.GOGPlusChangelog.CHANGELOG["9.9.8"];
+    }
+  });
+
   it("dismiss button hides the panel and persists lastSeenVersion", async () => {
     const known = Object.keys(window.GOGPlusChangelog.CHANGELOG).sort(
       window.GOGPlusChangelog.compareVersions

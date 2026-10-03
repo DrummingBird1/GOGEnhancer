@@ -140,10 +140,15 @@
       at: Date.now(),
     };
     log(`feature "${name}" failed`, err);
+    // Kept (locally, de-duplicated) so the popup can say something broke even
+    // after this page is gone.
+    void window.GOGPlusFailureLog?.persist(name, err, window.GOGPlusGogDom.pageType());
   }
 
   function runFeatures() {
+    const pass0 = performance.now();
     for (const [name, run] of FEATURES) {
+      const t0 = performance.now();
       try {
         const result = run();
         if (result && typeof (/** @type {any} */ (result)).catch === "function") {
@@ -152,7 +157,16 @@
       } catch (e) {
         noteFailure(name, e);
       }
+      const ms = performance.now() - t0;
+      const f = state.perf.features[name] || { lastMs: 0, maxMs: 0 };
+      f.lastMs = ms;
+      f.maxMs = Math.max(f.maxMs, ms);
+      state.perf.features[name] = f;
     }
+    const total = performance.now() - pass0;
+    state.perf.passes++;
+    state.perf.lastMs = total;
+    state.perf.maxMs = Math.max(state.perf.maxMs, total);
   }
 
   const scheduleProcess = debounce(processAll, 250);
@@ -228,7 +242,7 @@
   ]);
 
   // Bookkeeping the page never renders — a write must not cost a pass.
-  const QUIET_KEYS = new Set(["netLog", "failureLog"]);
+  const QUIET_KEYS = new Set(["netLog", "failureLog", "failureSeenAt", "streak", "challengesDone"]);
 
   window.GOGPlusStorage.onChange(async ({ key, newValue }) => {
     state.settings[key] = newValue;
@@ -372,7 +386,7 @@
   // what each lookup found (see GOGPlusGogDom.diagnose).
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg?.type === "gog-plus-diagnose") {
-      sendResponse({ ...window.GOGPlusGogDom.diagnose(), featureFailures: { ...state.failures } });
+      sendResponse({ ...window.GOGPlusGogDom.diagnose(), featureFailures: { ...state.failures }, perf: JSON.parse(JSON.stringify(state.perf)) });
     }
   });
 
@@ -383,6 +397,8 @@
     window.GOGPlusGogDom.watchRoute(onRouteChange);
     window.GOGPlusKeyboardNav.init();
     window.GOGPlusSiteSignals?.checkPackLink();
+    // The day streak (achievements, monthly challenges): one small write a day.
+    void window.GOGPlusStreak?.recordVisit(window.GOGPlusStorage);
     log("ready", state.settings);
   });
 })();

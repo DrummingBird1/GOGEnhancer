@@ -34,6 +34,12 @@
     rates: {}, // units per USD, for converting money figures
     targetCurrency: "ILS",
     monthlyGoal: 0, // games to finish per month; 0 = no goal
+    alerts: {}, // { slug: { threshold, currency } } — price alerts
+    streak: { last: "", current: 0, best: 0 }, // day streak, see lib/streak.js
+    challengesDone: {}, // { "YYYY-MM": [id, ...] } — see lib/challenges.js
+    notInterested: {}, // { slug: date }
+    lastAutoBackupAt: 0,
+    syncFolderName: "",    // chosen folder's display name (folder sync)
     preferredLanguages: [],
     uiLanguage: "en",
     tagColors: {}, // { tagName: "#hex" }

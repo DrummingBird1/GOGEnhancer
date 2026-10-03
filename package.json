@@ -8,7 +8,7 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.pages-popup.json && tsc --noEmit -p tsconfig.pages-onboarding.json && tsc --noEmit -p tsconfig.pages-options.json",
     "e2e": "node e2e/extension.e2e.mjs"
   },
   "devDependencies": {

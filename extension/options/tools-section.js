@@ -12,7 +12,8 @@
 (() => {
   "use strict";
 
-  const $ = (id) => document.getElementById(id);
+  /** The page's controls are looked up by id and used as inputs, buttons, … — typed loosely on purpose. */
+  const $ = /** @type {(id: string) => any} */ ((id) => document.getElementById(id));
 
   const TOGGLES = ["keyboardNav", "sysReqCheck"];
 
@@ -44,6 +45,17 @@
       `Game title: ${d.title.found ? `found via ${d.title.strategy}` : "not found"}`,
       `Panel position: ${d.panelAnchor ? `via ${d.panelAnchor}` : "not found"}`,
       `Applied so far: ${d.applied.cards} cards, ${d.applied.convertedPrices} converted prices, game panel ${d.applied.gamePanel ? "yes" : "no"}`,
+      ...(d.perf && d.perf.passes
+        ? [
+            `Speed: ${d.perf.passes} passes, slowest ${Math.round(d.perf.maxMs)} ms${
+              Object.entries(d.perf.features || {})
+                .sort((a, b) => b[1].maxMs - a[1].maxMs)
+                .slice(0, 1)
+                .map(([name, f]) => ` (${name} ${Math.round(f.maxMs)} ms)`)
+                .join("")
+            }`,
+          ]
+        : []),
       "",
       d.warnings.length
         ? `${d.warnings.length} issue${d.warnings.length === 1 ? "" : "s"} found:\n${d.warnings.map((w) => `  ! ${w}`).join("\n")}`

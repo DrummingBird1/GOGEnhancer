@@ -6,7 +6,10 @@
  * data export/import, CSV tag export, danger-zone resets.
  */
 
-const $ = (id) => document.getElementById(id);
+/** The page's controls are looked up by id and used as inputs, buttons, … — typed loosely on purpose. */
+const $ = /** @type {(id: string) => any} */ ((id) => document.getElementById(id));
+/** @type {(selector: string) => NodeListOf<HTMLElement>} */
+const $$ = (selector) => document.querySelectorAll(selector);
 
 const PRESETS = {
   il: { targetCurrency: "ILS", vatPercent: 18, vatLabel: "כולל מע״מ" },
@@ -92,7 +95,7 @@ async function load() {
   $("vatLabel").value = s.vatLabel ?? "";
 
   // Active region preset
-  document.querySelectorAll(".preset").forEach((b) => {
+  $$(".preset").forEach((b) => {
     b.classList.toggle("active", b.dataset.preset === s.regionPreset);
   });
 
@@ -128,7 +131,7 @@ async function load() {
   // Active theme swatch + live preview on the options page itself
   const activeTheme = s.theme || "neon";
   applyThemeClassToHtml(activeTheme, s.customThemeColors);
-  document.querySelectorAll(".theme-swatch").forEach((b) => {
+  $$(".theme-swatch").forEach((b) => {
     b.classList.toggle("active", b.dataset.theme === activeTheme);
   });
   if ($("customThemeEditor")) $("customThemeEditor").hidden = activeTheme !== "custom";
@@ -211,10 +214,10 @@ function formatTimeSince(ts) {
 
 function bind() {
   // Region presets
-  document.querySelectorAll(".preset").forEach((btn) => {
+  $$(".preset").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const key = btn.dataset.preset;
-      document.querySelectorAll(".preset").forEach((b) => b.classList.remove("active"));
+      $$(".preset").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       if (PRESETS[key]) {
         await window.GOGPlusStorage.set({
@@ -319,10 +322,10 @@ function bind() {
   $("monthlyBudgetCurrency").addEventListener("change", saveMonthlyBudget);
 
   // Theme swatches — live preview on the options page, then persist.
-  document.querySelectorAll(".theme-swatch").forEach((btn) => {
+  $$(".theme-swatch").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const theme = btn.dataset.theme;
-      document.querySelectorAll(".theme-swatch").forEach((b) => b.classList.remove("active"));
+      $$(".theme-swatch").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const { customThemeColors } = await window.GOGPlusStorage.get({ customThemeColors: null });
       applyThemeClassToHtml(theme, customThemeColors);
@@ -380,7 +383,7 @@ function bind() {
   // a second browser at a folder it has no access to.
   const PER_BROWSER_KEYS = [
     "syncFolderName", "lastFolderSyncAt", "syncBaseMeta", "syncConflicts", "autoSync", "autoBackup",
-    "lastAutoBackupAt", "webhookUrl", "webhookEnabled", "notifyQueue", "tourSeen",
+    "lastAutoBackupAt", "webhookUrl", "webhookEnabled", "notifyQueue", "tourSeen", "netLog", "failureLog", "failureSeenAt",
   ];
   const withoutPerBrowser = (obj) => Object.fromEntries(Object.entries(obj || {}).filter(([k]) => !PER_BROWSER_KEYS.includes(k)));
   const readAreas = async () => ({
@@ -445,7 +448,7 @@ function bind() {
         new Promise((resolve, reject) => {
           area.set(items, () => {
             if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-            else resolve();
+            else resolve(undefined);
           });
         });
       // Which folder this browser syncs to (and when it last did), its webhook
@@ -597,9 +600,9 @@ function bind() {
       if (phrase !== null) alert("Phrase didn't match. Nothing was deleted.");
       return;
     }
-    await new Promise((r) => chrome.storage.sync.clear(r));
+    await new Promise((r) => chrome.storage.sync.clear(() => r(undefined)));
     if (chrome.runtime.lastError) console.error("[GOG+] reset sync.clear failed:", chrome.runtime.lastError.message);
-    await new Promise((r) => chrome.storage.local.clear(r));
+    await new Promise((r) => chrome.storage.local.clear(() => r(undefined)));
     if (chrome.runtime.lastError) console.error("[GOG+] reset local.clear failed:", chrome.runtime.lastError.message);
     // Note image attachments (lib/attachments.js) live in IndexedDB, not
     // chrome.storage — not cleared by the two calls above. Best-effort,
@@ -624,7 +627,7 @@ function bind() {
 function bindSettingsSearch() {
   const input = $("settingsSearch");
   if (!input) return;
-  const cards = Array.from(document.querySelectorAll("main.page > .card"));
+  const cards = Array.from($$("main.page > .card"));
   const emptyMsg = $("settingsSearchEmpty");
   const emptyTerm = $("settingsSearchEmptyTerm");
 

@@ -141,6 +141,12 @@ export const V4_TILES = [
   ["delta_game", "Delta Game", 100, "20.00", "15.00", false],
 ];
 
+/** A catalog page with `n` tiles (a long list, or a home page's many carousels), for the performance budget. */
+export function catalogBig(n) {
+  const tiles = Array.from({ length: n }, (_, i) => tileV4(`big_game_${i}`, `Big Game ${i}`, (i * 37) % 360, i % 3 ? "40.00" : null, "20.00", i % 7 === 0)).join("");
+  return catalogV4().replace(/<div class="paginated-products-grid grid">[\s\S]*?<\/div>\s*<\/paginated-products-grid>/, `<div class="paginated-products-grid grid">${tiles}</div></paginated-products-grid>`);
+}
+
 export function catalogV4() {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Best Video games, DRM-free | GOG.COM</title><style>${baseCss}</style></head>
   <body><header><span id="clock">00:00</span> GOG.COM</header>
@@ -191,7 +197,7 @@ export function wishlistV4() {
   </div></div></body></html>`;
 }
 
-export function gameV4({ productId = null, title = "Alpha Game" } = {}) {
+export function gameV4({ productId = null, title = "Alpha Game", bundle = null } = {}) {
   const ends = new Date(Date.now() + 2 * 86400e3);
   const timer = `${ends.toISOString().slice(0, 19).replace("T", " ")}.000000+00:00`;
   const tick = '<svg class="ic-svg details__languages-icon details__languages-icon--tick"><use xlink:href="#check_tick"></use></svg>';
@@ -207,6 +213,7 @@ export function gameV4({ productId = null, title = "Alpha Game" } = {}) {
   <header><span id="clock">00:00</span> GOG.COM</header>
   <div class="layout ng-scope"><div class="layout-container">
     ${productId ? `<div card-product="${productId}"></div>` : ""}
+    ${bundle ? `<div class="bundle-covers" selenium-id="BundleCovers">${bundle.map(([slug, t]) => `<a class="bundle-covers__item" href="/en/game/${slug}" title="${t}" selenium-id="BundleCoverItem"><img alt=""></a>`).join("")}</div>` : ""}
     <div class="productcard-basics hide-when-content-is-expanded">
       <h1 class="productcard-basics__title" selenium-id="ProductTitle">${title}</h1>
       <div class="productcard-rating"><p class="rating productcard-rating__score--version-a">4.8/5</p><p class="rating productcard-rating__details">( 2848 Reviews )</p></div>

@@ -30,12 +30,12 @@
       keys: ["ownedSlugs", "gameFacts", "packInfo", "gameGenres"],
       forgettable: true,
     },
-    { id: "lists", label: "Your own lists and choices", keys: ["gameStatus", "statusDates", "purchaseLog", "notInterested", "catalogPresets", "myPc"] },
+    { id: "lists", label: "Your own lists and choices", keys: ["gameStatus", "statusDates", "purchaseLog", "notInterested", "catalogPresets", "myPc", "streak", "challengesDone"] },
     { id: "alerts", label: "Alerts, notification queue and digest", keys: ["priceAlerts", "tagAlerts", "notifLog", "notifyQueue", "weeklyDigest", "achievements", "lastSaleSeen"] },
     { id: "sync", label: "Folder-sync and backup bookkeeping", keys: ["syncMeta", "syncConflicts", "syncBaseMeta", "lastFolderSyncAt", "syncFolderName", "syncEncrypt", "autoSync", "autoBackup", "autoBackupKeep", "lastAutoBackupAt"] },
     { id: "webhook", label: "Your webhook address (a secret — never exported)", keys: ["webhookUrl", "webhookEnabled"] },
     { id: "caches", label: "Caches (mods list, wishlist badge)", keys: ["modsList", "modsUpdatedAt", "wishlistCache", "wishlistCacheUpdatedAt", "wishlistSlugs"] },
-    { id: "log", label: "The request log below", keys: ["netLog"] },
+    { id: "log", label: "The request list below, and the record of features that failed", keys: ["netLog", "failureLog", "failureSeenAt"] },
     { id: "misc", label: "Small flags", keys: ["tagDashboardDensity", "lastSeenVersion", "tourSeen"] },
   ];
 

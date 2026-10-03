@@ -111,9 +111,18 @@
     });
   }
 
-  function closeFilterBuilder() {
+  /** @type {(() => void) | null} */
+  let releaseTrap = null;
+
+  /** @param {boolean} [restoreFocus] */
+  function closeFilterBuilder(restoreFocus = false) {
     const pop = $("filterBuilderPopover");
     if (pop) pop.hidden = true;
+    releaseTrap?.();
+    releaseTrap = null;
+    const btn = $("filterBuilderBtn");
+    btn?.setAttribute("aria-expanded", "false");
+    if (restoreFocus) btn?.focus();
   }
 
   function toggleFilterBuilder() {
@@ -125,6 +134,12 @@
     }
     renderFilterBuilderContent();
     pop.hidden = false;
+    $("filterBuilderBtn")?.setAttribute("aria-expanded", "true");
+    const A11y = window.GOGPlusTagsA11y;
+    if (A11y) {
+      releaseTrap = A11y.trapFocus(pop, { onEscape: () => closeFilterBuilder(true) });
+      pop.querySelector("button")?.focus();
+    }
   }
 
   window.GOGPlusTagsFilterBuilder = { toggleFilterBuilder, closeFilterBuilder, insertFilterToken };

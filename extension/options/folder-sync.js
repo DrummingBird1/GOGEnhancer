@@ -66,7 +66,8 @@
 
   /* ---------- page wiring ---------- */
 
-  const $ = (id) => document.getElementById(id);
+  /** The page's controls are looked up by id and used as inputs, buttons, … — typed loosely on purpose. */
+  const $ = /** @type {(id: string) => any} */ ((id) => document.getElementById(id));
 
   function formatAgo(ts) {
     if (!ts) return "Never";

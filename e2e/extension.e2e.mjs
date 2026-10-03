@@ -11,13 +11,11 @@
 // --load-extension (Playwright's does; branded Google Chrome 137+ does not).
 // It looks for one already installed by Playwright before giving up.
 
-import { chromium } from "playwright-core";
-import { existsSync, mkdirSync, readdirSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, readFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { storeLegacy, storeVariant, gameLegacy, gameVariant } from "./fixtures.mjs";
-import { homeReal, catalogReal, gameReal, realTile, catalogV4, wishlistV4, gameV4, V4_TILES } from "./fixtures-real.mjs";
+import { startHarness } from "./harness.mjs";
+import { realTile } from "./fixtures-real.mjs";
 
 // E2E_LIVE=1 runs the extension against the REAL gog.com (public pages, logged
 // out, a handful of page loads) instead of fixtures — the only way to know the
@@ -29,118 +27,22 @@ const EXT = process.env.E2E_EXT || join(ROOT, "extension");
 const SHOTS = process.env.E2E_SHOTS;
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 
-function findChromium() {
-  if (process.env.PW_CHROMIUM) return process.env.PW_CHROMIUM;
-  const base = join(process.env.LOCALAPPDATA || "", "ms-playwright");
-  if (existsSync(base)) {
-    const dirs = readdirSync(base)
-      .filter((d) => /^chromium-\d+$/.test(d))
-      .sort((a, b) => parseInt(b.split("-")[1]) - parseInt(a.split("-")[1]));
-    for (const d of dirs) {
-      for (const sub of ["chrome-win64", "chrome-win"]) {
-        const exe = join(base, d, sub, "chrome.exe");
-        if (existsSync(exe)) return exe;
-      }
-    }
-  }
-  return undefined; // fall back to Playwright's own default
-}
-
 const results = [];
 function check(name, ok, detail = "") {
   results.push({ name, ok });
   console.log(`${ok ? "  ✓" : "  ✗"} ${name}${!ok && detail ? `\n      ${detail}` : ""}`);
 }
 
-const PAGES = {
-  "/en/games": storeLegacy,
-  "/en/games/variant": storeVariant,
-  "/en/game/cool_game": gameLegacy,
-  "/en/game/cool_game_variant": gameVariant,
-  "/en/": homeReal,
-  "/en": homeReal,
-  "/en/games/real": catalogReal,
-  "/en/game/gris": gameReal,
-  "/en/games/v4": catalogV4,
-  "/en/account/wishlist": wishlistV4,
-  "/en/game/alpha_game": gameV4,
-  "/en/game/pack_game": () => gameV4({ productId: "9990001", title: "Pack Game" }),
-};
+// E2E_AUTH=<file> (with E2E_LIVE=1): cookies saved by `node e2e/save-login.mjs`, so the
+// logged-in pages — wishlist, library ownership — can be checked against the real site.
+const AUTH = process.env.E2E_AUTH ? resolve(process.env.E2E_AUTH) : null;
+const authCookies = AUTH ? JSON.parse(readFileSync(AUTH, "utf8")).cookies : undefined;
 
-const userDataDir = mkdtempSync(join(tmpdir(), "gog-enhancer-e2e-"));
-const context = await chromium.launchPersistentContext(userDataDir, {
-  executablePath: findChromium(),
-  headless: false,
-  args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, "--headless=new", "--no-first-run"],
-  viewport: { width: 1100, height: 800 },
-});
+const { context, sw, extId, setSettings, storageGet: _storageGet, cleanup } = await startHarness({ live: LIVE, extPath: EXT, cookies: authCookies });
+void _storageGet;
 
 try {
-  // Nothing real leaves the machine: gog.com is served from fixtures, and the
-  // two APIs the extension calls get empty answers.
-  await context.route("**/*", (route) => {
-    const url = new URL(route.request().url());
-    if (!/^https?:$/.test(url.protocol)) return route.continue();
-    if (LIVE && /(^|\.)(gog\.com|gog-statics\.com|gogcdn\.net)$/.test(url.hostname)) {
-      return route.continue();
-    }
-    if (url.hostname === "www.gog.com") {
-      const page = PAGES[url.pathname];
-      return page
-        ? route.fulfill({ status: 200, contentType: "text/html", body: page() })
-        : route.fulfill({ status: 404, body: "not a fixture" });
-    }
-    if (url.hostname === "api.frankfurter.app") {
-      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ rates: { ILS: 4 } }) });
-    }
-    if (url.hostname === "www.cheapshark.com") {
-      return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
-    }
-    // GOG's own APIs, answered the way the real ones are: JSON with a CORS
-    // header that allows the gog.com page's origin (a content script's fetch
-    // carries that origin, so without the header it would be blocked).
-    const cors = { "access-control-allow-origin": "https://www.gog.com" };
-    if (url.hostname === "images.gog-statics.com") {
-      // The covers our endless-scrolling cards point at: a 1x1 transparent GIF.
-      return route.fulfill({ status: 200, contentType: "image/gif", body: Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64") });
-    }
-    if (url.hostname === "catalog.gog.com") {
-      const page = Number(url.searchParams.get("page") || 1);
-      const product = (slug, title) => ({
-        id: `id_${slug}`, slug, title, productType: "game", coverVertical: "https://images.gog-statics.com/x.jpg", releaseDate: "2020.01.01",
-        genres: [{ name: "RPG" }], reviewsRating: 4.5, reviewsCount: 5,
-        price: { finalMoney: { amount: "9.99", currency: "USD" }, baseMoney: { amount: "19.99", currency: "USD" }, discount: "-50%" },
-      });
-      const products = page === 1 ? V4_TILES.map((t) => product(t[0], t[1])) : page === 2 ? [product("more_one", "More One"), product("more_two", "More Two")] : [];
-      return route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify({ products, pages: 2, productCount: 6 }) });
-    }
-    if (url.hostname === "api.gog.com") {
-      const id = /\/games\/(\d+)/.exec(url.pathname)?.[1];
-      const child = (slug, title) => ({ _embedded: { product: { title } }, _links: { store: { href: `https://www.gog.com/en/game/${slug}` } } });
-      const answers = {
-        9990001: { _links: { includesGames: [{ href: "https://api.gog.com/v2/games/9990002" }, { href: "https://api.gog.com/v2/games/9990003" }] } },
-        9990002: child("child_one", "Child One"),
-        9990003: child("child_two", "Child Two"),
-      };
-      return route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(answers[id] || { _links: {} }) });
-    }
-    return route.abort();
-  });
-
-  let [sw] = context.serviceWorkers();
-  if (!sw) sw = await context.waitForEvent("serviceworker");
-  const extId = new URL(sw.url()).host;
   console.log(`Extension loaded (id ${extId.slice(0, 8)}…)\n`);
-
-  // A fresh install opens the onboarding tab; it isn't what we're testing.
-  await new Promise((r) => setTimeout(r, 800));
-  for (const p of context.pages()) if (p.url().includes("onboarding")) await p.close();
-
-  const setSettings = (areaItems) =>
-    sw.evaluate(async ({ sync, local }) => {
-      if (sync) await new Promise((r) => chrome.storage.sync.set(sync, r));
-      if (local) await new Promise((r) => chrome.storage.local.set(local, r));
-    }, areaItems);
 
   await setSettings({
     sync: { targetCurrency: "ILS", rates: { ILS: 4, EUR: 0.9 }, currencyConverter: true, taxEstimator: false, keyboardNav: true },
@@ -499,7 +401,48 @@ try {
     check("the options page's privacy dashboard shows what was contacted and what is stored", net && store);
     await shot(opts, "v4-privacy");
     await opts.close();
+    // A bundle page lists its games itself: same warning, no request.
+    await setSettings({ local: { netLog: [] } });
+    const bundle = await open("/en/game/bundle_game");
+    const bundleText = await bundle
+      .waitForFunction(() => /You already own 1 of the 2 games in this pack/.test(document.getElementById("gog-plus-gamepanel")?.textContent || ""), null, { timeout: 8000 })
+      .then(() => true, () => false);
+    const bundleAsked = ((await storageGet("local", "netLog")).netLog || []).filter((l) => l.host === "api.gog.com").length;
+    check("a bundle page's own covers are read — the same warning, and not a single request to GOG's API", bundleText && bundleAsked === 0, `warned=${bundleText} requests=${bundleAsked}`);
+    await bundle.close();
+
     await setSettings({ sync: { endlessCatalog: false } });
+  }
+
+  console.log("Performance budget — feature passes on long catalogs (and no runaway loops)");
+  {
+    // A pass has to stay cheap, because the site is an SPA and passes run on
+    // every change. These budgets are ~3x what a mid-range machine measures
+    // today (≈ 35 ms for 48 tiles, ≈ 100 ms for 400): they exist to catch an
+    // order-of-magnitude regression (a feature that went quadratic in the
+    // number of tiles, or layout reads interleaved with writes), not to benchmark.
+    await setSettings({ sync: { catalogTools: true, endlessCatalog: false, targetCurrency: "ILS", currencyConverter: true }, local: { ownedSlugs: {}, notInterested: {}, gameFacts: {}, packInfo: {} } });
+    const diagnose = () =>
+      sw.evaluate(async () => {
+        const [tab] = await chrome.tabs.query({ url: "https://www.gog.com/*", active: true });
+        const tabs = tab ? [tab] : await chrome.tabs.query({ url: "https://www.gog.com/*" });
+        return chrome.tabs.sendMessage(tabs[tabs.length - 1].id, { type: "gog-plus-diagnose" });
+      });
+    for (const [n, firstPassBudget, totalBudget] of [[48, 150, 150], [400, 600, 600]]) {
+      const page = await open(`/en/games/big${n}`);
+      await page.waitForFunction((count) => document.querySelectorAll(".gog-plus-card-done").length >= count, n, { timeout: 15000 }).catch(() => {});
+      await new Promise((r) => setTimeout(r, 1500));
+      const a = (await diagnose()).perf;
+      await new Promise((r) => setTimeout(r, 1500));
+      const b = (await diagnose()).perf;
+      const slowest = Object.entries(b.features).sort((x, y) => y[1].maxMs - x[1].maxMs).slice(0, 3).map(([name, f]) => `${name} ${f.maxMs.toFixed(0)}ms`).join(", ");
+      console.log(`    ${n} tiles: ${b.passes} passes, slowest pass ${b.maxMs.toFixed(0)} ms, slowest features: ${slowest}`);
+      check(`${n} tiles: no single pass takes longer than ${firstPassBudget} ms`, b.maxMs < firstPassBudget, `maxMs=${b.maxMs.toFixed(0)} (${slowest})`);
+      check(`${n} tiles: the page settles — no pass is triggered by the extension's own changes`, b.passes === a.passes && b.passes < 30, `passes ${a.passes} → ${b.passes}`);
+      check(`${n} tiles: every tile is processed`, await page.evaluate((count) => document.querySelectorAll(".gog-plus-card-done").length >= count, n));
+      void totalBudget;
+      await page.close();
+    }
   }
 
   console.log("v4 — wishlist (real rows only, smart sort, totals)");
@@ -660,12 +603,14 @@ try {
       await setSettings({ sync: { endlessCatalog: false } });
 
       // A real bundle: Prince of Persia Bundle contains four games, each with a page of its own.
-      await setSettings({ sync: { packContents: true }, local: { packInfo: {}, ownedSlugs: {} } });
+      await setSettings({ sync: { packContents: true }, local: { packInfo: {}, ownedSlugs: {}, netLog: [] } });
       const pk = await open("/en/game/prince_of_persia_bundle");
       await pk.waitForSelector("#gog-plus-gamepanel", { timeout: 20000 }).catch(() => {});
       const got = await pk.waitForFunction(() => document.querySelectorAll(".gog-plus-pack-list a").length === 4, null, { timeout: 20000 }).then(() => true, () => false);
       const kids = (await storageGet("local", "packInfo")).packInfo?.prince_of_persia_bundle?.children || [];
-      check("a real bundle page lists its four games, learned from api.gog.com", got && kids.length === 4 && kids.every((k) => k.slug && k.title), JSON.stringify(kids));
+      check("a real bundle page lists its four games, read from its own BundleCoverItem covers", got && kids.length === 4 && kids.every((k) => k.slug && k.title), JSON.stringify(kids));
+      const apiCalls = ((await storageGet("local", "netLog")).netLog || []).filter((l) => l.host === "api.gog.com").length;
+      check("…without asking GOG's API at all", apiCalls === 0, `${apiCalls} requests`);
       if (kids.length === 4) {
         await setSettings({ local: { ownedSlugs: { [kids[0].slug]: "2026-01-01" } } });
         await pk.reload({ waitUntil: "domcontentloaded" });
@@ -711,10 +656,54 @@ try {
       await shot(page, "live-game");
       await page.close();
     }
+
+    if (AUTH) {
+      // The logged-in pages. These need a login the user saved themselves
+      // (`node e2e/save-login.mjs`); the file stays on their disk and is never
+      // committed. NOT part of any automated run — nobody but the account's owner
+      // can run it, so it is the part of v4 that has only been checked this way
+      // by hand, if at all.
+      console.log("LIVE + saved login — wishlist and library ownership");
+      await setSettings({ sync: { wishlistFilters: true, wishlistSmart: true, ownershipLearning: true, catalogTools: true }, local: { ownedSlugs: {} } });
+
+      const wl = await open("/en/account/wishlist");
+      const bar = await wl.waitForSelector("#gog-plus-wlfilters", { timeout: 30000 }).then(() => true, () => false);
+      await new Promise((r) => setTimeout(r, 3000));
+      const w = await wl.evaluate(() => ({
+        rows: document.querySelectorAll(".product-row--wishlist").length,
+        all: document.querySelector('#gog-plus-wlfilters button[data-f="all"] .gog-plus-wlfilter-count')?.textContent || "",
+        total: document.querySelector("#gog-plus-wlfilters [data-wl-total]")?.textContent || "",
+        loggedIn: document.body.classList.contains("user-logged-in"),
+      }));
+      check("logged in: the wishlist bar mounts above the real list", bar, JSON.stringify(w));
+      if (w.rows > 0) {
+        check("logged in: the bar counts exactly the real rows (not the header's menu tiles)", String(w.rows) === w.all, JSON.stringify(w));
+        check("logged in: a live total is shown", /\d/.test(w.total), JSON.stringify(w));
+        await wl.selectOption('#gog-plus-wlfilters select[data-wl="sort"]', "discount").catch(() => {});
+        const sorted = await wl.evaluate(() => [...document.querySelectorAll(".product-row-wrapper")].length);
+        check("logged in: sorting the wishlist keeps every row", sorted === w.rows, `${sorted} vs ${w.rows}`);
+      } else {
+        console.log("    (the saved account's wishlist is empty — counts not checked)");
+      }
+      check("no uncaught page errors", wl.errors.length === 0, wl.errors.slice(0, 3).join(" | "));
+      await wl.close();
+
+      const cat = await open("/en/games");
+      await cat.waitForSelector("product-tile", { timeout: 30000 }).catch(() => {});
+      await new Promise((r) => setTimeout(r, 3000));
+      const labels = await cat.evaluate(() => [...document.querySelectorAll("product-tile")].filter((t) => t.querySelector(".product-label--owned")).map((t) => t.querySelector("a[href*='/game/']")?.getAttribute("href").split("/game/")[1]));
+      const learned = Object.keys((await storageGet("local", "ownedSlugs")).ownedSlugs || {});
+      check("logged in: every game the catalog marks IN LIBRARY is learned as owned", labels.every((s) => learned.includes(s)), `labels=${labels.join()} learned=${learned.slice(0, 5).join()}`);
+      await cat.close();
+
+      const gp = await open("/en/game/gris");
+      await gp.waitForSelector("#gog-plus-gamepanel", { timeout: 30000 }).catch(() => {});
+      check("logged in: the game page carries the logged-in marker the extension relies on", await gp.evaluate(() => document.body.classList.contains("user-logged-in")));
+      await gp.close();
+    }
   }
 } finally {
-  await context.close();
-  rmSync(userDataDir, { recursive: true, force: true });
+  await cleanup();
 }
 
 const failed = results.filter((r) => !r.ok);

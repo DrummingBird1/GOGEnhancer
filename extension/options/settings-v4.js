@@ -20,7 +20,8 @@
 (() => {
   "use strict";
 
-  const $ = (id) => document.getElementById(id);
+  /** The page's controls are looked up by id and used as inputs, buttons, … — typed loosely on purpose. */
+  const $ = /** @type {(id: string) => any} */ ((id) => document.getElementById(id));
   const Storage = () => window.GOGPlusStorage;
 
   /* ---------- tiny DOM builders ---------- */

@@ -80,6 +80,13 @@
     // anchors that have an image AND aren't tiny carousel previews.
     const { findCards, cardCoverHost } = window.GOGPlusGogDom;
     const seenSlugs = new Set();
+    // Two phases. Reading layout (cardCoverHost → getBoundingClientRect,
+    // getComputedStyle) between writes makes the browser re-layout the page for
+    // every card; reading for all of them first and writing afterwards keeps it
+    // to one layout per pass (a 400-tile page took ~240 ms before, measured by
+    // the end-to-end performance budget).
+    /** @type {Array<{ card: Element, slug: string, host: Element, wasStatic: boolean }>} */
+    const jobs = [];
     findCards(root).forEach((card) => {
       const img = card.querySelector("img, picture");
       if (!img) return;
@@ -96,6 +103,10 @@
       if (!host) return;
 
       seenSlugs.add(slug);
+      jobs.push({ card, slug, host, wasStatic: getComputedStyle(host).position === "static" });
+    });
+
+    jobs.forEach(({ card, slug, host, wasStatic }) => {
       card.classList.add("gog-plus-card-done");
       card.classList.add("gog-plus-card");
       if (state.settings.richTooltips) {
@@ -106,9 +117,8 @@
       // Mark the chosen cover host so CSS scopes badges to it.
       host.classList.add("gog-plus-cover-host");
       // Ensure positioning context exists WITHOUT !important.
-      const computedPos = getComputedStyle(host).position;
-      if (computedPos === "static") {
-        host.style.position = "relative";
+      if (wasStatic) {
+        /** @type {HTMLElement} */ (host).style.position = "relative";
       }
 
       // Era-aware styling — applied to the cover host, not the whole card.

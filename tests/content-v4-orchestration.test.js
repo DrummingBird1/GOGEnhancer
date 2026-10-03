@@ -57,6 +57,10 @@ describe("per-feature failure isolation", () => {
     await vi.advanceTimersByTimeAsync(10);
     expect(state().failures["currency detection"]).toMatchObject({ count: expect.any(Number), message: "detect exploded" });
     expect(spy).toHaveBeenCalled(); // a later feature still ran
+    // …and the failure was kept locally, so the popup can say something broke.
+    const stored = await new Promise((r) => chrome.storage.local.get("failureLog", r));
+    expect(stored.failureLog).toHaveLength(1);
+    expect(stored.failureLog[0]).toMatchObject({ feature: "currency detection", message: "detect exploded", page: "store" });
     expect(real).toBeTypeOf("function");
   });
 

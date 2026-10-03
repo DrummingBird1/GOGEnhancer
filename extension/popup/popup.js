@@ -37,6 +37,7 @@ const ID_OVERRIDES = {
 
 const DEFAULTS = window.GOG_PLUS_DEFAULTS;
 
+/** @param {string} id @returns {any} the page's controls are used as inputs, buttons, … */
 function $(id) { return document.getElementById(id); }
 
 async function load() {
@@ -61,10 +62,28 @@ async function load() {
     .forEach((c) => document.documentElement.classList.remove(c));
   if (s.palette && s.palette !== "default") document.documentElement.classList.add(`gog-plus-palette--${s.palette}`);
 
+  renderBroken(s);
   renderWhatsNew(s);
   renderRateStrip(s);
   renderDeals(s);
   renderDigest(s);
+}
+
+// "Something on gog.com isn't working" — features that failed on a gog.com page
+// recently (lib/failure-log.js). Each feature runs in isolation, so this says
+// which one stopped, and offers a report the user can copy or send themselves.
+function renderBroken(s) {
+  const box = $("brokenBanner");
+  const Log = window.GOGPlusFailureLog;
+  if (!box || !Log) return;
+  const entries = Log.current(s.failureLog, s.failureSeenAt);
+  if (!entries.length) {
+    box.hidden = true;
+    return;
+  }
+  $("brokenText").textContent = `${Log.summarize(entries)} stopped working on a gog.com page. The rest of the extension still works.`;
+  box.dataset.report = Log.buildReport(entries, { version: chrome.runtime.getManifest().version, userAgent: navigator.userAgent });
+  box.hidden = false;
 }
 
 const CUR_SYMBOLS = { USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽" };
@@ -195,6 +214,8 @@ function renderDigest(s) {
 // Shows changelog bullets for every version since the user last dismissed one
 // (see lib/changelog.js#versionsSince). Stays hidden once storage.lastSeenVersion
 // catches up to the installed manifest version.
+const WHATS_NEW_MAX = 6;
+
 function renderWhatsNew(s) {
   const panel = $("whatsNew");
   if (!panel || !window.GOGPlusChangelog) return;
@@ -218,11 +239,25 @@ function renderWhatsNew(s) {
       head.textContent = `v${v}`;
       list.appendChild(head);
     }
-    (window.GOGPlusChangelog.CHANGELOG[v] || []).forEach((text) => {
+    // The popup is small: the headline changes are listed (the changelog puts
+    // them first) and the rest is one link away.
+    const bullets = window.GOGPlusChangelog.CHANGELOG[v] || [];
+    bullets.slice(0, WHATS_NEW_MAX).forEach((text) => {
       const li = document.createElement("li");
       li.textContent = text;
       list.appendChild(li);
     });
+    if (bullets.length > WHATS_NEW_MAX) {
+      const li = document.createElement("li");
+      li.className = "whatsnew-more";
+      const a = document.createElement("a");
+      a.href = "https://drummingbird1.github.io/GOGEnhancer/changelog.html";
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = `…and ${bullets.length - WHATS_NEW_MAX} more change${bullets.length - WHATS_NEW_MAX === 1 ? "" : "s"} — see the full changelog`;
+      li.appendChild(a);
+      list.appendChild(li);
+    }
   });
   $("whatsNewVersion").textContent = `v${currentVersion}`;
   panel.hidden = false;
@@ -321,6 +356,24 @@ function bind() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  $("brokenCopy")?.addEventListener("click", async (e) => {
+    const report = $("brokenBanner").dataset.report || "";
+    try {
+      await navigator.clipboard.writeText(report);
+      e.target.textContent = "Copied ✓";
+    } catch (_) {
+      e.target.textContent = "Couldn't copy";
+    }
+  });
+  $("brokenIssue")?.addEventListener("click", () => {
+    const report = $("brokenBanner").dataset.report || "";
+    chrome.tabs.create({ url: window.GOGPlusFailureLog.issueUrl(report, chrome.runtime.getManifest().version) });
+  });
+  $("brokenDismiss")?.addEventListener("click", async () => {
+    await window.GOGPlusStorage.set({ failureSeenAt: Date.now() });
+    $("brokenBanner").hidden = true;
   });
 
   $("openOptions").addEventListener("click", (e) => {

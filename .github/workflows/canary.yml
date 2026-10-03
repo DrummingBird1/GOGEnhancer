@@ -1,0 +1,97 @@
+name: canary
+
+# Once a day: load the real extension into a real Chromium and run it against the
+# real, public, logged-out gog.com (`E2E_LIVE=1 npm run e2e`). This is the only
+# check that notices gog.com changing its markup — the unit tests and the
+# fixture-based e2e all run against recorded shapes. When it fails it opens (or
+# comments on) a single issue labelled "canary"; when it recovers it closes it.
+#
+# It also records the site's structure and prints how it differs from
+# e2e/baseline/structure.json (informational only: a visitor's country can change
+# what the site renders, so a difference there is a hint, not a verdict).
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: canary
+  cancel-in-progress: false
+
+jobs:
+  live-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Branded Google Chrome 137+ ignores --load-extension; Playwright's own
+      # Chromium build still honours it.
+      - name: Install Chromium
+        run: npx playwright-core install --with-deps chromium
+
+      - name: Site structure against the recorded baseline (informational)
+        run: node e2e/structure.mjs 2>&1 | tee structure.log || true
+
+      - name: Extension against the live site
+        id: live
+        continue-on-error: true
+        env:
+          E2E_LIVE: "1"
+        run: |
+          set -o pipefail
+          npm run e2e 2>&1 | tee live.log
+
+      - name: Open or update the canary issue
+        if: steps.live.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create canary --color B60205 --description "The live-site check failed" --force
+          {
+            echo "The daily live-site check failed: $RUN_URL"
+            echo
+            echo "Failed checks:"
+            echo '```'
+            grep -A2 '✗' live.log | head -60 || true
+            echo '```'
+            echo
+            echo "How the structure compares with the recorded baseline:"
+            echo '```'
+            tail -60 structure.log || true
+            echo '```'
+            echo
+            echo "See CLAUDE.md, \"When gog.com changes its markup\"."
+          } > body.md
+          existing=$(gh issue list --label canary --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file body.md
+          else
+            gh issue create --label canary --title "Canary: GOG Enhancer no longer works on the live gog.com" --body-file body.md
+          fi
+
+      - name: Close the canary issue when it recovers
+        if: steps.live.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --label canary --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "The live-site check passes again."
+          done
+
+      - name: Fail the run when the live check failed
+        if: steps.live.outcome == 'failure'
+        run: exit 1

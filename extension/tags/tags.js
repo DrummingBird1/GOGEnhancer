@@ -47,6 +47,11 @@ async function loadData() {
     monthlyGoal: 0,
     preferredLanguages: [],
     syncFolderName: "",
+    priceAlerts: {},
+    streak: { last: "", current: 0, best: 0 },
+    challengesDone: {},
+    notInterested: {},
+    lastAutoBackupAt: 0,
     calmMode: false,
     palette: "default",
   });
@@ -71,6 +76,11 @@ async function loadData() {
   state.preferredLanguages = Array.isArray(data.preferredLanguages) ? data.preferredLanguages : [];
   state.uiLanguage = data.uiLanguage || "en";
   state.syncFolderName = data.syncFolderName || "";
+  state.alerts = data.priceAlerts || {};
+  state.streak = data.streak || { last: "", current: 0, best: 0 };
+  state.challengesDone = data.challengesDone || {};
+  state.notInterested = data.notInterested || {};
+  state.lastAutoBackupAt = Number(data.lastAutoBackupAt) || 0;
   state.density = data.tagDashboardDensity === "compact" ? "compact" : "comfortable";
   applyDensityClass();
   applyThemeClassToHtml(data.theme, data.customThemeColors);

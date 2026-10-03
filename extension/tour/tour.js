@@ -8,11 +8,13 @@
 (() => {
   "use strict";
 
-  const $ = (id) => document.getElementById(id);
+  /** The page's controls are looked up by id and used as inputs, buttons, … — typed loosely on purpose. */
+  const $ = /** @type {(id: string) => any} */ ((id) => document.getElementById(id));
+  const $$ = /** @type {(selector: string) => NodeListOf<HTMLElement>} */ ((selector) => document.querySelectorAll(selector));
   let index = 0;
   let keysBound = false;
 
-  const slides = () => Array.from(document.querySelectorAll(".slide"));
+  const slides = () => Array.from($$(".slide"));
 
   function show(i) {
     const all = slides();
@@ -20,7 +22,7 @@
     all.forEach((s, n) => {
       s.hidden = n !== index;
     });
-    document.querySelectorAll(".tour-dot").forEach((d, n) => {
+    $$(".tour-dot").forEach((d, n) => {
       d.classList.toggle("is-on", n === index);
       d.setAttribute("aria-selected", String(n === index));
     });

@@ -194,6 +194,8 @@ body::-webkit-scrollbar-thumb:hover {
   margin-top: 4px;
 }
 .whatsnew-list li.whatsnew-version-head:first-child { margin-top: 0; }
+.whatsnew-list li.whatsnew-more::before { content: ""; }
+.whatsnew-list li.whatsnew-more a { color: inherit; opacity: 0.85; text-decoration: underline; }
 .whatsnew-list li.whatsnew-version-head::before { content: none; }
 .whatsnew-dismiss {
   width: 100%;
@@ -287,6 +289,30 @@ body::-webkit-scrollbar-thumb:hover {
   gap: 6px;
   margin-bottom: 6px;
 }
+.broken {
+  margin: 8px 12px 0;
+  padding: 8px 10px;
+  border: 1px solid #ffbf47;
+  border-radius: 8px;
+  background: rgba(255, 191, 71, 0.12);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.broken-head { display: flex; gap: 6px; align-items: center; }
+.broken-text { margin: 4px 0; }
+.broken-actions { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 2px; }
+.broken-actions button {
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.broken-actions button:hover, .broken-actions button:focus-visible { background: rgba(255, 191, 71, 0.25); }
+.broken-note { margin: 4px 0 0; opacity: 0.75; font-size: 11px; }
 .digest-icon { font-size: 13px; }
 .digest-download {
   margin-inline-start: auto;

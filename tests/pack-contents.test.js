@@ -181,3 +181,52 @@ describe("the game panel", () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(3); // pack + 2 children, one lookup
   });
 });
+
+describe("a bundle page names its games itself (selenium-id BundleCoverItem)", () => {
+  const BUNDLE = "prince_of_persia_bundle";
+  const covers = `
+    <div class="bundle-covers" selenium-id="BundleCovers">
+      <a selenium-id="BundleCoverItem" href="/en/game/prince_of_persia_the_sands_of_time" title="Prince of Persia®: The Sands of Time"><img alt=""></a>
+      <a selenium-id="BundleCoverItem" href="/en/game/prince_of_persia_warrior_within" title="Prince of Persia: Warrior Within"><img alt=""></a>
+      <a selenium-id="BundleCoverItem" href="/en/game/prince_of_persia_warrior_within" title="duplicate"><img alt=""></a>
+      <a selenium-id="BundleCoverItem" href="/en/game/${BUNDLE}" title="itself"><img alt=""></a>
+    </div>`;
+
+  beforeEach(() => {
+    window.history.replaceState({}, "", `/en/game/${BUNDLE}`);
+    document.body.innerHTML = gamePageHtml({ productId: "1207658999" }) + covers;
+  });
+
+  it("reads the games from the covers, once each, without the bundle itself", () => {
+    expect(window.GOGPlusGogDom.readBundleItems(BUNDLE)).toEqual([
+      { slug: "prince_of_persia_the_sands_of_time", title: "Prince of Persia®: The Sands of Time" },
+      { slug: "prince_of_persia_warrior_within", title: "Prince of Persia: Warrior Within" },
+    ]);
+    expect(window.GOGPlusGogDom.bundleSlugs(BUNDLE)).toEqual(["prince_of_persia_the_sands_of_time", "prince_of_persia_warrior_within"]);
+  });
+
+  it("learns the contents with no request at all", async () => {
+    globalThis.fetch = vi.fn();
+    expect(await K().ensurePackInfo(BUNDLE)).toBe(true);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(state.settings.packInfo[BUNDLE].children.map((c) => c.slug)).toEqual(["prince_of_persia_the_sands_of_time", "prince_of_persia_warrior_within"]);
+    expect((await getLocal("packInfo")).packInfo[BUNDLE].children).toHaveLength(2);
+  });
+
+  it("works even without the pack-contents switch's request path — and the panel warns about what you own", async () => {
+    globalThis.fetch = vi.fn();
+    state.settings.ownedSlugs = { prince_of_persia_warrior_within: "2026-01-01" };
+    await K().ensurePackInfo(BUNDLE);
+    const s = window.GOGPlusGameExtras.renderLibrarySection(BUNDLE);
+    expect(text(s)).toContain("⚠ You already own 1 of the 2 games in this pack: Prince of Persia: Warrior Within.");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the product API on a page that has no such covers", async () => {
+    document.body.innerHTML = gamePageHtml({ productId: "1207658980" });
+    mockProductApi();
+    window.history.replaceState({}, "", `/en/game/${SLUG}`);
+    expect(await K().ensurePackInfo(SLUG)).toBe(true);
+    expect(globalThis.fetch).toHaveBeenCalled();
+  });
+});

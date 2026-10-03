@@ -137,6 +137,10 @@
    * @property {string} tourSeen version whose intro tour was shown
    * @property {string} lastSaleSeen headline of the last store-wide sale already announced
    * @property {Array<{t: number, kind: string, host: string, path: string, status: number | null, ok: boolean, error?: string}>} netLog the extension's own recent network requests (host + path, never a query), for the privacy dashboard
+   * @property {{ last: string, current: number, best: number }} streak days in a row you've looked at gog.com (lib/streak.js)
+   * @property {Record<string, string[]>} challengesDone "YYYY-MM" -> ids of the monthly challenges completed (lib/challenges.js)
+   * @property {Array<{feature: string, message: string, page: string, count: number, first: number, last: number}>} failureLog features that failed on gog.com pages, de-duplicated and local (see lib/failure-log.js)
+   * @property {number} failureSeenAt when the "something isn't working" notice was last dismissed
    * @property {Record<string, {t: number, children: Array<{id: string, slug: string, title: string}>}>} packInfo slug -> what a pack contains ([] = not a pack), cached
    * @property {Record<string, Array<{t: number, text: string}>>} noteHistory slug -> earlier versions of the note, newest first (see lib/note-history.js)
    */
@@ -336,6 +340,10 @@
     lastSaleSeen: "",
     noteHistory: {},
     netLog: [],
+    failureLog: [],
+    streak: { last: "", current: 0, best: 0 },
+    challengesDone: {},
+    failureSeenAt: 0,
     packInfo: {},
   };
 

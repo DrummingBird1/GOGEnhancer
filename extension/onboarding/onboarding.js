@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * GOG+ onboarding wizard logic.
  *
@@ -7,6 +8,12 @@
  *   3 — toggle features
  *   4 — done
  */
+
+/** The wizard's controls are looked up by id / selector and used as inputs, buttons, … — typed loosely. */
+/** @type {(id: string) => any} */
+const $ = (id) => document.getElementById(id);
+/** @type {(selector: string) => NodeListOf<HTMLElement>} */
+const $$ = (selector) => document.querySelectorAll(selector);
 
 const PRESETS = {
   il: { targetCurrency: "ILS", vatPercent: 18, vatLabel: "כולל מע״מ" },
@@ -24,10 +31,10 @@ const state = {
 };
 
 function showStep(n) {
-  document.querySelectorAll(".step").forEach((el) => {
+  $$(".step").forEach((el) => {
     el.classList.toggle("active", parseInt(el.dataset.step, 10) === n);
   });
-  document.querySelectorAll(".step-dot").forEach((dot) => {
+  $$(".step-dot").forEach((dot) => {
     const i = parseInt(dot.dataset.step, 10);
     dot.classList.toggle("active", i === n);
     dot.classList.toggle("done", i < n);
@@ -38,14 +45,14 @@ function showStep(n) {
 
 /* ---- step 1: currency ---- */
 
-document.querySelectorAll(".currency-card").forEach((btn) => {
+$$(".currency-card").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".currency-card").forEach((b) =>
+    $$(".currency-card").forEach((b) =>
       b.classList.remove("selected")
     );
     btn.classList.add("selected");
     state.selectedCurrency = btn.dataset.cur;
-    document.getElementById("next1").disabled = false;
+    $("next1").disabled = false;
 
     // Auto-pick a sensible region for the chosen currency
     const map = { ILS: "il", EUR: "eu", GBP: "uk", PLN: "pl", USD: "us" };
@@ -55,7 +62,7 @@ document.querySelectorAll(".currency-card").forEach((btn) => {
   });
 });
 
-document.getElementById("next1").addEventListener("click", async () => {
+$("next1").addEventListener("click", async () => {
   await window.GOGPlusStorage.set({
     targetCurrency: state.selectedCurrency,
     currencyConverter: state.selectedCurrency !== "none",
@@ -71,9 +78,9 @@ document.getElementById("next1").addEventListener("click", async () => {
 
 /* ---- step 2: region preset ---- */
 
-document.querySelectorAll(".region-card").forEach((btn) => {
+$$(".region-card").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".region-card").forEach((b) =>
+    $$(".region-card").forEach((b) =>
       b.classList.remove("selected")
     );
     btn.classList.add("selected");
@@ -81,7 +88,7 @@ document.querySelectorAll(".region-card").forEach((btn) => {
   });
 });
 
-document.getElementById("next2").addEventListener("click", async () => {
+$("next2").addEventListener("click", async () => {
   if (state.selectedPreset && PRESETS[state.selectedPreset]) {
     await window.GOGPlusStorage.set({
       ...PRESETS[state.selectedPreset],
@@ -95,18 +102,18 @@ document.getElementById("next2").addEventListener("click", async () => {
 
 /* ---- step 3: features ---- */
 
-document.getElementById("next3").addEventListener("click", async () => {
+$("next3").addEventListener("click", async () => {
   const features = {
-    designInjection: document.getElementById("f-design").checked,
-    drmFreeBanner: document.getElementById("f-banner").checked,
-    refundBadge: document.getElementById("f-refund").checked,
-    modIndicator: document.getElementById("f-mods").checked,
-    priceHistoryTracking: document.getElementById("f-history").checked,
-    itadCompare: document.getElementById("f-itad").checked,
-    wishlistAlerts: document.getElementById("f-wlAlerts").checked,
-    customTags: document.getElementById("f-tags").checked,
-    hebrewTranslations: document.getElementById("f-hebrew").checked,
-    rtlLayout: document.getElementById("f-rtl").checked,
+    designInjection: $("f-design").checked,
+    drmFreeBanner: $("f-banner").checked,
+    refundBadge: $("f-refund").checked,
+    modIndicator: $("f-mods").checked,
+    priceHistoryTracking: $("f-history").checked,
+    itadCompare: $("f-itad").checked,
+    wishlistAlerts: $("f-wlAlerts").checked,
+    customTags: $("f-tags").checked,
+    hebrewTranslations: $("f-hebrew").checked,
+    rtlLayout: $("f-rtl").checked,
     enabled: true,
   };
   await window.GOGPlusStorage.set(features);
@@ -118,15 +125,15 @@ document.getElementById("next3").addEventListener("click", async () => {
 
 /* ---- step 4: theme ---- */
 
-document.querySelectorAll(".theme-card").forEach((btn) => {
+$$(".theme-card").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".theme-card").forEach((b) => b.classList.remove("selected"));
+    $$(".theme-card").forEach((b) => b.classList.remove("selected"));
     btn.classList.add("selected");
     state.selectedTheme = btn.dataset.theme;
   });
 });
 
-document.getElementById("finish").addEventListener("click", async () => {
+$("finish").addEventListener("click", async () => {
   await window.GOGPlusStorage.set({
     theme: state.selectedTheme || "neon",
     onboardingComplete: true,
@@ -136,7 +143,7 @@ document.getElementById("finish").addEventListener("click", async () => {
 
 /* ---- back buttons ---- */
 
-document.querySelectorAll('[data-action="back"]').forEach((btn) => {
+$$('[data-action="back"]').forEach((btn) => {
   btn.addEventListener("click", () => {
     if (state.currentStep > 1) showStep(state.currentStep - 1);
   });
@@ -146,10 +153,10 @@ document.querySelectorAll('[data-action="back"]').forEach((btn) => {
 window.GOGPlusStorage.get({ uiLanguage: "en" }).then((s) => {
   window.GOGPlusI18n?.apply(s.uiLanguage || "en");
 });
-const versionEl = document.getElementById("onboardingVersion");
+const versionEl = $("onboardingVersion");
 if (versionEl) versionEl.textContent = `v${chrome.runtime.getManifest().version}`;
 showStep(1);
 
-document.getElementById("closeBtn")?.addEventListener("click", () => {
+$("closeBtn")?.addEventListener("click", () => {
   window.close();
 });

@@ -84,6 +84,7 @@
   /** @param {string} message */
   function fail(message) {
     state.failures["endless scrolling"] = { count: (state.failures["endless scrolling"]?.count || 0) + 1, message, at: Date.now() };
+    void window.GOGPlusFailureLog?.persist("Endless scrolling", message, "store");
   }
 
   function env() {

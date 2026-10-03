@@ -18,6 +18,17 @@
     </label>
   </header>
 
+  <div class="broken" id="brokenBanner" role="alert" hidden>
+    <div class="broken-head"><span aria-hidden="true">⚠️</span><strong>Something on gog.com isn't working</strong></div>
+    <p class="broken-text" id="brokenText"></p>
+    <div class="broken-actions">
+      <button id="brokenCopy" type="button">Copy report</button>
+      <button id="brokenIssue" type="button">Report on GitHub</button>
+      <button id="brokenDismiss" type="button">Dismiss</button>
+    </div>
+    <p class="broken-note">The report has no web addresses or personal data. "Report on GitHub" only opens a page with it filled in — you choose whether to send it.</p>
+  </div>
+
   <div class="whatsnew" id="whatsNew" hidden>
     <div class="whatsnew-head">
       <span class="whatsnew-icon" aria-hidden="true">✨</span>
@@ -297,6 +308,7 @@
   <script src="../lib/storage.js"></script>
   <script src="../lib/changelog.js"></script>
   <script src="../lib/digest-html.js"></script>
+  <script src="../lib/failure-log.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

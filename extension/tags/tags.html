@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="tags.css" />
 </head>
 <body>
+  <a class="skip-link" href="#gameList">Skip to your games</a>
   <header class="hero">
     <div class="hero-inner">
       <div class="hero-brand">
@@ -18,17 +19,17 @@
         Every game you've tagged or written notes about. Click a tag on the
         left to filter, or search by name.
       </p>
-      <div class="toolbar">
+      <div class="toolbar" role="toolbar" aria-label="Search, filter, sort and export">
         <input type="search" id="search" placeholder="Search… or use tag:X, status:playing, genre:rpg, lang:hebrew, owned:yes, lowest:<10, since:2026" autocomplete="off" title="Advanced filters: tag:rpg status:playing genre:rpg lang:hebrew owned:yes ends:3 lowest:<10 lowest:>5 snapshots:>3 since:2026 — combine freely with plain text" />
-        <button id="filterBuilderBtn" class="ghost" type="button" title="Browse available search filters">⚙ Filters</button>
-        <div id="filterBuilderPopover" class="filter-builder-popover" hidden></div>
+        <button id="filterBuilderBtn" class="ghost" type="button" title="Browse available search filters" aria-haspopup="dialog" aria-expanded="false" aria-controls="filterBuilderPopover">⚙ Filters</button>
+        <div id="filterBuilderPopover" class="filter-builder-popover" role="dialog" aria-label="Search filters" hidden></div>
         <select id="sortBy" class="toolbar-select" title="Sort games by…">
           <option value="name">Name</option>
           <option value="lastVisit">Last visit</option>
           <option value="tagCount">Tag count</option>
           <option value="snapshots">Snapshot count</option>
         </select>
-        <span class="counts" id="counts"></span>
+        <span class="counts" id="counts" role="status" aria-live="polite"></span>
         <button id="densityToggle" class="ghost" type="button" title="Toggle compact / comfortable density">⇅ Density</button>
         <button id="exportCsv" class="ghost">↓ CSV</button>
         <button id="exportStaticHtml" class="ghost" type="button" title="Export the currently-visible games as a shareable, read-only HTML page">🔗 Share ↓</button>
@@ -52,7 +53,7 @@
   <main class="layout">
     <aside class="sidebar">
       <h2>All tags</h2>
-      <div id="tagList" class="tag-list-vertical">
+      <div id="tagList" class="tag-list-vertical" role="list" aria-label="Tags">
         <p class="empty-msg">Loading…</p>
       </div>
     </aside>
@@ -77,6 +78,8 @@
   <script src="../lib/markdown-export.js"></script>
   <script src="../lib/attachments.js"></script>
   <script src="../lib/achievements.js"></script>
+  <script src="../lib/streak.js"></script>
+  <script src="../lib/challenges.js"></script>
   <script src="../lib/deals.js"></script>
   <script src="../lib/lang-names.js"></script>
   <script src="../lib/library-tools.js"></script>
@@ -88,6 +91,8 @@
   <script src="../lib/sync-core.js"></script>
   <script src="../lib/folder-sync-core.js"></script>
   <script src="../content/toasts.js"></script>
+  <script src="../content/announce.js"></script>
+  <script src="a11y.js"></script>
   <script src="state.js"></script>
   <script src="features/tag-management.js"></script>
   <script src="features/games-list.js"></script>

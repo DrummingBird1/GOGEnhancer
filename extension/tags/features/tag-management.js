@@ -41,6 +41,28 @@ async function reorderTagBefore(fromTag, beforeTag) {
 }
 
 
+/**
+ * Moves a tag one place up or down the list — the keyboard way to do what
+ * dragging does. Keeps focus on the tag and tells a screen reader where it went.
+ * @param {string} tag @param {-1 | 1} delta
+ * @returns {Promise<boolean>} false when it was already at that end
+ */
+async function moveTag(tag, delta) {
+  const names = sortedTags().map(([t]) => t);
+  const i = names.indexOf(tag);
+  const j = i + delta;
+  if (i < 0 || j < 0 || j >= names.length) return false;
+  names.splice(i, 1);
+  names.splice(j, 0, tag);
+  state.tagOrder = names;
+  await window.GOGPlusStorage.set({ tagOrder: state.tagOrder });
+  renderTagList();
+  const moved = /** @type {HTMLElement[]} */ ([...$("tagList").children]).find((el) => el.dataset.tag === tag);
+  moved?.focus();
+  window.GOGPlusTagsA11y?.announce(`${tag} moved to position ${j + 1} of ${names.length}`);
+  return true;
+}
+
 function buildUniqueTags() {
   const counts = {};
   for (const slug of Object.keys(state.allTags)) {
@@ -64,7 +86,14 @@ function renderTagList() {
     pill.className = "tag-pill";
     pill.draggable = true;
     pill.dataset.tag = tag;
-    if (state.activeTag === tag) pill.classList.add("active");
+    pill.setAttribute("role", "listitem");
+    pill.tabIndex = 0;
+    pill.setAttribute("aria-label", `${tag}, ${count} game${count === 1 ? "" : "s"}. Enter filters by it; Alt plus the up or down arrow moves it.`);
+    pill.title = "Alt+↑ / Alt+↓ reorder";
+    if (state.activeTag === tag) {
+      pill.classList.add("active");
+      pill.setAttribute("aria-current", "true");
+    }
     const color = state.tagColors[tag];
     if (color) pill.style.setProperty("--tag-accent", color);
     pill.innerHTML = `
@@ -87,6 +116,20 @@ function renderTagList() {
     pill.querySelector(".tag-pill-menu").addEventListener("click", (e) => {
       e.stopPropagation();
       openTagMenu(tag, e.currentTarget);
+    });
+    pill.addEventListener("keydown", (e) => {
+      if (e.target !== pill) return; // the buttons inside handle their own keys
+      if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        e.preventDefault();
+        void moveTag(tag, e.key === "ArrowUp" ? -1 : 1);
+      } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const sib = e.key === "ArrowDown" ? pill.nextElementSibling : pill.previousElementSibling;
+        if (sib instanceof HTMLElement && sib.classList.contains("tag-pill")) sib.focus();
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        pill.click();
+      }
     });
     pill.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", tag);
@@ -143,12 +186,14 @@ function openTagMenu(tag, anchor) {
   const r = anchor.getBoundingClientRect();
   menu.style.left = `${Math.round(r.right + window.scrollX - menu.offsetWidth)}px`;
   menu.style.top = `${Math.round(r.bottom + window.scrollY + 6)}px`;
+  // Roles, arrow keys, Escape, focus back to the "⋯" button (tags/a11y.js).
+  const closeMenu = window.GOGPlusTagsA11y?.menu(menu, anchor) || (() => menu.remove());
 
   menu.addEventListener("click", async (e) => {
     const found = /** @type {HTMLElement} */ (e.target).closest("button[data-act]");
     if (!found) return;
     const btn = /** @type {HTMLElement} */ (found);
-    menu.remove();
+    closeMenu(false);
     if (btn.dataset.act === "rename") await renameTag(tag);
     else if (btn.dataset.act === "merge") await mergeTag(tag);
     else if (btn.dataset.act === "delete") await deleteTag(tag);
@@ -278,11 +323,24 @@ function openColorPicker(tag, anchor) {
     </label>
     <button class="tag-color-clear" data-clear="1" type="button">Default</button>
   `;
+  picker.setAttribute("role", "dialog");
+  picker.setAttribute("aria-label", `Colour for ${tag}`);
   document.body.appendChild(picker);
 
   const r = anchor.getBoundingClientRect();
   picker.style.left = `${Math.round(r.left + window.scrollX)}px`;
   picker.style.top = `${Math.round(r.bottom + window.scrollY + 6)}px`;
+
+  const A11y = window.GOGPlusTagsA11y;
+  if (A11y) {
+    A11y.trapFocus(picker, {
+      onEscape: () => {
+        picker.remove();
+        anchor.focus();
+      },
+    });
+    /** @type {HTMLElement | null} */ (picker.querySelector(".tag-color-swatch.active") || picker.querySelector("button"))?.focus();
+  }
 
   const saveColor = async (color) => {
     if (color === null) delete state.tagColors[tag];
@@ -309,6 +367,7 @@ function openColorPicker(tag, anchor) {
   window.GOGPlusTagsManagement = {
     sortedTags,
     reorderTagBefore,
+    moveTag,
     buildUniqueTags,
     renderTagList,
     safeHexColor,
