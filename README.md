@@ -21,6 +21,8 @@ An unofficial third-party extension for GOG.com — live currency conversion, pr
 
 ---
 
+🗺 **Planned work: see [ROADMAP.md](ROADMAP.md).**
+
 ## 📂 Repository contents
 
 | File / Folder | Purpose |
