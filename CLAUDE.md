@@ -6,6 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **GOG Enhancer** — an unofficial third-party Chromium extension (Manifest V3) that enhances gog.com with live currency conversion, price-history tracking, custom tags, Hebrew/RTL translations, and visual upgrades. Vanilla JS/CSS, no framework, no bundler.
 
+## Current status and handoff (updated 2026-11-08)
+
+Any agent or contributor can pick up from here; this section is the only "where are we" note, so keep it current and short.
+
+- **Released:** v4.0.0 (tag `v4.0.0`, GitHub Release with the Web Store zip and the experimental Firefox zip, Pages live). `main` has since only taken Dependabot bumps. The version in `extension/manifest.json` is still `4.0.0`; no next release is cut or in progress.
+- **Not done, and only the maintainer can do it:** Chrome Web Store / Edge submission (nothing is published there yet, so README install wording that implies otherwise is wrong), a run with a real logged-in account / real cloud folder / real webhook, a real Firefox run, and native-speaker review of the six non-English translations.
+- **A post-release audit has found follow-ups** (a 2026-10-23 sweep: a few dozen confirmed or likely defects across the content scripts, backup/sync import paths, the service worker and the docs). They are tracked **privately by the maintainer, not in this repo and not as public issues** — some concern security, so do not describe them in public issues, PRs or commit messages until fixed (describe the fix neutrally). Most are **not verified**: re-read the code and reproduce before fixing. Ask the maintainer for the list before starting a "next release"; do not rediscover it from scratch.
+- **Known and visible without the private list:** (1) endless scrolling can append tiles that are already on screen (`content/features/catalog-endless.js`, the cause of the canary failures that auto-opened and auto-closed issues #16, #18 and #22 — so a green canary does not mean it is fixed); (2) the FX source `api.frankfurter.app` now redirects to `api.frankfurter.dev`, which is not in `lib/net.js` `HOSTS` or in the privacy documents — fix code, allow-list, `tests/privacy-audit.test.js` and all privacy documents together (see "Privacy boundary"); (3) the Buy Me a Coffee / Patreon links in the extension pages and docs return 404 and need the maintainer's decision.
+- **Open PRs** are Dependabot bumps plus maintainer PRs for `SECURITY.md`, a public `ROADMAP.md` and a lockfile audit fix. The vitest 5 bump is the fix for a dev-only advisory but is a major version: run the full gates (`npm test`, `npm run lint`, `npm run typecheck`, `npm run coverage`) before merging it.
+- **Do not** merge a release, tag, publish, or submit to a store without the maintainer's explicit go-ahead in that conversation; an earlier go-ahead (for 4.0.0) does not carry over.
+
 ## Repository layout
 
 The shippable extension lives entirely under **`extension/`** — `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `icons/`, and `manifest.json`. This is the folder you "Load unpacked" in Chrome and the only thing `build.ps1` zips. Paths inside `manifest.json` and the HTML files are relative to `extension/`, so the whole folder moves as a unit.
