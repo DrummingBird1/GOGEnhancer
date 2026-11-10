@@ -20,6 +20,8 @@
 
   const FORMAT = "gog-enhancer-tag-pack";
   const SHARE_PREFIX = "gogplus-pack=";
+  const MAX_FRAGMENT_CHARS = 200 * 1024;
+  const MAX_INFLATED_BYTES = 512 * 1024;
   const COLOR_RE = /^#[0-9a-f]{3,8}$/i;
   /** Upper bound on what a link may ask to import — a fragment is attacker-controlled input. */
   const MAX_GAMES = 2000;
@@ -86,27 +88,30 @@
     const purchaseLog = { ...cur.purchaseLog };
     const tagColors = { ...cur.tagColors };
     const counts = { tags: 0, notes: 0, purchases: 0, colors: 0 };
+    const V = globalThis.GOGPlusValidate;
+    const okSlug = (/** @type {unknown} */ x) => (V ? V.isSlug(x) : typeof x === "string" && /^[a-z0-9_-]{1,120}$/.test(x) && x !== "__proto__");
     for (const g of pack.games) {
-      if (!g || typeof g.slug !== "string" || !g.slug) continue;
+      if (!g || !okSlug(g.slug)) continue;
       if (Array.isArray(g.tags) && g.tags.length) {
         const existing = new Set(tags[g.slug] || []);
         const before = existing.size;
-        for (const t of g.tags) if (typeof t === "string" && t.trim()) existing.add(t);
+        for (const t of g.tags) if (typeof t === "string" && t.trim()) existing.add(t.trim().slice(0, 60));
         if (existing.size > before) {
           tags[g.slug] = [...existing];
           counts.tags += existing.size - before;
         }
       }
-      if (g.note && !notes[g.slug]) {
-        notes[g.slug] = g.note;
+      if (typeof g.note === "string" && g.note && !notes[g.slug]) {
+        notes[g.slug] = g.note.slice(0, 20000);
         counts.notes++;
       }
-      if (g.purchaseDate && !purchaseLog[g.slug]) {
+      if (typeof g.purchaseDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(g.purchaseDate) && !purchaseLog[g.slug]) {
         purchaseLog[g.slug] = { date: g.purchaseDate };
         counts.purchases++;
       }
     }
     for (const [t, c] of Object.entries(pack.tagColors || {})) {
+      if (t === "__proto__" || t === "constructor" || t === "prototype") continue;
       if (!tagColors[t] && typeof c === "string" && COLOR_RE.test(c)) {
         tagColors[t] = c;
         counts.colors++;
@@ -139,7 +144,27 @@
   async function pipe(mode, bytes) {
     const Ctor = mode === "compress" ? globalThis.CompressionStream : globalThis.DecompressionStream;
     const stream = new Blob([/** @type {BlobPart} */ (bytes)]).stream().pipeThrough(new Ctor("deflate-raw"));
-    return new Uint8Array(await new Response(stream).arrayBuffer());
+    if (mode === "compress") return new Uint8Array(await new Response(stream).arrayBuffer());
+    // Inflating untrusted data: stop as soon as the output is larger than any
+    // real pack could be, instead of letting a tiny link expand into memory.
+    const reader = stream.getReader();
+    /** @type {Uint8Array[]} */
+    const chunks = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      if (total > MAX_INFLATED_BYTES) {
+        await reader.cancel();
+        throw new Error("too large");
+      }
+      chunks.push(value);
+    }
+    const out = new Uint8Array(total);
+    let at = 0;
+    for (const c of chunks) { out.set(c, at); at += c.length; }
+    return out;
   }
 
   /**
@@ -172,6 +197,9 @@
    * @returns {Promise<Pack>}
    */
   async function decodeShare(value) {
+    if (typeof value !== "string" || value.length > MAX_FRAGMENT_CHARS) {
+      throw new Error("This share link is damaged or not from GOG Enhancer.");
+    }
     const kind = value.slice(0, 2);
     const body = value.slice(2);
     let bytes;

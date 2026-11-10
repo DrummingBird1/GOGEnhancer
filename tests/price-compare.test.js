@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 
 await import("../extension/lib/net.js");
 await import("../extension/lib/price-compare.js");
 
-const { fetchDeals, normalizeTitle, titlesMatch, STORE_NAMES } = window.GOGPlusPriceCompare;
+const { fetchDeals, normalizeTitle, titlesMatch, STORE_NAMES, _clearCache } = window.GOGPlusPriceCompare;
 
 function mockFetch(payload, ok = true) {
   globalThis.fetch = vi.fn(async () => ({
@@ -21,8 +21,11 @@ describe("normalizeTitle / titlesMatch", () => {
     expect(titlesMatch("Hades", "hades")).toBe(true);
   });
 
-  it("matches when one normalized title contains the other", () => {
-    expect(titlesMatch("Hades", "Hades II")).toBe(true);
+  it("matches the same game in another edition, but never a sequel or spin-off", () => {
+    expect(titlesMatch("Cyberpunk 2077", "Cyberpunk 2077: Ultimate Edition")).toBe(true);
+    expect(titlesMatch("The Witcher 3: Wild Hunt", "The Witcher 3: Wild Hunt - Game of the Year Edition")).toBe(true);
+    expect(titlesMatch("Hades", "Hades II")).toBe(false);
+    expect(titlesMatch("Portal", "Portal 2")).toBe(false);
   });
 
   it("does not match unrelated titles", () => {
@@ -36,6 +39,7 @@ describe("normalizeTitle / titlesMatch", () => {
 
 describe("fetchDeals", () => {
   const origFetch = globalThis.fetch;
+  beforeEach(() => _clearCache());
   afterEach(() => {
     globalThis.fetch = origFetch;
     vi.restoreAllMocks();
@@ -112,5 +116,16 @@ describe("fetchDeals", () => {
       { storeID: "1", title: "Hades", dealID: "d1", salePrice: "not-a-number", normalPrice: "20.00", isOnSale: "0", savings: "0" },
     ]);
     expect(await fetchDeals("Hades")).toEqual([]);
+  });
+});
+
+describe("fetchDeals cache", () => {
+  beforeEach(() => _clearCache());
+  it("asks CheapShark once per title, however often the panel is rebuilt", async () => {
+    mockFetch([{ storeID: "1", title: "Hades", dealID: "d1", salePrice: "12.50", normalPrice: "25.00", isOnSale: "1", savings: "50.0" }]);
+    await fetchDeals("Hades");
+    await fetchDeals("hades");
+    await fetchDeals("Hades");
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 });

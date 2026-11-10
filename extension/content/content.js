@@ -53,13 +53,33 @@
     html.classList.toggle("gog-plus-skeletons", !!state.settings.skeletonLoaders && !plain);
     html.classList.toggle("gog-plus-calm", !!state.settings.calmMode);
     [...html.classList].filter((c) => c.startsWith("gog-plus-palette--")).forEach((c) => html.classList.remove(c));
-    if (state.settings.palette && state.settings.palette !== "default") {
+    if (typeof state.settings.palette === "string" && /^[a-z0-9-]{1,30}$/.test(state.settings.palette) && state.settings.palette !== "default") {
       html.classList.add(`gog-plus-palette--${state.settings.palette}`);
     }
     const scale = Math.min(1.6, Math.max(0.8, Number(state.settings.uiScale) || 1));
     if (scale === 1) html.style.removeProperty("--gp-scale");
     else html.style.setProperty("--gp-scale", String(scale));
 
+    try {
+      applyTheme(plain);
+    } catch (e) {
+      // A malformed stored theme/palette (a bad import or sync) must cost the
+      // look, never the features.
+      noteFailure("theme", e);
+    }
+    document.documentElement.classList.toggle(
+      "gog-plus-dyslexia-font",
+      !!state.settings.dyslexiaFont && !plain
+    );
+
+    runFeatures();
+  }
+
+  const KNOWN_THEMES = new Set(["neon", "classic", "crt", "sunset", "light", "auto", "native", "custom"]);
+  const COLOR_RE = /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|hsla?\([\d\s.,%deg]+\))$/i;
+
+  /** @param {boolean} plain */
+  function applyTheme(plain) {
     // Theme: strip prior theme- class then add the current one. "neon" is the
     // CSS default so applying it is a no-op but kept for explicitness.
     // "auto" isn't a real CSS variant — it resolves to "light" or "neon"
@@ -68,6 +88,7 @@
       .filter((c) => c.startsWith("gog-plus-theme--"))
       .forEach((c) => document.documentElement.classList.remove(c));
     let theme = plain ? "native" : state.settings.theme || "neon";
+    if (!KNOWN_THEMES.has(theme)) theme = "neon";
     if (theme === "auto") {
       theme = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "neon";
     }
@@ -89,17 +110,11 @@
     // explicitly cleared on every other theme or they'd keep overriding it
     // (the clear() above already removed them for every non-custom theme).
     const customColors = state.settings.customThemeColors;
-    if (theme === "custom" && customColors) {
-      document.documentElement.style.setProperty("--gp-magenta", customColors.magenta);
-      document.documentElement.style.setProperty("--gp-cyan", customColors.cyan);
-      document.documentElement.style.setProperty("--gp-bg", customColors.bg);
+    if (theme === "custom" && customColors && typeof customColors === "object") {
+      for (const [prop, val] of [["--gp-magenta", customColors.magenta], ["--gp-cyan", customColors.cyan], ["--gp-bg", customColors.bg]]) {
+        if (typeof val === "string" && COLOR_RE.test(val.trim())) document.documentElement.style.setProperty(prop, val.trim());
+      }
     }
-    document.documentElement.classList.toggle(
-      "gog-plus-dyslexia-font",
-      !!state.settings.dyslexiaFont && !plain
-    );
-
-    runFeatures();
   }
 
   /* ============== per-feature isolation ============== */
@@ -241,10 +256,48 @@
     "catalogDensity", "ownedDisplay", "hideNotInterested", "noteHistory",
   ]);
 
+  // Keys the insights panel shows and can also write itself.
+  const PANEL_KEYS = new Set(["tags", "notes", "gameStatus", "purchaseLog", "priceAlerts", "tagColors"]);
+
   // Bookkeeping the page never renders — a write must not cost a pass.
   const QUIET_KEYS = new Set(["netLog", "failureLog", "failureSeenAt", "streak", "challengesDone"]);
 
+  // The insights panel is rebuilt when data it shows changes — but never while
+  // the user is typing in it (a note, a tag), and a burst of writes (a first
+  // visit stores price history, genre, facts, pack info one after another)
+  // costs one rebuild, not one per key.
+  /** @type {ReturnType<typeof setTimeout> | null} */
+  let panelTimer = null;
+  function invalidatePanel() {
+    if (panelTimer) clearTimeout(panelTimer);
+    panelTimer = setTimeout(() => {
+      panelTimer = null;
+      const panel = document.getElementById("gog-plus-gamepanel");
+      if (!panel) return;
+      if (panel.contains(document.activeElement) && document.activeElement !== document.body) {
+        // Rebuild once focus leaves the panel.
+        panel.addEventListener(
+          "focusout",
+          (e) => {
+            if (panel.contains(/** @type {FocusEvent} */ (e).relatedTarget)) return;
+            invalidatePanel();
+          },
+          { once: true }
+        );
+        return;
+      }
+      panel.remove();
+      processAll();
+    }, 350);
+  }
+
   window.GOGPlusStorage.onChange(async ({ key, newValue }) => {
+    // After an extension update this old script keeps running in the page with
+    // no connection to the extension; stop instead of throwing on every change.
+    if (typeof chrome.runtime?.getManifest !== "function") {
+      rootObserver?.disconnect();
+      return;
+    }
     state.settings[key] = newValue;
     if (QUIET_KEYS.has(key)) return;
     // Features that live outside processAll (the catalog bar, other tabs'
@@ -256,9 +309,8 @@
       return;
     }
     // New facts about a game (or what a pack contains) only change the insights panel.
-    if (key === "gameFacts" || key === "packInfo") {
-      document.getElementById("gog-plus-gamepanel")?.remove();
-      processAll();
+    if (key === "gameFacts" || key === "packInfo" || key === "gameGenres" || key === "priceHistory") {
+      invalidatePanel();
       return;
     }
 
@@ -287,7 +339,12 @@
           .filter((c) => c === "gog-plus-cover--classic" || c === "gog-plus-cover--neon" || c.startsWith("gog-plus-cover--genre-"))
           .forEach((c) => el.classList.remove(c));
       });
-    document.getElementById("gog-plus-gamepanel")?.remove();
+    // Also the quick-add buttons and their popovers: they are re-created by the
+    // pass below, and left in place they would stack up on every rebuild.
+    document.querySelectorAll(".gog-plus-quickadd-btn, .gog-plus-quickadd-popover").forEach((el) => el.remove());
+    // The panel itself waits for the user to stop typing (see above).
+    if (PANEL_KEYS.has(key)) invalidatePanel();
+    else document.getElementById("gog-plus-gamepanel")?.remove();
     document.getElementById("gog-plus-wlfilters")?.remove();
 
     processAll();

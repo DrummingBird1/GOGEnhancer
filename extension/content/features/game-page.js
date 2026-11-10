@@ -301,10 +301,10 @@
       latest: entries[entries.length - 1],
       currency: displayCur,
     };
-    const sym = symbolFor(stats.currency);
-    const lowest = `${sym}${stats.min.price.toFixed(2)}`;
+    const sym = escapeHtml(symbolFor(stats.currency));
+    const lowest =`${sym}${stats.min.price.toFixed(2)}`;
     const current = `${sym}${stats.latest.p.toFixed(2)}`;
-    const since = stats.first.d;
+    const since = escapeHtml(stats.first.d);
     const isAtLow = stats.latest.p === stats.min.price;
     const cheer = isAtLow && stats.count >= 3
       ? `<div class="gog-plus-allmtl-cheer" role="status">
@@ -346,7 +346,7 @@
   // computed (no new data, no new page scraping). Not shown when the game
   // is already at its all-time low — the cheer banner covers that case.
   function buildWorthWaitingVerdict(stats) {
-    const sym = symbolFor(stats.currency);
+    const sym = escapeHtml(symbolFor(stats.currency));
     const pctAboveLow =
       stats.min.price > 0 ? ((stats.latest.p - stats.min.price) / stats.min.price) * 100 : 0;
     let tier, text;
@@ -427,13 +427,13 @@
             ? state.settings.targetCurrency
             : "USD";
         const rate = targetCur === "USD" ? 1 : state.settings.rates?.[targetCur];
-        const sym = symbolFor(rate ? targetCur : "USD");
+        const sym = escapeHtml(symbolFor(rate ? targetCur : "USD"));
         list.innerHTML = deals
           .slice(0, 6)
           .map((d) => {
             const shown = rate ? d.price * rate : d.price;
             return `
-              <a class="gog-plus-compare-row" href="${d.url}" target="_blank" rel="noopener">
+              <a class="gog-plus-compare-row" href="${escapeHtml(/^https:\/\//.test(String(d.url)) ? d.url : "#")}" target="_blank" rel="noopener noreferrer">
                 <span class="gog-plus-compare-store">${escapeHtml(d.storeName)}</span>
                 <span class="gog-plus-compare-price${d.isOnSale ? " is-sale" : ""}">${sym}${shown.toFixed(2)}</span>
                 ${d.isOnSale && d.savingsPct > 0 ? `<span class="gog-plus-compare-savings">-${d.savingsPct}%</span>` : ""}
@@ -540,8 +540,11 @@
     const areaPath = `${linePath} L${points[points.length - 1][0].toFixed(1)},${(H - PAD_Y).toFixed(1)} L${points[0][0].toFixed(1)},${(H - PAD_Y).toFixed(1)} Z`;
     const minIdx = prices.indexOf(minP);
     const lastIdx = points.length - 1;
-    const sym = symbolFor(stats.currency);
-    const gradId = `gpSparkFill-${slug}`;
+    const sym = escapeHtml(symbolFor(stats.currency));
+    // Dates come from storage (a backup or sync file can put anything there) and
+    // end up inside an attribute that the tooltip renders: allow only a real day.
+    const dd = (d) => (/^\d{4}-\d{2}-\d{2}$/.test(String(d)) ? String(d) : "");
+    const gradId = `gpSparkFill-${String(slug).replace(/[^a-z0-9_-]/gi, "")}`;
 
     // Detect ≥30% drops between consecutive snapshots — these are likely sale events
     const saleMarkers = [];
@@ -552,7 +555,7 @@
         const dropPct = Math.round(((prev - curr) / prev) * 100);
         saleMarkers.push({
           x: points[i][0],
-          tip: `<strong>-${dropPct}% drop</strong><br>${sym}${prev.toFixed(2)} → ${sym}${curr.toFixed(2)}<br>${entries[i].d}`,
+          tip: `<strong>-${dropPct}% drop</strong><br>${sym}${prev.toFixed(2)} → ${sym}${curr.toFixed(2)}<br>${dd(entries[i].d)}`,
         });
       }
     }
@@ -567,7 +570,7 @@
     // colored marker circles so the named circles win the hit test at their position.
     const hoverDots = entries.map((e, i) => {
       const [x, y] = points[i];
-      const tip = `<strong>${sym}${e.p.toFixed(2)}</strong><br>${e.d}`;
+      const tip = `<strong>${sym}${e.p.toFixed(2)}</strong><br>${dd(e.d)}`;
       return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7" fill="transparent" data-gog-plus-tip="${tip}" style="cursor: crosshair;"/>`;
     }).join("");
 
@@ -585,9 +588,9 @@
           ${saleLines}
           ${hoverDots}
           <circle cx="${points[minIdx][0].toFixed(1)}" cy="${points[minIdx][1].toFixed(1)}" r="3.5" fill="#5cff9d" stroke="#0a0612" stroke-width="1.5"
-            data-gog-plus-tip="<strong>All-time low</strong><br>${sym}${minP.toFixed(2)} on ${entries[minIdx].d}" style="cursor: help;"/>
+            data-gog-plus-tip="<strong>All-time low</strong><br>${sym}${minP.toFixed(2)} on ${dd(entries[minIdx].d)}" style="cursor: help;"/>
           <circle cx="${points[lastIdx][0].toFixed(1)}" cy="${points[lastIdx][1].toFixed(1)}" r="3.5" fill="#c64fff" stroke="#0a0612" stroke-width="1.5"
-            data-gog-plus-tip="<strong>Latest</strong><br>${sym}${entries[lastIdx].p.toFixed(2)} on ${entries[lastIdx].d}" style="cursor: help;"/>
+            data-gog-plus-tip="<strong>Latest</strong><br>${sym}${entries[lastIdx].p.toFixed(2)} on ${dd(entries[lastIdx].d)}" style="cursor: help;"/>
         </svg>
         <div class="gog-plus-spark-legend">
           <span><i class="dot dot-low"></i>All-time low</span>
@@ -607,8 +610,10 @@
       (state.settings.targetCurrency && state.settings.targetCurrency !== "none"
         ? state.settings.targetCurrency
         : state.pageCurrency.code || "USD");
-    const sym = symbolFor(purchasedCur);
-    const today = new Date().toISOString().slice(0, 10);
+    const sym = escapeHtml(symbolFor(purchasedCur));
+    // Local calendar day (not UTC), so "today" is pickable right after local midnight.
+    const now0 = new Date();
+    const today = `${now0.getFullYear()}-${String(now0.getMonth() + 1).padStart(2, "0")}-${String(now0.getDate()).padStart(2, "0")}`;
     const wrap = document.createElement("section");
     wrap.className = "gog-plus-gp-section";
     wrap.innerHTML = `
@@ -625,7 +630,7 @@
         <label for="gog-plus-purchase-price">Price paid <span class="gog-plus-gp-muted">(optional)</span></label>
         <span class="gog-plus-alert-sym">${sym}</span>
         <input type="number" id="gog-plus-purchase-price" step="0.01" min="0"
-          value="${entry?.price !== undefined ? entry.price : ""}" placeholder="0.00" />
+          value="${Number.isFinite(entry?.price) ? Number(entry.price) : ""}" placeholder="0.00" />
       </div>
       <div id="gog-plus-refund-status" class="gog-plus-refund-status" role="status"></div>
     `;
@@ -707,7 +712,7 @@
       state.settings.targetCurrency && state.settings.targetCurrency !== "none"
         ? state.settings.targetCurrency
         : state.pageCurrency.code || "USD";
-    const sym = symbolFor(alertCur);
+    const sym = escapeHtml(symbolFor(alertCur));
 
     const wrap = document.createElement("section");
     wrap.className = "gog-plus-gp-section";
@@ -720,13 +725,13 @@
       <div class="gog-plus-alert-row">
         <span class="gog-plus-alert-sym">${sym}</span>
         <input type="number" id="gog-plus-alert-threshold" step="0.01" min="0"
-          value="${alert ? alert.threshold : ""}" placeholder="9.99" />
+          value="${alert && Number.isFinite(alert.threshold) ? Number(alert.threshold) : ""}" placeholder="9.99" />
         <button id="gog-plus-alert-save" type="button">Save</button>
         ${alert ? `<button id="gog-plus-alert-clear" type="button" class="gog-plus-alert-clear" title="Remove alert">×</button>` : ""}
       </div>
       <div class="gog-plus-alert-status${alert ? " is-active" : ""}">
         ${alert
-          ? `Alert active: notify when price &lt; ${symbolFor(alert.currency)}${alert.threshold.toFixed(2)} ${alert.currency}`
+          ? `Alert active: notify when price &lt; ${escapeHtml(symbolFor(alert.currency))}${Number(alert.threshold).toFixed(2)} ${escapeHtml(alert.currency)}`
           : "No alert set."}
       </div>
     `;
@@ -850,10 +855,11 @@
       const renderTags = () => {
         const list = wrap.querySelector("#gog-plus-tag-list");
         list.innerHTML = "";
-        (state.settings._tagsCache?.[slug] || existing).forEach((t) => {
+        (state.settings.tags?.[slug] || state.settings._tagsCache?.[slug] || existing).forEach((t) => {
           const chip = document.createElement("span");
           chip.className = "gog-plus-tag-chip";
-          if (tagColors[t]) chip.style.setProperty("--tag-accent", tagColors[t]);
+          const accent = window.GOGPlusValidate?.safeHex(tagColors[t]);
+          if (accent) chip.style.setProperty("--tag-accent", accent);
           // Build safely — t is user input, must NOT go through innerHTML raw.
           const tNode = document.createTextNode(t + " ");
           const rmBtn = document.createElement("button");

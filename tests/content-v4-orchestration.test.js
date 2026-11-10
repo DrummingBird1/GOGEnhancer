@@ -158,7 +158,7 @@ describe("storage changes", () => {
     const first = document.getElementById("gog-plus-gamepanel");
     expect(first).not.toBeNull();
     await set("local", { gameFacts: { the_witcher_3: { t: 1, title: "x" } } });
-    await vi.advanceTimersByTimeAsync(400);
+    await vi.advanceTimersByTimeAsync(1200);
     expect(document.getElementById("gog-plus-gamepanel")).not.toBe(first);
   });
 });

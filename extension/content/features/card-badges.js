@@ -242,7 +242,7 @@
       // customTags same as the dot above. Lets a user tag a game straight
       // from a listing page without opening it — see openQuickAddTag() for
       // the popover this opens.
-      if (state.settings.customTags) {
+      if (state.settings.customTags && !host.querySelector(":scope > .gog-plus-quickadd-btn")) {
         const addBtn = document.createElement("button");
         addBtn.type = "button";
         addBtn.className = "gog-plus-quickadd-btn";

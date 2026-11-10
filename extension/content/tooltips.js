@@ -51,11 +51,52 @@
     tip.style.top = `${top + window.scrollY}px`;
   }
 
+  // The tooltip text sits in a DOM attribute, which the page (or anything that
+  // got markup into it) can also write — so it is never handed to innerHTML as
+  // is. It is parsed into an inert template and rebuilt from a short list of
+  // formatting tags; every attribute, script, image and link is dropped.
+  const ALLOWED = new Set(["STRONG", "B", "EM", "I", "BR", "SMALL", "SPAN", "DIV"]);
+  const CLASS_OK = /^gog-plus-[a-z0-9 _-]{0,80}$/;
+
+  /**
+   * @param {Node} from
+   * @param {Node} into
+   */
+  function copySafe(from, into) {
+    for (const node of Array.from(from.childNodes)) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        into.appendChild(document.createTextNode(node.textContent || ""));
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = /** @type {Element} */ (node);
+        if (ALLOWED.has(el.tagName)) {
+          const clean = document.createElement(el.tagName.toLowerCase());
+          // The one attribute that survives: the extension's own style classes.
+          const cls = el.getAttribute("class");
+          if (cls && CLASS_OK.test(cls)) clean.setAttribute("class", cls);
+          copySafe(el, clean);
+          into.appendChild(clean);
+        } else {
+          // Unknown element: keep its text, lose the element.
+          copySafe(el, into);
+        }
+      }
+    }
+  }
+
+  /** @param {string} html @returns {DocumentFragment} */
+  function safeFragment(html) {
+    const tpl = document.createElement("template");
+    tpl.innerHTML = html;
+    const out = document.createDocumentFragment();
+    copySafe(tpl.content, out);
+    return out;
+  }
+
   function show(el) {
     const content = el.dataset.gogPlusTip;
     if (!content) return;
     ensureEl();
-    tip.innerHTML = content;
+    tip.replaceChildren(safeFragment(content));
     tip.style.opacity = "1";
     tip.style.transform = "translateY(0)";
     target = el;
@@ -87,5 +128,5 @@
   document.addEventListener("scroll", hide, { passive: true });
   window.addEventListener("blur", hide);
 
-  window.GOGPlusTooltips = { show, hide };
+  window.GOGPlusTooltips = { show, hide, safeFragment };
 })();

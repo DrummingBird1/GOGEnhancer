@@ -34,7 +34,10 @@
    * @returns {string} the currency's symbol, or the code itself if unknown
    */
   function symbolFor(cur) {
-    return SYMBOLS[cur] || cur;
+    if (Object.prototype.hasOwnProperty.call(SYMBOLS, cur)) return SYMBOLS[cur];
+    // Stored values (a backup, a sync file) can name any "currency": keep only
+    // letters so the result is always safe to place inside markup.
+    return String(cur ?? "").replace(/[^A-Za-z]/g, "").slice(0, 5).toUpperCase();
   }
 
   /**

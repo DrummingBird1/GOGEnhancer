@@ -44,17 +44,35 @@
       .trim();
   }
 
+  // Words that name an edition of the SAME game. Everything else that differs
+  // between two titles (a sequel number, a subtitle) means a different game.
+  const EDITION_RE = /\b(?:game of the year|goty|definitive|complete|remastered|remaster|enhanced|deluxe|ultimate|gold|special|anniversary|directors? cut|standard|digital|edition|the|a)\b/g;
+
+  /** @param {string} t */
+  function coreTitle(t) {
+    return normalizeTitle(t).replace(EDITION_RE, " ").replace(/\s+/g, " ").trim();
+  }
+
   /**
+   * Same game, possibly a different edition. "Witcher 3" must never match
+   * "Witcher 3 Blood and Wine" or "Witcher" — those are other products with
+   * other prices.
    * @param {string} a
    * @param {string} b
    * @returns {boolean}
    */
   function titlesMatch(a, b) {
-    const na = normalizeTitle(a);
-    const nb = normalizeTitle(b);
+    const na = coreTitle(a);
+    const nb = coreTitle(b);
     if (!na || !nb) return false;
-    return na === nb || na.includes(nb) || nb.includes(na);
+    return na === nb;
   }
+
+  // A game page rebuilds its panel several times; the answer rarely changes in
+  // minutes, so one request per title per five minutes is plenty.
+  const CACHE_MS = 5 * 60 * 1000;
+  /** @type {Map<string, { at: number, p: Promise<CompareDeal[]> }>} */
+  const dealCache = new Map();
 
   /**
    * @typedef {Object} CompareDeal
@@ -75,8 +93,23 @@
    * @param {string} title
    * @returns {Promise<CompareDeal[]>}
    */
-  async function fetchDeals(title) {
-    if (!title) return [];
+  function fetchDeals(title) {
+    if (!title) return Promise.resolve([]);
+    const key = normalizeTitle(title);
+    const hit = dealCache.get(key);
+    if (hit && Date.now() - hit.at < CACHE_MS) return hit.p;
+    const p = fetchDealsUncached(title);
+    dealCache.set(key, { at: Date.now(), p });
+    // A failure (empty answer) is not worth remembering for five minutes.
+    p.then((r) => { if (!r.length) dealCache.delete(key); }, () => dealCache.delete(key));
+    return p;
+  }
+
+  /**
+   * @param {string} title
+   * @returns {Promise<CompareDeal[]>}
+   */
+  async function fetchDealsUncached(title) {
     const url = `${DEALS_URL}?title=${encodeURIComponent(title)}&limit=30`;
     let res;
     try {
@@ -117,7 +150,7 @@
     return [...byStore.values()].sort((a, b) => a.price - b.price);
   }
 
-  const Api = { fetchDeals, normalizeTitle, titlesMatch, STORE_NAMES };
+  const Api = { fetchDeals, normalizeTitle, titlesMatch, STORE_NAMES, _clearCache: () => dealCache.clear() };
   if (typeof window !== "undefined") window.GOGPlusPriceCompare = Api;
   if (typeof self !== "undefined") self.GOGPlusPriceCompare = Api;
 })();
