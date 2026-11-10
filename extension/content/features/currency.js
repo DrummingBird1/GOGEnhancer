@@ -41,9 +41,31 @@
     return v;
   }
 
+  /** What a converted element shows, without the note the extension added to it. */
+  function plainText(/** @type {Element} */ host) {
+    const clone = /** @type {Element} */ (host.cloneNode(true));
+    clone.querySelectorAll(".gog-plus-conv-note").forEach((n) => n.remove());
+    return (clone.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  /**
+   * The site can change a price in place (a discount applied, another region):
+   * a note computed from the old text would stay next to the new one. Drop it
+   * so the pass below converts the new text.
+   */
+  function dropStaleNotes(/** @type {ParentNode} */ root) {
+    for (const host of /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll(".gog-plus-converted"))) {
+      if (host.dataset.gpSrc === undefined || host.dataset.gpSrc === plainText(host)) continue;
+      host.querySelectorAll(":scope > .gog-plus-conv-note").forEach((n) => n.remove());
+      host.classList.remove("gog-plus-converted");
+      delete host.dataset.gpSrc;
+    }
+  }
+
   function applyCurrencyConversion(root = document) {
     if (!state.settings.currencyConverter || state.settings.targetCurrency === "none") return;
     if (state.pageCurrency.code === state.settings.targetCurrency) return; // already in target
+    dropStaleNotes(root);
 
     const srcSym = state.pageCurrency.symbol;
     if (!srcSym) return;
@@ -136,6 +158,7 @@
         )} (rate ${info.label}${info.stale ? ", may be stale" : ""})`;
       }
       host.classList.add("gog-plus-converted");
+      /** @type {HTMLElement} */ (host).dataset.gpSrc = plainText(host);
       host.appendChild(note);
       converted++;
     };

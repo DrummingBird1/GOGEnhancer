@@ -112,11 +112,16 @@
       // silently disappeared. A wrapper that is nearly the whole card still
       // fails (that's the carousel/overlay container this guards against).
       const isCoverSized = r.width > 0 && r.height > 0 && r.width * r.height <= cardArea * 0.9;
-      if (isCoverSized) break;
+      // …and big enough to carry a badge: an 80x14 strip next to a list row's
+      // title is no cover (the badge spilled over the wishlist heart there).
+      const isBigEnough = r.width >= 60 && r.height >= 30;
+      if (isCoverSized && isBigEnough) break;
       host = host.parentElement;
       hops++;
     }
     if (!host || host === card) return null;
+    const last = host.getBoundingClientRect();
+    if (last.width > 0 && (last.width < 60 || last.height < 30)) return null;
     return host;
   }
 

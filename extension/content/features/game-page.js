@@ -281,7 +281,11 @@
     const srcRate = e.c === "USD" ? 1 : state.settings.rates[e.c];
     const tgtRate = targetCur === "USD" ? 1 : state.settings.rates[targetCur];
     if (!srcRate || !tgtRate) return e;
-    return { ...e, p: (e.p / srcRate) * tgtRate, c: targetCur, _origP: e.p, _origC: e.c };
+    // Same VAT estimate as the converted price next to the buy button, so the
+    // panel and the page show one figure for one price.
+    const s = state.settings;
+    const tax = s.taxEstimator && s.vatPercent > 0 ? 1 + s.vatPercent / 100 : 1;
+    return { ...e, p: (e.p / srcRate) * tgtRate * tax, c: targetCur, _origP: e.p, _origC: e.c };
   }
 
   async function renderPriceHistorySection(slug) {

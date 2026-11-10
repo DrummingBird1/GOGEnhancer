@@ -4,10 +4,9 @@
   "version": "4.5.0",
   "description": "תוסף third-party (לא רשמי) ל-GOG.com: המרת מטבע חיה, מעקב היסטוריית מחירים, תגיות, עברית + RTL.",
 
-  "permissions": ["storage", "activeTab", "alarms", "notifications"],
+  "permissions": ["storage", "alarms", "notifications"],
   "host_permissions": [
-    "https://www.gog.com/*",
-    "https://www.cheapshark.com/*"
+    "https://www.gog.com/*"
   ],
   "optional_host_permissions": ["https://*/*"],
 

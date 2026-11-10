@@ -283,7 +283,7 @@ Don't try to make the SW scrape `/account/wishlist` directly — it won't work.
 
 ### Privacy boundary (manifest + permissions)
 
-`host_permissions` is intentionally minimal: **`https://www.gog.com/*` and `https://www.cheapshark.com/*`** (exchange rates from `api.frankfurter.dev` need no host permission — the API allows cross-origin reads; it is on the `lib/net.js` allow-list) — the last one powers the opt-out "Price comparison table" on the game page (`lib/price-compare.js`), a free keyless deal-aggregation API. No Google Fonts, no analytics, no remote code. Before adding a new host:
+`host_permissions` is intentionally minimal: **`https://www.gog.com/*` only** (since 4.5.0). Exchange rates from `api.frankfurter.dev` and the opt-out "Price comparison table" (`lib/price-compare.js`, `www.cheapshark.com`) need no host permission — both APIs allow cross-origin reads and are on the `lib/net.js` allow-list; the unused `activeTab` permission was dropped as well. No Google Fonts, no analytics, no remote code. Before adding a new host:
 
 1. Add it to `host_permissions` in `manifest.json`.
 2. Update `PRIVACY.md`'s network-requests section (§3) and its permissions table.

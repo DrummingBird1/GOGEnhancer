@@ -486,7 +486,10 @@
           [["", "Choose…"], ...names.map(/** @returns {[string, string]} */ (n) => [presets[n], n])],
           presets[names.find((n) => presets[n] === here) || ""] || "",
           (v) => {
-            if (v) location.assign(v);
+            // A saved search is only ever followed to a catalog path on this site,
+            // whatever got into storage (an import, Chrome Sync).
+            const safe = v ? window.GOGPlusCatalogTools.sanitizePresetUrl(v) : null;
+            if (safe) location.assign(safe);
           }
         )
       );

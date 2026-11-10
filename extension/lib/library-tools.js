@@ -121,13 +121,13 @@
    */
   function monthlyProgress({ statusDates = {}, goal, now = Date.now() }) {
     const d = new Date(now);
-    const month = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const finished = Object.values(statusDates).filter((s) => s?.finished?.startsWith(month)).length;
-    const daysInMonth = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
-    const daysLeft = daysInMonth - d.getUTCDate();
+    const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    const daysLeft = daysInMonth - d.getDate();
     const pct = goal > 0 ? Math.min(100, Math.round((finished / goal) * 100)) : 0;
     // On track = at least the share of the goal that the elapsed share of the month calls for.
-    const elapsed = d.getUTCDate() / daysInMonth;
+    const elapsed = d.getDate() / daysInMonth;
     return { finished, goal, pct, daysLeft, onTrack: goal > 0 && finished >= Math.floor(goal * elapsed) };
   }
 

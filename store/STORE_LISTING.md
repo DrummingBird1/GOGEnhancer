@@ -441,9 +441,6 @@ exact answers:
 ### `storage`
 > Used to save user preferences (which features are enabled, target currency, VAT rate) in chrome.storage.sync, and personal data (tags, notes, price history) in chrome.storage.local. Nothing is transmitted off-device.
 
-### `activeTab`
-> Used by the popup's "Reload tab" button so the user can refresh the GOG.com page they are currently viewing after toggling features.
-
 ### `alarms`
 > Used to schedule periodic background refreshes: exchange rates every 12 hours from frankfurter.dev, the public GOG mods catalog every 24 hours, the wishlist sale-count badge every 6 hours, a once-daily local check for refund windows and price alerts, a weekly digest, the release of held-back notifications, and the optional folder auto-sync (notifications only if the user opted in).
 
@@ -465,8 +462,8 @@ exact answers:
 ### Optional host permission: `https://*/*` (`optional_host_permissions`)
 > Never granted at install and never used unless the user turns on the optional "send notifications to my own webhook" setting and types an https address. At that moment the extension requests access to that single origin through the browser's own permission prompt, and only the notification's title and text are POSTed to it (no cookies, no referrer, no library data). The address is stored locally and excluded from every export and sync. If the user never sets a webhook, no network request is ever made under this permission. A broad optional pattern is required because the address is chosen by the user and cannot be known in advance.
 
-### Host permission: `https://www.cheapshark.com/*`
-> Required to fetch the optional cross-store price comparison table (Steam, Epic, Humble Store, Fanatical, GreenManGaming) shown on GOG game pages. CheapShark's deals API is free and keyless. Only the game's title is sent, as a public GET request; no user data, cookies, or account information. Toggleable in the popup ("Price comparison table"), on by default.
+### No host permission for the price comparison (`www.cheapshark.com`)
+> The optional cross-store price comparison asks CheapShark's public deals API, which allows cross-origin reads, so the extension declares no host permission for it (version 4.5.0 removed the old one, and the unused `activeTab` permission). Only the game's title is sent, as a public GET request; no user data, cookies or account information. Toggle off in the popup.
 
 ---
 

@@ -222,6 +222,12 @@
           return;
         }
         s.calibrated = true;
+        // The answer for the list on screen says how many pages it has: a
+        // one-page list has nothing to continue with (no pointless page 2).
+        if (mine.pages && s.next > mine.pages) {
+          finish(s);
+          return;
+        }
       }
       const res = await API.fetchCatalogPage(API.pageUrl(s.base, s.next, env()));
       if (session !== s) return;

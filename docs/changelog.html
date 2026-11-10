@@ -145,6 +145,8 @@
         <li>🔔 <strong>Notifications</strong>: "one a day" mode combined with quiet hours can no longer hold the queue indefinitely, and the background alarms are re-created if the browser lost them.</li>
         <li>☁️ <strong>Sync</strong>: a device whose clock is far in the future can no longer win every conflict, and the first sync after upgrading from before v4 keeps both sides' tags and notes instead of choosing by text order.</li>
         <li>🗂️ <strong>Dashboard and options</strong>: the open dashboard follows changes made elsewhere instead of overwriting them; renaming, merging or deleting a tag moves its price alert and its place in the order (merge now needs an existing tag and can be undone); "Clear tags &amp; notes" also clears note history; "Reset everything" also forgets the sync folder and revokes the webhook permission; "Choose folder" no longer stays disabled; the custom-theme picker saves once per choice; a region preset switches conversion on or off consistently; CSV exports neutralise spreadsheet formulas and open correctly in Excel, and CSV import accepts semicolons and old line endings.</li>
+        <li>🔑 <strong>Fewer permissions</strong>: the unused <code>activeTab</code> permission and the CheapShark host permission are gone (CheapShark allows cross-origin reads, so the price comparison works without it). The Patreon and Buy Me a Coffee links point to their new pages.</li>
+        <li>🪙 A price the site changes in place gets a fresh converted note instead of keeping the old one; the panel's price-history figures include the same VAT estimate as the note next to the buy button; "finished" dates and the monthly goal follow your local calendar; cover badges are no longer hung on thumbnail holders too small to carry them; a saved search can only lead to a catalog page on gog.com; endless scrolling does not ask for a second page of a one-page list.</li>
         <li>⌨️ <strong>Shortcuts</strong> (Ctrl/Cmd+K and J / K / T / W / N / A) work on Hebrew, Russian and other layouts.</li>
         <li>🎨 <strong>Cover effects</strong> no longer collapse the cover art of "Good Old Game" tiles; the monospace price style no longer reaches the Add to cart button; the loading shimmer no longer paints the catalog filter sidebar; the pinned banner leaves room for the footer; quick-add buttons no longer stack up.</li>
         <li>🔧 Hide-expired-sales understands GOG's new <code>/promo/YYYYMMDD_name</code> links, pack contents are no longer cached when a lookup was incomplete, and the "Check this page" translation walker leaves the extension's own panels alone.</li>
@@ -234,7 +236,7 @@
       </ul>
       <h4>Languages &amp; accessibility</h4>
       <ul>
-        <li>🌍 The <strong>tag dashboard, Advanced Options, popup and first-run wizard</strong> are available in all seven interface languages — English, Hebrew, Russian, Polish, German, French and Spanish — about 600 strings each, including sentences with highlighted words (translated as a whole so the word order can differ), Russian and Polish plural forms, and the dialogs. Hebrew is laid out right-to-left. What you wrote yourself (tag names, notes, game titles) is never translated. The store-translation overlay for gog.com's redesigned catalog, home page and filters was extended too.</li>
+        <li>🌍 The <strong>tag dashboard, Advanced Options, popup and first-run wizard</strong> are available in all seven interface languages — English, Hebrew, Russian, Polish, German, French and Spanish — about 800 strings each, including sentences with highlighted words (translated as a whole so the word order can differ), Russian and Polish plural forms, and the dialogs. Hebrew is laid out right-to-left. What you wrote yourself (tag names, notes, game titles) is never translated. The store-translation overlay for gog.com's redesigned catalog, home page and filters was extended too.</li>
         <li>♿ <strong>Keyboard and screen readers on the dashboard</strong>: a skip link and landmarks, tags that are focusable list items (<kbd>Enter</kbd> filters, <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> reorders, with the new position announced), menus with arrow keys, <kbd>Home</kbd>/<kbd>End</kbd> and <kbd>Esc</kbd>, and the colour picker and filter builder as dialogs that hold focus and give it back.</li>
       </ul>
       <h4>Achievements, streaks &amp; challenges</h4>
@@ -508,8 +510,8 @@
       <a href="privacy.html">Privacy Policy</a>
       <a href="https://github.com/DrummingBird1/GOGEnhancer/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
       <a href="https://ko-fi.com/idanlights" target="_blank" rel="noopener">Ko-fi</a>
-      <a href="https://buymeacoffee.com/MrIdan" target="_blank" rel="noopener">Buy Me a Coffee</a>
-      <a href="https://www.patreon.com/c/IdanLights" target="_blank" rel="noopener">Patreon</a>
+      <a href="https://buymeacoffee.com/solvaris" target="_blank" rel="noopener">Buy Me a Coffee</a>
+      <a href="https://www.patreon.com/c/Solvaris" target="_blank" rel="noopener">Patreon</a>
     </div>
   </div>
   <p class="disclaimer">

@@ -75,6 +75,14 @@ describe("cardCoverHost", () => {
     expect(Dom.cardCoverHost(card).id).toBe("mid");
   });
 
+  it("rejects a strip-sized wrapper (a list row's 80x14 thumbnail holder) so no badge is hung over the wishlist heart", () => {
+    document.body.innerHTML = `<a href="/en/game/a" id="card"><div id="thumb"><img src="a.png"></div></a>`;
+    const card = document.getElementById("card");
+    card.getBoundingClientRect = rect(400, 60);
+    document.getElementById("thumb").getBoundingClientRect = rect(80, 14);
+    expect(Dom.cardCoverHost(card)).toBeNull();
+  });
+
   it("accepts a cover that spans the card's full width but only part of its height (vertical tile)", () => {
     document.body.innerHTML = `
       <a href="/en/game/a" id="card"><div id="cover"><img src="a.png"></div><div id="info">title</div></a>`;

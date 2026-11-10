@@ -969,7 +969,9 @@ let statusStampQueue = Promise.resolve();
 async function stampStatusDates(oldValue, newValue) {
   const o = oldValue || {};
   const n = newValue || {};
-  const today = new Date().toISOString().slice(0, 10);
+  // The user's calendar day (a game finished at 01:30 on the 1st belongs to the new month).
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const { statusDates = {} } = await self.GOGPlusStorage.get({ statusDates: {} });
   const next = { ...statusDates };
   let changed = false;

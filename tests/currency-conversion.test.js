@@ -143,3 +143,27 @@ describe("applyCurrencyConversion", () => {
     expect(notes()).toHaveLength(0);
   });
 });
+
+describe("a price the site changes in place", () => {
+  it("gets a new note for the new price instead of keeping the old one", () => {
+    setup("USD", "$");
+    document.body.innerHTML = '<span id="p">$10.00</span>';
+    applyCurrencyConversion(document.body);
+    expect(document.querySelector("#p .gog-plus-conv-note").textContent).toContain("40");
+    // the site rewrites the price text in place
+    document.getElementById("p").firstChild.nodeValue = "$5.00";
+    applyCurrencyConversion(document.body);
+    const all = document.querySelectorAll("#p .gog-plus-conv-note");
+    expect(all).toHaveLength(1);
+    expect(all[0].textContent).toContain("20");
+  });
+
+  it("leaves a price that has not changed alone", () => {
+    setup("USD", "$");
+    document.body.innerHTML = '<span id="p">$10.00</span>';
+    applyCurrencyConversion(document.body);
+    const first = document.querySelector("#p .gog-plus-conv-note");
+    applyCurrencyConversion(document.body);
+    expect(document.querySelector("#p .gog-plus-conv-note")).toBe(first);
+  });
+});
