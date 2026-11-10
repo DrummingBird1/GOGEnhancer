@@ -207,7 +207,12 @@ describe("load()", () => {
     document.getElementById("customColorMagenta").value = "#abcdef";
     document.getElementById("customColorMagenta").dispatchEvent(new Event("input"));
     await new Promise((r) => setTimeout(r, 0));
+    // Dragging only previews; nothing is written until the choice is made.
     expect(document.documentElement.style.getPropertyValue("--accent-magenta")).toBe("#abcdef");
+    const before = await new Promise((r) => chrome.storage.sync.get(["customThemeColors"], r));
+    expect(before.customThemeColors?.magenta).not.toBe("#abcdef");
+    document.getElementById("customColorMagenta").dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 0));
     const s = await new Promise((r) => chrome.storage.sync.get(["customThemeColors"], r));
     expect(s.customThemeColors.magenta).toBe("#abcdef");
   });

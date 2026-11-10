@@ -318,7 +318,7 @@ function renderYearReview() {
     .join(" + ");
 
   const dropLine = biggestDrop
-    ? `<strong>-${biggestDrop.pct}%</strong> on <em>${escapeHtml(window.GOGPlusTagsGamesList.slugToTitle(biggestDrop.slug))}</em> on ${biggestDrop.when}
+    ? `<strong>-${biggestDrop.pct}%</strong> on <em>${escapeHtml(window.GOGPlusTagsGamesList.slugToTitle(biggestDrop.slug))}</em> on ${escapeHtml(biggestDrop.when)}
        <span class="yr-detail">${formatPrice(biggestDrop.from, biggestDrop.currency)} → ${formatPrice(biggestDrop.to, biggestDrop.currency)}</span>`
     : `<span class="yr-empty">No significant drops captured yet</span>`;
 

@@ -172,7 +172,9 @@
         else say(err instanceof Error ? err.message : String(err), true);
       } finally {
         await refreshStatus();
-        if (!isSupported()) $("syncChoose").disabled = true;
+        // "Choose folder" is always available where folders are supported (it
+        // was left disabled after every action, even "Stop syncing").
+        $("syncChoose").disabled = !isSupported();
       }
     };
 

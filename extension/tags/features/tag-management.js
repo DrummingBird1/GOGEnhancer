@@ -94,7 +94,7 @@ function renderTagList() {
       pill.classList.add("active");
       pill.setAttribute("aria-current", "true");
     }
-    const color = state.tagColors[tag];
+    const color = window.GOGPlusValidate?.safeHex(state.tagColors[tag]);
     if (color) pill.style.setProperty("--tag-accent", color);
     pill.innerHTML = `
       <span class="tag-pill-grip" aria-hidden="true">⋮⋮</span>
@@ -203,6 +203,29 @@ function openTagMenu(tag, anchor) {
 /** A dialog's text in the page's language — see lib/i18n-pages.js. */
 const tx = (/** @type {string} */ s) => window.GOGPlusPageI18n?.tx(s) ?? s;
 
+/**
+ * Per-tag price alerts and the manual tag order are keyed by tag name, so a
+ * rename, merge or delete has to move them too — in the SAME write as the tags.
+ * @param {string} from
+ * @param {string | null} to null = the tag is gone
+ * @returns {Promise<{ tagAlerts: Record<string, any>, tagOrder: string[] }>}
+ */
+async function moveTagMeta(from, to) {
+  const { tagAlerts = {} } = await window.GOGPlusStorage.get({ tagAlerts: {} });
+  const alerts = { ...tagAlerts };
+  if (from in alerts) {
+    if (to && !(to in alerts)) alerts[to] = alerts[from];
+    delete alerts[from];
+  }
+  const order = [];
+  for (const t of state.tagOrder || []) {
+    const mapped = t === from ? to : t;
+    if (mapped && !order.includes(mapped)) order.push(mapped);
+  }
+  state.tagOrder = order;
+  return { tagAlerts: alerts, tagOrder: order };
+}
+
 async function renameTag(oldName) {
   const newName = prompt(tx(`Rename "${oldName}" to:`), oldName);
   if (!newName || newName === oldName) return;
@@ -218,7 +241,8 @@ async function renameTag(oldName) {
   }
   delete state.tagColors[oldName];
   if (state.activeTag === oldName) state.activeTag = trimmed;
-  await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors });
+  const meta = await moveTagMeta(oldName, trimmed);
+  await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors, ...meta });
   renderTagList();
   window.GOGPlusTagsGamesList.renderGames();
   await window.GOGPlusTagsStats.renderStats();
@@ -231,10 +255,22 @@ async function mergeTag(fromName) {
     alert(tx("No other tags to merge into."));
     return;
   }
-  const toName = prompt(tx(`Merge "${fromName}" into which tag?\n\nExisting: ${all.join(", ")}`), all[0]);
+  const toName = prompt(tx(`Merge "${fromName}" into which tag?\n\nExisting: ${all.join(", ")}`), "");
   if (!toName || toName === fromName) return;
   const trimmed = toName.trim();
   if (!trimmed) return;
+  // Only into a tag that exists: a typo would otherwise silently rename the tag.
+  if (!all.includes(trimmed)) {
+    alert(tx("That tag does not exist, so nothing was merged."));
+    return;
+  }
+  const before = {
+    tags: JSON.parse(JSON.stringify(state.allTags)),
+    colors: { ...state.tagColors },
+    order: [...(state.tagOrder || [])],
+    active: state.activeTag,
+  };
+  const { tagAlerts: alertsBefore = {} } = await window.GOGPlusStorage.get({ tagAlerts: {} });
   for (const slug of Object.keys(state.allTags)) {
     state.allTags[slug] = (state.allTags[slug] || []).map((t) => (t === fromName ? trimmed : t));
     state.allTags[slug] = Array.from(new Set(state.allTags[slug]));
@@ -245,10 +281,28 @@ async function mergeTag(fromName) {
   }
   delete state.tagColors[fromName];
   if (state.activeTag === fromName) state.activeTag = trimmed;
-  await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors });
+  const meta = await moveTagMeta(fromName, trimmed);
+  await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors, ...meta });
   renderTagList();
   window.GOGPlusTagsGamesList.renderGames();
   await window.GOGPlusTagsStats.renderStats();
+  window.GOGPlusToasts?.show(tx(`Merged "${fromName}" into "${trimmed}"`), {
+    variant: "muted",
+    duration: 6000,
+    action: {
+      label: tx("Undo"),
+      onClick: async () => {
+        state.allTags = before.tags;
+        state.tagColors = before.colors;
+        state.tagOrder = before.order;
+        state.activeTag = before.active;
+        await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors, tagOrder: before.order, tagAlerts: alertsBefore });
+        renderTagList();
+        window.GOGPlusTagsGamesList.renderGames();
+        await window.GOGPlusTagsStats.renderStats();
+      },
+    },
+  });
 }
 
 // Deletes a tag from every game it's on. Replaces the old blocking
@@ -266,6 +320,8 @@ async function deleteTag(name) {
     ),
     color: state.tagColors[name],
     wasActive: state.activeTag === name,
+    order: [...(state.tagOrder || [])],
+    alert: (await window.GOGPlusStorage.get({ tagAlerts: {} })).tagAlerts?.[name],
   };
 
   const commitDeletion = async () => {
@@ -275,7 +331,8 @@ async function deleteTag(name) {
     }
     delete state.tagColors[name];
     if (state.activeTag === name) state.activeTag = null;
-    await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors });
+    const meta = await moveTagMeta(name, null);
+    await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors, ...meta });
     renderTagList();
     window.GOGPlusTagsGamesList.renderGames();
     await window.GOGPlusTagsStats.renderStats();
@@ -294,7 +351,10 @@ async function deleteTag(name) {
         }
         if (snapshot.color) state.tagColors[name] = snapshot.color;
         if (snapshot.wasActive) state.activeTag = name;
-        await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors });
+        state.tagOrder = snapshot.order;
+        const { tagAlerts = {} } = await window.GOGPlusStorage.get({ tagAlerts: {} });
+        if (snapshot.alert) tagAlerts[name] = snapshot.alert;
+        await window.GOGPlusStorage.set({ tags: state.allTags, tagColors: state.tagColors, tagOrder: snapshot.order, tagAlerts });
         renderTagList();
         window.GOGPlusTagsGamesList.renderGames();
         await window.GOGPlusTagsStats.renderStats();
@@ -314,7 +374,7 @@ function openColorPicker(tag, anchor) {
         data-color="${c}" style="background:${c}" type="button"
         aria-label="Use ${c}"></button>`
   ).join("");
-  const currentColor = state.tagColors[tag] || "#c64fff";
+  const currentColor = window.GOGPlusValidate?.safeHex(state.tagColors[tag]) || "#c64fff";
   picker.innerHTML = `
     ${swatchesHtml}
     <label class="tag-color-custom" title="Pick any color">

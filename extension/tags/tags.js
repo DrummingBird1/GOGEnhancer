@@ -105,10 +105,46 @@ async function renderAll() {
   window.GOGPlusTagsLibraryHub?.renderHub();
 }
 
+/**
+ * The dashboard holds its own copy of the data and writes whole objects back.
+ * Without this, a tag added on a game page while the dashboard sat open in
+ * another tab was silently overwritten by the dashboard's next save. Here the
+ * copy follows storage: when a watched key changes to something the page
+ * doesn't already hold, the data is reloaded and redrawn (never while the user
+ * is typing in a field of the page — then after they leave it).
+ */
+const WATCHED = {
+  tags: "allTags", notes: "allNotes", gameStatus: "allStatus", purchaseLog: "allPurchases",
+  tagColors: "tagColors", tagOrder: "tagOrder", priceAlerts: "alerts", priceHistory: "allHistory",
+  ownedSlugs: "allOwned", gameFacts: "allFacts", gameGenres: "allGenres", statusDates: "statusDates",
+};
+/** @type {ReturnType<typeof setTimeout> | null} */
+let followTimer = null;
+function followStorage() {
+  window.GOGPlusStorage.onChange(({ key, newValue }) => {
+    const field = WATCHED[key];
+    if (!field) return;
+    // The page's own save writes the very value it already holds: nothing to do.
+    if (JSON.stringify(state[field]) === JSON.stringify(newValue ?? (Array.isArray(state[field]) ? [] : {}))) return;
+    if (followTimer) clearTimeout(followTimer);
+    followTimer = setTimeout(async function reload() {
+      const a = document.activeElement;
+      if (a && a !== document.body && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) {
+        a.addEventListener("blur", () => void reload(), { once: true });
+        return;
+      }
+      followTimer = null;
+      await loadData();
+      await renderAll();
+    }, 400);
+  });
+}
+
 async function init() {
   await loadData();
   await renderAll();
   bind();
+  followStorage();
   // Syncs / backs up by itself when the browser allows it without asking
   // (see lib/folder-sync-core.js); redraws the hub with what happened.
   window.GOGPlusTagsLibraryHub?.runAutoSync().catch((err) => console.warn("[GOG+] auto-sync failed:", err));

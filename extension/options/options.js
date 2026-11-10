@@ -223,6 +223,10 @@ function bind() {
       if (PRESETS[key]) {
         await window.GOGPlusStorage.set({
           ...PRESETS[key],
+          // One source of truth: converting is on exactly when a target currency is set.
+          ...(PRESETS[key].targetCurrency !== undefined
+            ? { currencyConverter: PRESETS[key].targetCurrency !== "none" }
+            : {}),
           regionPreset: key,
         });
       } else {
@@ -338,18 +342,25 @@ function bind() {
 
   // Custom theme color pickers — persist as one object so a partial pick
   // never leaves the other two colors undefined.
+  const readCustomColors = () => ({
+    magenta: $("customColorMagenta").value,
+    cyan: $("customColorCyan").value,
+    bg: $("customColorBg").value,
+  });
+  // While the picker is dragged only the page preview follows; writing to
+  // chrome.storage.sync on every pixel of the drag exceeded its write limit,
+  // after which the final colour was never saved. One write per finished choice.
+  const previewCustomColors = () => applyThemeClassToHtml("custom", readCustomColors());
   const saveCustomColors = async () => {
-    const colors = {
-      magenta: $("customColorMagenta").value,
-      cyan: $("customColorCyan").value,
-      bg: $("customColorBg").value,
-    };
+    const colors = readCustomColors();
     applyThemeClassToHtml("custom", colors);
     await window.GOGPlusStorage.set({ customThemeColors: colors });
     flashSaved();
   };
   ["customColorMagenta", "customColorCyan", "customColorBg"].forEach((id) => {
-    if ($(id)) $(id).addEventListener("input", saveCustomColors);
+    if (!$(id)) return;
+    $(id).addEventListener("input", previewCustomColors);
+    $(id).addEventListener("change", saveCustomColors);
   });
 
   if ($("dyslexiaFont")) {
