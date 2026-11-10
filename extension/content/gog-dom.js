@@ -145,8 +145,10 @@
   const CURRENCY_SYM = "[$€£₪₽]|zł|Kč|kr|R\\$|C\\$|A\\$";
   // The WHOLE trimmed text must be one price ("$19.99" / "19,99 €") — a
   // substring test would flag "from $5 to $60" sliders and "3 kr" in prose.
+  // A number, with "1 097,99" (groups of three split by a space / NBSP) counted as one.
+  const PRICE_NUM = "\\d[\\d.,]*(?:[\\s\\u00a0\\u202f]\\d{3}(?:[.,]\\d+)?)*";
   const PRICE_FULL_RE = new RegExp(
-    `^\\s*(?:(?:${CURRENCY_SYM})\\s?\\d[\\d.,]*|\\d[\\d.,]*\\s?(?:${CURRENCY_SYM}))\\s*$`
+    `^\\s*(?:(?:${CURRENCY_SYM})[\\s\\u00a0]?${PRICE_NUM}|${PRICE_NUM}[\\s\\u00a0]?(?:${CURRENCY_SYM}))\\s*$`
   );
 
   // Everything this extension injects into the page. Our own panel has
@@ -207,7 +209,8 @@
     return null;
   }
 
-  const BARE_NUMBER_RE = /^\s*\d[\d.,]*\s*$/;
+  // "2.99", "2,99" and "1 097,99" (a space or non-breaking space between groups of three).
+  const BARE_NUMBER_RE = /^\s*\d[\d.,]*(?:[\s  ]\d{3}(?:[.,]\d+)?)*\s*$/;
 
   /**
    * What the user actually SEES in a price element. The site prints the

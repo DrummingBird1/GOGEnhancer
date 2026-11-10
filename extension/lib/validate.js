@@ -66,9 +66,18 @@
   /** @param {unknown} v @param {number} [max] */
   const str = (v, max = 2000) => (typeof v === "string" ? v.slice(0, max) : undefined);
 
+  /** A value that must be one of a fixed list (anything else is dropped). @param {string[]} list */
+  const oneOf = (list) => (/** @type {any} */ v) => (typeof v === "string" && list.includes(v) ? v : undefined);
+
   /** Per-key shape cleaners for the datasets that end up in templates or keys. */
   /** @type {Record<string, (v: any) => any>} */
   const SHAPES = {
+    theme: oneOf(["neon", "classic", "crt", "sunset", "light", "auto", "highcontrast", "amoled", "amber", "native", "custom"]),
+    palette: oneOf(["default", "deuteranopia", "protanopia", "tritanopia", "high-contrast"]),
+    ownedDisplay: oneOf(["show", "dim", "hide"]),
+    catalogDensity: oneOf(["normal", "compact"]),
+    notifyMode: oneOf(["instant", "daily"]),
+    targetCurrency: (v) => (v === "none" || (typeof v === "string" && /^[A-Z]{3}$/.test(v)) ? v : undefined),
     tags: (v) => slugMap(v, (a) => (Array.isArray(a) ? a.filter((t) => typeof t === "string").map((t) => t.slice(0, 60)).slice(0, 50) : undefined)),
     notes: (v) => slugMap(v, (n) => str(n, 20000)),
     gameStatus: (v) => slugMap(v, (s) => str(s, 30)),
@@ -150,7 +159,9 @@
       if (!Object.prototype.hasOwnProperty.call(defaults, k)) { skipped.push(k); continue; }
       if (!typeMatches(v, defaults[k])) { skipped.push(k); continue; }
       const shape = SHAPES[k];
-      clean[k] = shape ? shape(v) : v;
+      const cleaned = shape ? shape(v) : v;
+      if (cleaned === undefined) { skipped.push(k); continue; }
+      clean[k] = cleaned;
     }
     return { clean, skipped };
   }

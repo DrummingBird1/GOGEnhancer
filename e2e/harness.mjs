@@ -67,16 +67,19 @@ export const PAGES = {
 };
 
 /**
- * @param {{ live?: boolean, extPath: string, viewport?: { width: number, height: number }, cookies?: any[], extraArgs?: string[] }} opts
+ * @param {{ live?: boolean, extPath: string, viewport?: { width: number, height: number }, cookies?: any[], extraArgs?: string[], userDataDir?: string, onWorker?: (w: any) => void }} opts
  */
-export async function startHarness({ live = false, extPath, viewport = { width: 1100, height: 800 }, cookies, extraArgs = [] }) {
-  const userDataDir = mkdtempSync(join(tmpdir(), "gog-enhancer-e2e-"));
+export async function startHarness({ live = false, extPath, viewport = { width: 1100, height: 800 }, cookies, extraArgs = [], userDataDir: givenDir, onWorker }) {
+  // A given profile folder is kept after cleanup (the upgrade test reuses it).
+  const userDataDir = givenDir || mkdtempSync(join(tmpdir(), "gog-enhancer-e2e-"));
   const context = await chromium.launchPersistentContext(userDataDir, {
     executablePath: findChromium(),
     headless: false,
     args: [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`, "--headless=new", "--no-first-run", ...extraArgs],
     viewport,
   });
+
+  if (onWorker) context.on("serviceworker", onWorker);
 
   // Cookies the user saved with `node e2e/save-login.mjs` (logged-in checks).
   if (cookies?.length) await context.addCookies(cookies);
@@ -131,6 +134,7 @@ export async function startHarness({ live = false, extPath, viewport = { width: 
   });
 
   let [sw] = context.serviceWorkers();
+  if (onWorker && sw) onWorker(sw);
   if (!sw) sw = await context.waitForEvent("serviceworker");
   const extId = new URL(sw.url()).host;
 
@@ -148,7 +152,7 @@ export async function startHarness({ live = false, extPath, viewport = { width: 
 
   const cleanup = async () => {
     await context.close();
-    rmSync(userDataDir, { recursive: true, force: true });
+    if (!givenDir) rmSync(userDataDir, { recursive: true, force: true });
   };
 
   return { context, sw, extId, setSettings, storageGet, cleanup };

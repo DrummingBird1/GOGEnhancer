@@ -70,9 +70,11 @@
     const srcSym = state.pageCurrency.symbol;
     if (!srcSym) return;
     const escSym = srcSym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const symRe = new RegExp(`${escSym}\\s?\\d|\\d\\s?${escSym}`);
+    const symRe = new RegExp(`${escSym}[\\s\\u00a0]?\\d|\\d[\\s\\u00a0]?${escSym}`);
+    // "1 097,99": groups of three separated by a space / non-breaking space are one number.
+    const NUM = "\\d[\\d.,]*(?:[\\s\\u00a0\\u202f]\\d{3}(?:[.,]\\d+)?)*";
     const priceOnlyRe = new RegExp(
-      `^\\s*(?:${escSym}\\s?\\d[\\d.,]*|\\d[\\d.,]*\\s?${escSym})\\s*$`
+      `^\\s*(?:${escSym}[\\s\\u00a0]?${NUM}|${NUM}[\\s\\u00a0]?${escSym})\\s*$`
     );
 
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {

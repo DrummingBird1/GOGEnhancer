@@ -132,6 +132,13 @@ describe("findPriceNodes", () => {
     expect(r.nodes).toHaveLength(1);
   });
 
+  it("last resort: a price with a space or non-breaking space between thousands is still one price", () => {
+    document.body.innerHTML = `<div><b>1 097,99 zł</b><em>26 069 ₽</em><u>from 1 000 to 2 000 zł</u></div>`;
+    const r = Dom.findPriceNodes();
+    expect(r.strategy).toBe("text-shape");
+    expect(r.nodes.map((n) => n.tagName)).toEqual(["B", "EM"]);
+  });
+
   it("last resort: elements whose entire text is one price, symbol first or last", () => {
     document.body.innerHTML = `
       <div><span class="a">$19.99</span><span class="b">19,99 €</span><span class="c">£5</span>

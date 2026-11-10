@@ -203,3 +203,17 @@ describe("image addresses the extension may load", () => {
     expect(ok(null)).toBe(false);
   });
 });
+
+describe("fixed-choice settings in an imported file", () => {
+  it("drops values outside the allowed list instead of storing them", () => {
+    const { sanitizeStorage } = window.GOGPlusValidate;
+    const defaults = window.GOG_PLUS_DEFAULTS;
+    const bad = sanitizeStorage({ targetCurrency: "javascript:alert(1)", theme: "evil", palette: 5, ownedDisplay: "x", catalogDensity: "y", notifyMode: "z" }, defaults);
+    expect(bad.clean).toEqual({});
+    expect(bad.skipped.sort()).toEqual(["catalogDensity", "notifyMode", "ownedDisplay", "palette", "targetCurrency", "theme"]);
+    const good = sanitizeStorage({ targetCurrency: "PLN", theme: "amber", palette: "high-contrast", ownedDisplay: "dim", catalogDensity: "compact", notifyMode: "daily" }, defaults);
+    expect(good.skipped).toEqual([]);
+    expect(good.clean.targetCurrency).toBe("PLN");
+    expect(sanitizeStorage({ targetCurrency: "none" }, defaults).clean.targetCurrency).toBe("none");
+  });
+});
