@@ -448,6 +448,9 @@
       await Storage().set(settings);
       flash();
       load();
+      // A profile can change the theme and many switches the other script owns:
+      // reload the page so every control shows what was applied.
+      setTimeout(() => location.reload(), 500);
     });
 
     $("replayTour")?.addEventListener("click", () => {

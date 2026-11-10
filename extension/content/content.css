@@ -1882,6 +1882,18 @@ html.gog-plus-calm .gog-plus-more-hide { transition: none; }
 }
 
 
+/* A pack's games, side by side instead of run together. */
+.gog-plus-pack-list { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+
+/* Anyone who asked the system for less motion gets none from the extension. */
+@media (prefers-reduced-motion: reduce) {
+  [class*="gog-plus-"], [class*="gog-plus-"]::before, [class*="gog-plus-"]::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* The converted amount copies on click. */
 .gog-plus-conv-note { cursor: copy; }
 

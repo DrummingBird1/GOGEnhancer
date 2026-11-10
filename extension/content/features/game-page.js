@@ -259,6 +259,16 @@
       Chrome?.decorate(node, id);
       body.appendChild(node);
     }
+    // If something on this page stopped working (the site changed its markup),
+    // say so here instead of failing silently.
+    const broken = Object.keys(state.failures || {});
+    if (broken.length) {
+      const note = document.createElement("p");
+      note.className = "gog-plus-gp-muted gog-plus-gp-health";
+      note.setAttribute("role", "status");
+      note.textContent = `${broken.length === 1 ? "One feature" : `${broken.length} features`} couldn't run on this page (${broken.slice(0, 3).join(", ")}). Advanced Options → "Check this page" shows why.`;
+      body.appendChild(note);
+    }
     Chrome?.applyOrder(body);
     Chrome?.addHeaderTools(panel);
     Chrome?.applyPanelMode(panel);

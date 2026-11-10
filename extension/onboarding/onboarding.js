@@ -96,6 +96,10 @@ $("next2").addEventListener("click", async () => {
       taxEstimator:
         state.selectedPreset !== "none" && PRESETS[state.selectedPreset].vatPercent > 0,
     });
+  } else if (!state.selectedPreset) {
+    // Continuing without choosing must not leave another country's VAT in place
+    // (the built-in defaults are Israeli): convert the currency, estimate no tax.
+    await window.GOGPlusStorage.set({ regionPreset: "custom", taxEstimator: false, vatPercent: 0, vatLabel: "" });
   }
   showStep(3);
 });

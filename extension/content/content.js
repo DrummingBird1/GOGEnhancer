@@ -60,6 +60,10 @@
     if (scale === 1) html.style.removeProperty("--gp-scale");
     else html.style.setProperty("--gp-scale", String(scale));
 
+    // The dock / compact switches act on a panel that is already on the page
+    // (they used to wait for the next rebuild).
+    const livePanel = document.getElementById("gog-plus-gamepanel");
+    if (livePanel) window.GOGPlusPanelChrome?.applyPanelMode(livePanel);
     try {
       applyTheme(plain);
     } catch (e) {

@@ -99,6 +99,20 @@ describe("look and feel", () => {
     expect(html.style.getPropertyValue("--gp-scale")).toBe("");
   });
 
+  it("applies the AMOLED and Amber themes, and a malformed stored theme costs the look but not the features", async () => {
+    await boot();
+    await set("sync", { theme: "amoled" });
+    await vi.advanceTimersByTimeAsync(10);
+    expect(html.classList.contains("gog-plus-theme--amoled")).toBe(true);
+    await set("sync", { theme: "amber" });
+    await vi.advanceTimersByTimeAsync(10);
+    expect(html.classList.contains("gog-plus-theme--amber")).toBe(true);
+    // A value no theme list knows (a bad import) falls back to the default theme.
+    await set("sync", { theme: { not: "a string" } });
+    await vi.advanceTimersByTimeAsync(10);
+    expect(html.classList.contains("gog-plus-theme--neon")).toBe(true);
+  });
+
   it("clamps an absurd text size", async () => {
     await boot();
     await set("sync", { uiScale: 9 });
