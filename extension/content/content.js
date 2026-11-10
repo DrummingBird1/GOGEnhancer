@@ -279,7 +279,7 @@
         panel.addEventListener(
           "focusout",
           (e) => {
-            if (panel.contains(/** @type {FocusEvent} */ (e).relatedTarget)) return;
+            if (panel.contains(/** @type {Node | null} */ (/** @type {FocusEvent} */ (e).relatedTarget))) return;
             invalidatePanel();
           },
           { once: true }

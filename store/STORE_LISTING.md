@@ -445,7 +445,7 @@ exact answers:
 > Used by the popup's "Reload tab" button so the user can refresh the GOG.com page they are currently viewing after toggling features.
 
 ### `alarms`
-> Used to schedule periodic background refreshes: exchange rates every 12 hours from frankfurter.dev, the public GOG mods catalog every 24 hours, the wishlist sale-count badge every 6 hours, and a once-daily check that fires desktop notifications when a tracked refund window is about to close (only if the user opted in).
+> Used to schedule periodic background refreshes: exchange rates every 12 hours from frankfurter.dev, the public GOG mods catalog every 24 hours, the wishlist sale-count badge every 6 hours, a once-daily local check for refund windows and price alerts, a weekly digest, the release of held-back notifications, and the optional folder auto-sync (notifications only if the user opted in).
 
 ### `notifications`
 > Used exclusively for optional, opt-in alerts the user controls from Advanced Options: a system notification when a manually-marked refund window has 1–2 days remaining, and a system notification when the count of wishlist items on sale jumps. All notifications use the local chrome.notifications API — nothing is transmitted off-device. The toggle is OFF by default; nothing fires until the user enables it.

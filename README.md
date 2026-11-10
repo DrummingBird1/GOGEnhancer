@@ -142,7 +142,7 @@ Enabled via the "Design injection" toggle in the popup. When on:
 |---|---|
 | **Chrome** | ✅ Fully supported — this is the primary target. |
 | **Edge, Brave, Opera** (Chromium-based) | ✅ Works the same as Chrome — same engine, same "Load unpacked" steps above. |
-| **Firefox** | ⚠️ Experimental / unverified. `node scripts/build-firefox.mjs` builds a Firefox variant (a background page instead of the service worker, an add-on id, a "collects nothing" declaration) that is clean under `web-ext lint`, and the zip is attached to each GitHub release — but **it has never been run in a real Firefox**, and folder sync needs an API Firefox doesn't have. Chrome Web Store / Edge Add-ons are the supported install paths for now. |
+| **Firefox** | ⚠️ Experimental / unverified. `node scripts/build-firefox.mjs` builds a Firefox variant (a background page instead of the service worker, an add-on id, a "collects nothing" declaration) that is clean under `web-ext lint`, and the zip is attached to each GitHub release — but **it has never been run in a real Firefox**, and folder sync needs an API Firefox doesn't have. The Chrome Web Store listing is the supported install path; Edge users can install the same extension from there or use "Load unpacked" (Edge Add-ons has no listing yet). |
 
 ---
 

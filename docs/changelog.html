@@ -131,7 +131,35 @@
   <div class="cl-list wrap">
 
     <div class="cl-entry is-current">
-      <div class="cl-version-row"><span class="cl-version">v4.0.0</span><span class="cl-badge-current">Current</span></div>
+      <div class="cl-version-row"><span class="cl-version">v4.5.0</span><span class="cl-badge-current">Current</span></div>
+      <p class="cl-title">Sturdier imports and sync, a calmer insights panel, working endless scrolling, live ruble rates and two new themes.</p>
+      <h4>Fixes</h4>
+      <ul>
+        <li>💱 <strong>Exchange rates</strong> now come straight from Frankfurter's current API (<code>api.frankfurter.dev</code>, v2 with the old v1 as a fallback) instead of through a redirect, and the Russian ruble is refreshed live like the other currencies. The extension no longer declares a host permission for it.</li>
+        <li>🛡️ <strong>Imported data is checked before it is stored.</strong> A backup, a sync file or a shared tag pack is now validated — unknown items, wrong types, odd dates, currencies and colours and unsafe names are dropped, and the import says how many items it skipped. Dated backups written by the extension can now be restored with the same Import button, and per-browser items (the request list, failure list, tour flag…) stay out of them. Tooltips are rebuilt from a short allow-list, and share links are size-limited.</li>
+        <li>🔐 <strong>Encrypted backups</strong> use 600,000 key-derivation rounds (older files still open), the file records its own settings, the password is typed twice and the file is test-opened before it is offered.</li>
+        <li>🧩 <strong>The insights panel</strong> no longer sits between the title and the buy box (which it pushed far down the page), is not rebuilt while you type a note or tag, rebuilds once for a burst of changes, and asks CheapShark once per game. CheapShark matching no longer lets a sequel or spin-off replace the real game's price.</li>
+        <li>♾️ <strong>Endless scrolling</strong> skips games already on screen, starts over when you sort, filter or change page inside the catalog, ignores answers that arrive late, keeps keyboard focus, and shows the star rating on appended cards.</li>
+        <li>💲 <strong>Prices</strong>: Brazilian-real pages are no longer read as dollars, thousands separated by a space or non-breaking space (1&nbsp;097,99 zł) are read as one number, a catalog that renders late no longer gets stuck on a guessed currency, and "Only prices up to" compares in your target currency.</li>
+        <li>📈 <strong>Price history</strong> keeps the day a price was first seen, so the weekly digest and monthly challenges count real changes rather than visits; days follow your local calendar.</li>
+        <li>🔔 <strong>Notifications</strong>: "one a day" mode combined with quiet hours can no longer hold the queue indefinitely, and the background alarms are re-created if the browser lost them.</li>
+        <li>☁️ <strong>Sync</strong>: a device whose clock is far in the future can no longer win every conflict, and the first sync after upgrading from before v4 keeps both sides' tags and notes instead of choosing by text order.</li>
+        <li>🗂️ <strong>Dashboard and options</strong>: the open dashboard follows changes made elsewhere instead of overwriting them; renaming, merging or deleting a tag moves its price alert and its place in the order (merge now needs an existing tag and can be undone); "Clear tags &amp; notes" also clears note history; "Reset everything" also forgets the sync folder and revokes the webhook permission; "Choose folder" no longer stays disabled; the custom-theme picker saves once per choice; a region preset switches conversion on or off consistently; CSV exports neutralise spreadsheet formulas and open correctly in Excel, and CSV import accepts semicolons and old line endings.</li>
+        <li>⌨️ <strong>Shortcuts</strong> (Ctrl/Cmd+K and J / K / T / W / N / A) work on Hebrew, Russian and other layouts.</li>
+        <li>🎨 <strong>Cover effects</strong> no longer collapse the cover art of "Good Old Game" tiles; the monospace price style no longer reaches the Add to cart button; the loading shimmer no longer paints the catalog filter sidebar; the pinned banner leaves room for the footer; quick-add buttons no longer stack up.</li>
+        <li>🔧 Hide-expired-sales understands GOG's new <code>/promo/YYYYMMDD_name</code> links, pack contents are no longer cached when a lookup was incomplete, and the "Check this page" translation walker leaves the extension's own panels alone.</li>
+      </ul>
+      <h4>New</h4>
+      <ul>
+        <li>🎨 Two themes, <strong>AMOLED</strong> (true black) and <strong>Amber</strong> (retro monitor).</li>
+        <li>📋 Click a converted price to copy it.</li>
+        <li>🔤 Numbers, prices and signs keep their own direction in the Hebrew dashboard.</li>
+      </ul>
+      <a class="cl-release-link" href="https://github.com/DrummingBird1/GOGEnhancer/releases/tag/v4.5.0" target="_blank" rel="noopener">View release →</a>
+    </div>
+
+    <div class="cl-entry">
+      <div class="cl-version-row"><span class="cl-version">v4.0.0</span></div>
       <p class="cl-title">Built to survive a redesign — plus smarter prices, a smart wishlist and catalog, library knowledge, seven languages everywhere, a privacy dashboard, automatic folder sync and calmer notifications</p>
       <h4>Resilience to site changes</h4>
       <ul>

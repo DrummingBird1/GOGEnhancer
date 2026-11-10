@@ -232,6 +232,7 @@ ${b}`;
         // cannot be ordered: merge them instead of letting string order pick one.
         const bothUnstamped =
           ls.kind === "value" && rs.kind === "value" && ls.t === 0 && rs.t === 0 && !same(ls.v, rs.v);
+        /** @type {Side} */
         const w = bothUnstamped ? { kind: "value", t: 0, v: mergeUnstamped(ls.v, rs.v) } : resolve(ls, rs);
         if (bothUnstamped) {
           conflicts.push({ key, id, local: ls.v, remote: rs.v, kept: "local" });

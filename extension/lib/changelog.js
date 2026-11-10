@@ -73,6 +73,13 @@
       "🏆 Achievements — local badges for tagging, tracking, and spending milestones",
       "🦊 Firefox compatibility groundwork (experimental, unverified) — see the README's browser-support section",
     ],
+    "4.5.0": [
+      "💱 Exchange rates moved to Frankfurter's current API — and the Russian ruble is now refreshed live too",
+      "🛡️ Sturdier handling of imported backups, sync files and shared tag packs: they are checked before anything is stored, and a damaged one can no longer break a page",
+      "🧩 The insights panel no longer pushes the buy box down the page, no longer loses what you are typing when something else is saved, and asks CheapShark once per game instead of several times",
+      "♾️ Endless scrolling no longer repeats games already on screen, and starts over when you sort or filter the list",
+      "🎨 Two new themes, AMOLED and Amber — and click a converted price to copy it",
+    ],
     "4.0.0": [
       "🧭 Rebuilt for gog.com's redesign — every lookup of the site's markup now goes through one adapter that tries several strategies, each feature runs in isolation, and prices GOG prints with CSS are converted and recorded again",
       "💸 Smarter prices — “is this discount real?”, an offer countdown, price per hour of play, the price in several currencies, a smart wishlist and catalog tools (dim or hide games you own, local sorting, side-by-side comparison)",

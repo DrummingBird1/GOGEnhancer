@@ -19,7 +19,7 @@
    * What a challenge can look at.
    * @typedef {{
    *   statusDates?: Record<string, { playing?: string, finished?: string }>,
-   *   priceHistory?: Record<string, Array<{ d: string }>>,
+   *   priceHistory?: Record<string, Array<{ d: string, l?: string }>>,
    *   streakNow?: number,
    *   monthlyGoal?: number
    * }} ChallengeData

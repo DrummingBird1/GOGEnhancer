@@ -142,7 +142,7 @@
 |---|---|
 | **Chrome** | ✅ נתמך במלואו — זהו היעד העיקרי. |
 | **Edge, Brave, Opera** (מבוססי Chromium) | ✅ עובד בדיוק כמו ב-Chrome — אותו מנוע, אותם צעדי "Load unpacked" שלמעלה. |
-| **Firefox** | ⚠️ ניסיוני / לא מאומת. `node scripts/build-firefox.mjs` בונה גרסת Firefox (דף רקע במקום ה-service worker, מזהה תוסף, הצהרה "לא אוסף כלום") שעוברת `web-ext lint` נקי, וה-zip מצורף לכל release ב-GitHub — אבל **היא מעולם לא הורצה ב-Firefox אמיתי**, וסנכרון תיקייה דורש API שאין ב-Firefox. Chrome Web Store / Edge Add-ons הם נתיבי ההתקנה הנתמכים כרגע. |
+| **Firefox** | ⚠️ ניסיוני / לא מאומת. `node scripts/build-firefox.mjs` בונה גרסת Firefox (דף רקע במקום ה-service worker, מזהה תוסף, הצהרה "לא אוסף כלום") שעוברת `web-ext lint` נקי, וה-zip מצורף לכל release ב-GitHub — אבל **היא מעולם לא הורצה ב-Firefox אמיתי**, וסנכרון תיקייה דורש API שאין ב-Firefox. הרשימה ב-Chrome Web Store היא נתיב ההתקנה הנתמך; משתמשי Edge יכולים להתקין את אותו התוסף משם או דרך "Load unpacked" (ב-Edge Add-ons עדיין אין רשימה). |
 
 ---
 

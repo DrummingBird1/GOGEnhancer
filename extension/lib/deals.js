@@ -146,7 +146,7 @@
    * list price (`b`) when the snapshot has one, otherwise the highest price
    * seen so far.
    *
-   * @param {Array<{ d: string, p: number, c: string, b?: number }>} history
+   * @param {Array<{ d: string, l?: string, p: number, c: string, b?: number }>} history
    * @returns {{
    *   count: number,
    *   episodes: Array<{ start: string, end: string, minPrice: number, depthPct: number }>,
@@ -267,7 +267,7 @@
    *
    * @param {{
    *   purchaseLog: Record<string, any>,
-   *   priceHistory: Record<string, Array<{ d: string, p: number, c: string, b?: number }>>,
+   *   priceHistory: Record<string, Array<{ d: string, l?: string, p: number, c: string, b?: number }>>,
    *   rates: Record<string, number>,
    *   target: string,
    * }} p

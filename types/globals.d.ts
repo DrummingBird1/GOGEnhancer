@@ -226,6 +226,7 @@ declare global {
     GOGPlusStorageKeys?: GogPlusStorageKeysApi;
     GOGPlusMigrations?: GogPlusMigrationsApi;
     GOGPlusDomSafety?: GogPlusDomSafetyApi;
+    GOGPlusValidate?: any;
     GOGPlusCurrencyFormat?: GogPlusCurrencyFormatApi;
     GOGPlusGenres?: GogPlusGenresApi;
     GOGPlusChangelog?: GogPlusChangelogApi;

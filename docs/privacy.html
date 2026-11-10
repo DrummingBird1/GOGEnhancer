@@ -45,7 +45,7 @@
     <h1>Privacy Policy</h1>
     <div class="policy-meta">
       <span>Last updated: October 3, 2026</span>
-      <span>Extension version: 2.4.1+</span>
+      <span>Extension version: 4.5.0+</span>
       <span><a href="https://github.com/DrummingBird1/GOGEnhancer/issues" target="_blank" rel="noopener" style="color:var(--accent-cyan)">Contact / file an issue</a></span>
     </div>
     <p class="policy-lede">
@@ -263,8 +263,8 @@
         <tbody>
           <tr><td><code>storage</code></td><td>To save your settings, tags, notes, and price history on your device</td></tr>
           <tr><td><code>activeTab</code></td><td>When you click the toolbar icon, this lets the popup reload the active tab if you press the "Reload tab" button</td></tr>
-          <tr><td><code>alarms</code></td><td>To schedule four periodic background jobs: exchange-rate refresh (12h), mods-catalog refresh (24h), wishlist sale-count badge update (6h), and a once-daily local check for refund windows about to close</td></tr>
-          <tr><td><code>notifications</code></td><td><strong>Opt-in only.</strong> When you enable "Desktop notifications" in Advanced Options, the extension can show a system notification when a refund window has 1–2 days left or when new wishlist items go on sale. Uses <code>chrome.notifications</code>, local to the browser — nothing is transmitted off-device. Off by default.</td></tr>
+          <tr><td><code>alarms</code></td><td>To schedule seven periodic background jobs: exchange-rate refresh (12h), mods-catalog refresh (24h), wishlist sale-count badge update (6h), a once-daily local check for refund windows and price alerts, the weekly digest, releasing held-back notifications (hourly) and the optional folder auto-sync (30 min). Only the first two make a network request</td></tr>
+          <tr><td><code>notifications</code></td><td><strong>Opt-in only.</strong> When you enable "Desktop notifications" in Advanced Options, the extension can show a system notification when a refund window has 1–2 days left, when a price alert or a per-tag alert fires, when wishlisted games go on sale, when a sale you follow is about to end, and as a weekly digest. Uses <code>chrome.notifications</code>, local to the browser — nothing is transmitted off-device. Off by default.</td></tr>
           <tr><td>Host permission for <code>https://www.gog.com/*</code></td><td>To run the content script on GOG pages and to fetch the public /en/mods page in the background</td></tr>
           <tr><td>Host permission for <code>https://www.cheapshark.com/*</code></td><td>To fetch the cross-store price comparison table shown on game pages (opt-out toggle in the popup)</td></tr>
           <tr><td>Optional host permission for <code>https://*/*</code></td><td><strong>Optional and never granted at install.</strong> Declared as <code>optional_host_permissions</code> so that, <em>only if you enter your own webhook address</em>, the browser can ask you to allow that single origin. Without it nothing can be sent anywhere new.</td></tr>
