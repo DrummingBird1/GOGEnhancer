@@ -75,6 +75,21 @@
     </svg>`;
   }
 
+  /**
+   * The overlay the era/genre cover effects are drawn on (see
+   * design-injection.css): a child of the cover host, so the host's own
+   * ::before/::after (GOG's aspect-ratio spacer) are never replaced.
+   * @param {Element} host
+   */
+  function ensureFx(host) {
+    if (host.querySelector(":scope > .gog-plus-fx")) return;
+    const fx = document.createElement("span");
+    fx.className = "gog-plus-fx";
+    fx.setAttribute("aria-hidden", "true");
+    host.appendChild(fx);
+  }
+
+
   function applyCardBadges(root = document) {
     // Tighter selector: skip cards we already processed, and only consider
     // anchors that have an image AND aren't tiny carousel previews.
@@ -126,6 +141,7 @@
         '[class*="good-old-game"], [class*="goodOldGame"]'
       ) || /good old game/i.test(card.textContent || "");
       if (isClassic && state.settings.designInjection) {
+        ensureFx(host);
         host.classList.add("gog-plus-cover--classic");
       }
       if (/cyberpunk|witcher/i.test(slug) && state.settings.designInjection) {
@@ -138,6 +154,7 @@
         // hand-listed in GENRE_PATTERNS.
         const genre = (state.settings.gameGenres && state.settings.gameGenres[slug]) || matchGenrePattern(slug);
         if (genre) {
+          ensureFx(host);
           host.classList.add(`gog-plus-cover--genre-${genre}`);
         }
       }

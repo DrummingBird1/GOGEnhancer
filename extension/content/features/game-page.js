@@ -217,7 +217,12 @@
       </header>
       <div class="gog-plus-gp-body" id="gog-plus-gp-body"></div>
     `;
-    anchor.parentElement?.insertBefore(panel, anchor.nextSibling);
+    // Mounted AFTER the whole product block, not inside it: the title sits in
+    // a container whose sibling is the buy box (price / Add to cart), and a
+    // panel in between pushed the buy box ~1,600px down the page (checked on
+    // the live site 2026-11-10).
+    const mount = anchor.closest(".layout-container") || anchor;
+    mount.parentElement?.insertBefore(panel, mount.nextSibling);
 
     const body = panel.querySelector("#gog-plus-gp-body");
     const Chrome = window.GOGPlusPanelChrome;

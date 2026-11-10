@@ -218,7 +218,9 @@
 
   document.addEventListener("keydown", (e) => {
     if (!state.settings.enabled) return;
-    const isToggleCombo = (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "k";
+    // e.code too: on a Hebrew/Russian layout the K key does not produce "k".
+    const isToggleCombo =
+      (e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && (String(e.key).toLowerCase() === "k" || e.code === "KeyK");
     if (isToggleCombo) {
       e.preventDefault();
       overlay ? close() : open();

@@ -120,25 +120,37 @@
     return false;
   }
 
+  /**
+   * The key as a Latin letter regardless of the keyboard layout: on a Hebrew
+   * or Russian layout `e.key` is a Hebrew/Cyrillic letter, so J/K/T/W/N/A would
+   * never match. The physical key (`e.code`) is the same on every layout.
+   * @param {KeyboardEvent} e
+   */
+  function keyOf(e) {
+    const m = !e.shiftKey && /^Key([A-Z])$/.exec(e.code || "");
+    return m ? m[1].toLowerCase() : e.key;
+  }
+
   /** @param {KeyboardEvent} e */
   function handleKey(e) {
     if (!state.settings.enabled || !state.settings.keyboardNav) return;
+    const key = keyOf(e);
     if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
     if (isTypingTarget(e.target)) return;
     if (document.querySelector(".gog-plus-palette-overlay")) return;
 
-    if (window.GOGPlusGogDom.pageType() === "game" && gamePageKey(e.key)) {
+    if (window.GOGPlusGogDom.pageType() === "game" && gamePageKey(key)) {
       e.preventDefault();
       return;
     }
 
-    if (e.key === "j") {
+    if (key === "j") {
       e.preventDefault();
       step(1);
-    } else if (e.key === "k") {
+    } else if (key === "k") {
       e.preventDefault();
       step(-1);
-    } else if (e.key === "t") {
+    } else if (key === "t") {
       e.preventDefault();
       tagFocused();
     } else if (e.key === "?") {

@@ -328,7 +328,7 @@
         );
       });
     document
-      .querySelectorAll(".gog-plus-conv-note, .gog-plus-badges, .gog-plus-tag-dot")
+      .querySelectorAll(".gog-plus-conv-note, .gog-plus-badges, .gog-plus-tag-dot, .gog-plus-fx")
       .forEach((el) => el.remove());
     // Strip era-aware cover classes so toggling designInjection off doesn't
     // leave classic-CRT or neon-glow effects stuck on existing cards.
@@ -345,6 +345,7 @@
     // The panel itself waits for the user to stop typing (see above).
     if (PANEL_KEYS.has(key)) invalidatePanel();
     else document.getElementById("gog-plus-gamepanel")?.remove();
+    window.GOGPlusWishlistFeature?.keepFilter?.();
     document.getElementById("gog-plus-wlfilters")?.remove();
 
     processAll();

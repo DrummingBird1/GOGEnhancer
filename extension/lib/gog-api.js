@@ -226,7 +226,9 @@
     const final = num(p.price?.finalMoney?.amount ?? p.price?.final?.replace?.(/[^\d.,]/g, ""));
     const base = num(p.price?.baseMoney?.amount);
     const disc = parseInt(String(p.price?.discount || "").replace(/[^\d]/g, ""), 10);
-    const rating = num(p.reviewsRating);
+    // GOG reports the rating on a 0-50 scale (4.5 stars = 45); the cards want 0-5.
+    const ratingRaw = num(p.reviewsRating);
+    const rating = ratingRaw != null && ratingRaw > 5 ? ratingRaw / 10 : ratingRaw;
     return {
       id: String(p.id ?? ""),
       slug: p.slug,
@@ -315,6 +317,9 @@
     const seen = new Set([ownSlug]);
     for (const id of ids) {
       const child = await Net.getJson("product", `${PRODUCT_URL}${id}?locale=en-US`);
+      // One failed lookup would silently shorten the list — and the short list
+      // would be cached for a month. Better to say "unknown" and ask again later.
+      if (!child) return null;
       const slug = storeSlugOf(child);
       if (!slug || seen.has(slug)) continue;
       seen.add(slug);

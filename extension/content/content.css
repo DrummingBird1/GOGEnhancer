@@ -1857,3 +1857,9 @@ html.gog-plus-calm .gog-plus-more-hide { transition: none; }
   white-space: nowrap !important;
   border: 0 !important;
 }
+
+
+/* Room for the pinned DRM-free banner, so the site's footer is not hidden under it. */
+html:has(#gog-plus-banner) body {
+  padding-bottom: var(--gp-banner-h, 0px);
+}

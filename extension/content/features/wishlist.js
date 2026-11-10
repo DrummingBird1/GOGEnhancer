@@ -111,10 +111,28 @@
 
   /* ============== quick filters ============== */
 
+  // The chosen quick filter survives the bar being rebuilt (a settings change
+  // rebuilds it), and the observer of a removed bar must not keep running.
+  let activeQuickFilter = "all";
+  let keepFilterOnce = false;
+  /** Called right before the bar is rebuilt for a settings change (not a page change). */
+  function keepFilter() {
+    keepFilterOnce = true;
+  }
+  /** @type {MutationObserver | null} */
+  let barObserver = null;
+
   function ensureWishlistFilters() {
     if (!state.settings.wishlistFilters) return;
     if (!location.pathname.includes("/account/wishlist")) return;
     if (document.getElementById("gog-plus-wlfilters")) return;
+    if (!keepFilterOnce) activeQuickFilter = "all";
+    keepFilterOnce = false;
+    if (barObserver) {
+      barObserver.disconnect();
+      state.observers = state.observers.filter((o) => o !== barObserver);
+      barObserver = null;
+    }
 
     const target = Dom.wishlistRoot();
     if (!target) return;
@@ -134,7 +152,7 @@
       ${filters
         .map(
           (f, i) => `
-        <button data-f="${f.id}" class="gog-plus-wlfilter ${i === 0 ? "active" : ""}" type="button">
+        <button data-f="${f.id}" class="gog-plus-wlfilter ${f.id === activeQuickFilter || (i === 0 && !filters.some((x) => x.id === activeQuickFilter)) ? "active" : ""}" type="button">
           <span class="gog-plus-wlfilter-icon" aria-hidden="true">${f.icon}</span>
           <span class="gog-plus-wlfilter-label">${f.label}</span>
           <span class="gog-plus-wlfilter-count" aria-hidden="true"></span>
@@ -152,9 +170,12 @@
       if (!btn) return;
       bar.querySelectorAll("button[data-f]").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      applyWishlistFilter(/** @type {HTMLElement} */ (btn).dataset.f);
+      activeQuickFilter = /** @type {HTMLElement} */ (btn).dataset.f || "all";
+      applyWishlistFilter(activeQuickFilter);
       applySmart();
     });
+    // A rebuilt bar re-applies the filter it remembers, so the chip and the rows agree.
+    if (activeQuickFilter !== "all") applyWishlistFilter(activeQuickFilter);
 
     // Live counts: recompute when the wishlist DOM mutates (debounced). The
     // bar lives inside the observed node, so changes this feature makes itself
@@ -174,6 +195,7 @@
     });
     observer.observe(target, { childList: true, subtree: true });
     state.observers.push(observer);
+    barObserver = observer;
     setTimeout(() => {
       updateWishlistFilterCounts(bar);
       applySmart();
@@ -205,6 +227,7 @@
     }
     bar.querySelectorAll("button[data-f]").forEach((btn) => {
       const f = btn.dataset.f;
+      if (f && f.startsWith("genre-")) return; // the genre chips carry their own count
       const span = btn.querySelector(".gog-plus-wlfilter-count");
       if (!span) return;
       const n = counts[f];
@@ -604,6 +627,7 @@
 
   window.GOGPlusWishlistFeature = {
     ensureWishlistFilters,
+    keepFilter,
     updateWishlistFilterCounts,
     reportWishlistCount,
     applyWishlistFilter,

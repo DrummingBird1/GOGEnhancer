@@ -20,13 +20,31 @@ html.gog-plus-design [class*="-discount"] {
   letter-spacing: -0.01em;
 }
 
+html.gog-plus-design [class*="price-text"] :is(button, a.button, [role="button"]),
+html.gog-plus-design [class*="product-actions-price"] :is(button, a.button, [role="button"]),
+html.gog-plus-design [class*="discount"] :is(button, a.button, [role="button"]) {
+  font-family: inherit !important;
+  letter-spacing: normal;
+}
+
 /* ===== Era-aware game cards =====
    Effects are attached to .gog-plus-cover-host (the cover image wrapper),
    NOT to the card anchor itself. Touching the card root caused GOG's own
    carousel/preview overlays to snap to the wrong positioning context. */
 
+/* The effects are drawn on a dedicated child (.gog-plus-fx, added by card-badges),
+   never on the cover host's own ::before/::after: GOG uses those for its aspect-ratio
+   spacer, and replacing them collapsed the cover art of every "Good Old Game" tile. */
+.gog-plus-cover-host > .gog-plus-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: inherit;
+}
+
 /* "Good Old Game" cover — retro CRT treatment */
-.gog-plus-cover--classic::before {
+.gog-plus-cover--classic > .gog-plus-fx::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -44,8 +62,8 @@ html.gog-plus-design [class*="-discount"] {
   transition: opacity 0.35s ease;
   border-radius: inherit;
 }
-.gog-plus-cover--classic:hover::before { opacity: 0.6; }
-.gog-plus-cover--classic::after {
+.gog-plus-cover--classic:hover > .gog-plus-fx::before { opacity: 0.6; }
+.gog-plus-cover--classic > .gog-plus-fx::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -57,7 +75,7 @@ html.gog-plus-design [class*="-discount"] {
     inset 0 0 1px rgba(255, 196, 70, 0);
   transition: box-shadow 0.35s ease;
 }
-.gog-plus-cover--classic:hover::after {
+.gog-plus-cover--classic:hover > .gog-plus-fx::after {
   box-shadow:
     inset 0 0 22px rgba(255, 196, 70, 0.15),
     inset 0 0 1px rgba(255, 196, 70, 0.4);
@@ -100,7 +118,7 @@ html.gog-plus-design [class*="-discount"] {
     0 6px 18px rgba(180, 30, 60, 0.32),
     inset 0 0 0 1px rgba(180, 30, 60, 0.5);
 }
-.gog-plus-cover--genre-horror::after {
+.gog-plus-cover--genre-horror > .gog-plus-fx::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -118,10 +136,10 @@ html.gog-plus-design [class*="-discount"] {
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-.gog-plus-cover--genre-horror:hover::after { opacity: 1; }
+.gog-plus-cover--genre-horror:hover > .gog-plus-fx::after { opacity: 1; }
 
 /* Strategy — subtle grid overlay */
-.gog-plus-cover--genre-strategy::before {
+.gog-plus-cover--genre-strategy > .gog-plus-fx::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -136,7 +154,7 @@ html.gog-plus-design [class*="-discount"] {
   transition: opacity 0.35s ease;
   mix-blend-mode: overlay;
 }
-.gog-plus-cover--genre-strategy:hover::before { opacity: 0.7; }
+.gog-plus-cover--genre-strategy:hover > .gog-plus-fx::before { opacity: 0.7; }
 .gog-plus-cover--genre-strategy:hover {
   box-shadow: 0 6px 18px rgba(0, 240, 255, 0.18);
 }
@@ -145,7 +163,7 @@ html.gog-plus-design [class*="-discount"] {
 .gog-plus-cover--genre-scifi {
   transition: box-shadow 0.35s ease;
 }
-.gog-plus-cover--genre-scifi::before {
+.gog-plus-cover--genre-scifi > .gog-plus-fx::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -161,7 +179,7 @@ html.gog-plus-design [class*="-discount"] {
   opacity: 0;
   transition: opacity 0.5s ease;
 }
-.gog-plus-cover--genre-scifi:hover::before { opacity: 0.9; }
+.gog-plus-cover--genre-scifi:hover > .gog-plus-fx::before { opacity: 0.9; }
 .gog-plus-cover--genre-scifi:hover {
   box-shadow:
     0 8px 22px rgba(80, 140, 255, 0.25),
@@ -192,8 +210,8 @@ html.gog-plus-design .gog-plus-card:hover {
    We target only elements GOG itself flags as placeholders/skeletons.
    Earlier versions used :empty on product tiles, which over-matched
    (many GOG nodes are lazy-loaded but not actually loading). */
-html.gog-plus-skeletons [class*="placeholder"]:empty,
-html.gog-plus-skeletons [class*="skeleton"]:empty,
+html.gog-plus-skeletons [class*="placeholder"]:empty:not([class*="simplebar"]),
+html.gog-plus-skeletons [class*="skeleton"]:empty:not([class*="simplebar"]),
 html.gog-plus-skeletons [class*="product-tile--placeholder"] {
   background: linear-gradient(
     90deg,
@@ -210,8 +228,8 @@ html.gog-plus-skeletons [class*="product-tile--placeholder"] {
   100% { background-position: -200% 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  html.gog-plus-skeletons [class*="placeholder"]:empty,
-  html.gog-plus-skeletons [class*="skeleton"]:empty {
+  html.gog-plus-skeletons [class*="placeholder"]:empty:not([class*="simplebar"]),
+  html.gog-plus-skeletons [class*="skeleton"]:empty:not([class*="simplebar"]) {
     animation: none;
   }
 }

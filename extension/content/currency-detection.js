@@ -37,12 +37,39 @@
     return acc;
   }, {});
 
+  // Longest first, so "R$" / "A$" / "C$" are tried before a bare "$".
+  const SYMBOLS_LONGEST_FIRST = Object.keys(SYMBOL_TO_CODE).sort((a, b) => b.length - a.length);
+
+  /**
+   * Which currencies are named in a price text. A symbol that is part of a
+   * longer one ("$" inside "R$") is consumed with it, so it is not counted twice.
+   * @param {string} text
+   * @returns {string[]}
+   */
+  function codesIn(text) {
+    const found = [];
+    let rest = String(text || "");
+    for (const sym of SYMBOLS_LONGEST_FIRST) {
+      if (rest.includes(sym)) {
+        found.push(SYMBOL_TO_CODE[sym]);
+        rest = rest.split(sym).join(" ");
+      }
+    }
+    return found;
+  }
+
   let cached = null;
   let cachedFor = null;
+  let cachedAt = 0;
+  // A result that came from no evidence at all (no price on the page yet: a
+  // catalog that renders late) must not be remembered for the whole page.
+  let cachedIsGuess = false;
+  const GUESS_TTL_MS = 1500;
 
   function detect() {
-    if (cached && cachedFor === location.pathname) return cached;
+    if (cached && cachedFor === location.pathname && (!cachedIsGuess || Date.now() - cachedAt < GUESS_TTL_MS)) return cached;
     cached = null;
+    cachedIsGuess = false;
 
     // The page's own declaration wins: game pages print prices as bare
     // numbers (the symbol is CSS-injected) and name the currency only in a
@@ -51,6 +78,7 @@
     if (hint && CODE_TO_SYMBOL[hint]) {
       cached = { code: hint, symbol: CODE_TO_SYMBOL[hint] };
       cachedFor = location.pathname;
+      cachedAt = Date.now();
       return cached;
     }
 
@@ -60,11 +88,7 @@
     const counts = {};
     for (let i = 0; i < Math.min(candidates.length, 30); i++) {
       const t = window.GOGPlusGogDom.displayText(candidates[i]);
-      for (const [sym, code] of Object.entries(SYMBOL_TO_CODE)) {
-        if (t.includes(sym)) {
-          counts[code] = (counts[code] || 0) + 1;
-        }
-      }
+      for (const code of codesIn(t)) counts[code] = (counts[code] || 0) + 1;
     }
 
     let topCode = null;
@@ -77,6 +101,7 @@
     }
 
     if (!topCode) {
+      cachedIsGuess = true;
       // URL locale fallback
       const path = location.pathname;
       if (/^\/de(\/|$)/.test(path)) topCode = "EUR";
@@ -88,6 +113,7 @@
 
     cached = { code: topCode, symbol: CODE_TO_SYMBOL[topCode] || "$" };
     cachedFor = location.pathname;
+    cachedAt = Date.now();
     return cached;
   }
 
@@ -140,10 +166,15 @@
     // symbol sits on varies by locale and by how GOG's markup is built.
     const grab = (sym, currency) => {
       const escSym = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const re = new RegExp(`${escSym}\\s?([\\d.,]+)|(\\d[\\d.,]*)\\s?${escSym}`);
+      // "1 097,99" and "26 069" (space, NBSP or narrow NBSP between groups of
+      // three) are one number, not two. A bare "$" is not the tail of "R$".
+      const NUM = "(?:\\d{1,3}(?:[\\s\\u00a0\\u202f]\\d{3})+(?:[.,]\\d+)?|[\\d.,]+)";
+      const lead = sym === "$" ? "(?<![A-Za-z])" : "";
+      const re = new RegExp(`${lead}${escSym}[\\s\\u00a0]?(${NUM})|(${NUM})[\\s\\u00a0]?${escSym}`);
       const m = text.match(re);
       if (!m) return null;
-      const v = normalizeNumber(m[1] ?? m[2], currency);
+      const raw = (m[1] ?? m[2]).replace(/[\s  ]/g, "");
+      const v = normalizeNumber(raw, currency);
       return Number.isFinite(v) ? v : null;
     };
 
@@ -152,8 +183,8 @@
       if (!sym) return null;
       return grab(sym, knownCurrency);
     }
-    for (const [sym, code] of Object.entries(SYMBOL_TO_CODE)) {
-      const v = grab(sym, code);
+    for (const sym of SYMBOLS_LONGEST_FIRST) {
+      const v = grab(sym, SYMBOL_TO_CODE[sym]);
       if (v !== null) return v;
     }
     return null;

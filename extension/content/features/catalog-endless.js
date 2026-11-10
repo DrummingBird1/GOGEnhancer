@@ -40,6 +40,8 @@
   /**
    * @typedef {Object} Session
    * @property {string} key  pathname+search the session belongs to
+   * @property {string} sig  the first games on screen when it started: the list it continues
+   * @property {Set<string>} seen slugs already appended
    * @property {URLSearchParams} base
    * @property {boolean} trusted the query came from the page's own request
    * @property {boolean} calibrated
@@ -95,6 +97,15 @@
     };
   }
 
+  /**
+   * Which list is on screen right now: its first games. A sort, filter or
+   * page-number click inside the page changes this without changing the URL
+   * the session was started for.
+   */
+  function signature() {
+    return Dom.catalogTiles().slice(0, 12).map((t) => t.slug).join("|");
+  }
+
   /** @param {HTMLElement} grid @param {string} key */
   function start(grid, key) {
     const API = window.GOGPlusGogApi;
@@ -121,11 +132,12 @@
     const list = el("div", "gog-plus-endless-grid");
     const status = el("div", "gog-plus-endless-status");
     status.setAttribute("role", "status");
+    status.tabIndex = -1; // so focus can land here when a button inside it goes away
     box.append(list, status);
     grid.parentElement?.insertBefore(box, grid.nextSibling);
 
     session = {
-      key, base, trusted, calibrated: trusted, current, next: current + 1, appended: 0,
+      key, sig: signature(), seen: new Set(), base, trusted, calibrated: trusted, current, next: current + 1, appended: 0,
       loading: false, done: false, box, list, status, io: null,
     };
     watch();
@@ -158,8 +170,28 @@
     s.status.appendChild(b);
   }
 
-  /** @param {boolean} [byUser] pressed the button — go past the automatic limit */
-  async function loadNext(byUser = false) {
+  /**
+   * The games of a fetched page that are not already on screen (GOG's order
+   * drifts between the cached first page and a fresh API page, so a game can
+   * come round again) or appended earlier.
+   * @param {Session} s @param {Item[]} items
+   */
+  function freshOnly(s, items) {
+    const onScreen = new Set(Dom.catalogTiles().map((t) => t.slug));
+    const out = [];
+    for (const it of items) {
+      if (!it?.slug || onScreen.has(it.slug) || s.seen.has(it.slug)) continue;
+      s.seen.add(it.slug);
+      out.push(it);
+    }
+    return out;
+  }
+
+  /**
+   * @param {boolean} [byUser] pressed the button — go past the automatic limit
+   * @param {number} [hops] pages in a row that held nothing new
+   */
+  async function loadNext(byUser = false, hops = 0) {
     const s = session;
     if (!s || s.loading || s.done) return;
     if (!byUser && s.appended >= AUTO_PAGES && s.appended % AUTO_PAGES === 0) {
@@ -169,10 +201,13 @@
     }
     const API = window.GOGPlusGogApi;
     s.loading = true;
+    const hadFocus = s.status.contains(document.activeElement);
     s.status.replaceChildren(document.createTextNode("Loading more games…"));
+    if (hadFocus) s.status.focus({ preventScroll: true });
     try {
       if (!s.calibrated) {
         const mine = await API.fetchCatalogPage(API.pageUrl(s.base, s.current, env()));
+        if (session !== s) return; // the list changed while we waited
         const onScreen = Dom.catalogTiles().map((t) => t.slug);
         const theirs = (mine?.items || []).map((i) => i.slug);
         if (!mine || !API.sameList(onScreen, theirs)) {
@@ -189,12 +224,14 @@
         s.calibrated = true;
       }
       const res = await API.fetchCatalogPage(API.pageUrl(s.base, s.next, env()));
+      if (session !== s) return;
       if (!res) throw new Error("no answer from the catalog API");
       if (!res.items.length) {
         finish(s);
         return;
       }
-      render(s, res.items, s.next);
+      const fresh = freshOnly(s, res.items);
+      if (fresh.length) render(s, fresh, s.next);
       s.next++;
       s.appended++;
       if (res.pages && s.next > res.pages) {
@@ -202,8 +239,15 @@
         return;
       }
       s.status.textContent = "";
+      // A page of nothing but games already shown: go straight on to the next.
+      if (!fresh.length && hops < 3) {
+        s.loading = false;
+        await loadNext(byUser, hops + 1);
+        return;
+      }
       watch();
     } catch (err) {
+      if (session !== s) return;
       s.status.replaceChildren();
       s.status.appendChild(document.createTextNode("Couldn't load more games. "));
       const retry = /** @type {HTMLButtonElement} */ (el("button", "gog-plus-bar-btn", "Try again"));
@@ -316,7 +360,10 @@
     const grid = Dom.catalogGrid();
     if (!grid || !grid.parentElement) return;
     const key = `${location.pathname}${location.search}`;
-    if (session && session.key !== key) reset();
+    // Same URL but a different list on screen (the page's own sort, filter or
+    // page-number click, or back/forward): what we would append belongs to the
+    // old list, so start over from what is shown now.
+    if (session && (session.key !== key || (session.sig && session.sig !== signature() && Dom.catalogTiles().length >= 4))) reset();
     if (!session) {
       // Needs a real list on screen to continue.
       if (Dom.catalogTiles().length < 4) return;

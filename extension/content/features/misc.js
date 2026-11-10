@@ -13,7 +13,15 @@
   /* ============== hide expired sales ============== */
 
   function hideExpiredSales(root = document) {
-    if (!state.settings.hideExpiredSales) return;
+    if (!state.settings.hideExpiredSales) {
+      // Switched off at runtime: give the sale links back.
+      document.querySelectorAll(".gog-plus-expired").forEach((el) => {
+        el.classList.remove("gog-plus-expired");
+        el.removeAttribute("title");
+      });
+      document.querySelectorAll(".gog-plus-promo-done").forEach((el) => el.classList.remove("gog-plus-promo-done"));
+      return;
+    }
     const candidates = root.querySelectorAll(
       'a[href*="/promo/"]:not(.gog-plus-promo-done)'
     );
@@ -24,7 +32,8 @@
       // or at a path boundary. Card text often mentions years for unrelated
       // reasons ("top games of 2024") and would false-flag live promos.
       const href = (el.getAttribute("href") || "").toLowerCase();
-      const yearMatch = href.match(/(?:^|[-_/])(20\d{2})(?:[-_/]|$)/);
+      // Both "/promo/summer-sale-2024" and the newer "/promo/20240620_summer_sale".
+      const yearMatch = href.match(/(?:^|[-_/])(20\d{2})(?:[01]\d[0-3]\d)?(?:[-_/]|$)/);
       if (yearMatch) {
         const y = parseInt(yearMatch[1], 10);
         if (y < currentYear) {
@@ -69,6 +78,13 @@
       window.GOGPlusStorage.set({ drmFreeBanner: false });
     });
     document.body.prepend(banner);
+    // The banner is pinned to the bottom edge; without room reserved for it the
+    // site's legal line and links sit underneath it.
+    const reserve = () => {
+      document.documentElement.style.setProperty("--gp-banner-h", `${banner.offsetHeight || 0}px`);
+    };
+    reserve();
+    window.addEventListener("resize", reserve);
   }
 
   /* ============== Hebrew + RTL ============== */
@@ -87,6 +103,8 @@
         if (parent.closest("script,style,code,pre,textarea,input"))
           return NodeFilter.FILTER_REJECT;
         if (parent.closest(".gog-plus-tooltip, .gog-plus-toasts"))
+          return NodeFilter.FILTER_REJECT;
+        if (window.GOGPlusGogDom?.isSiteElement && !window.GOGPlusGogDom.isSiteElement(parent))
           return NodeFilter.FILTER_REJECT;
         if (parent.classList.contains("gog-plus-translated")) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
