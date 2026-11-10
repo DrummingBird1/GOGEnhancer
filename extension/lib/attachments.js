@@ -166,7 +166,64 @@
     });
   }
 
+  /** @param {Blob} blob @returns {Promise<string>} */
+  async function blobToDataUrl(blob) {
+    const real = typeof blob.arrayBuffer === "function" ? blob : new Blob([blob], { type: blob.type });
+    const bytes = new Uint8Array(await real.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return `data:${blob.type || "image/jpeg"};base64,${btoa(bin)}`;
+  }
+
+  const IMAGE_URL_RE = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/;
+
+  /**
+   * Every stored image as plain data, for a backup file.
+   * @returns {Promise<Array<{slug: string, dataUrl: string}>>}
+   */
+  async function exportAll() {
+    const db = await openDb();
+    const rows = await new Promise((resolve, reject) => {
+      const req = db.transaction(STORE, "readonly").objectStore(STORE).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+    const out = [];
+    for (const r of /** @type {Array<{slug: string, blob: Blob}>} */ (rows)) {
+      if (r && r.blob) out.push({ slug: r.slug, dataUrl: await blobToDataUrl(r.blob) });
+    }
+    return out;
+  }
+
+  /**
+   * Restores images from a backup. Only well-formed slugs and image data URLs
+   * are accepted; anything else is skipped. Returns how many were stored.
+   * @param {unknown} list
+   * @returns {Promise<number>}
+   */
+  async function importAll(list) {
+    if (!Array.isArray(list)) return 0;
+    const isSlug = window.GOGPlusValidate?.isSlug || ((s) => typeof s === "string" && /^[a-z0-9_]{1,120}$/.test(s));
+    let n = 0;
+    for (const item of list.slice(0, 2000)) {
+      const m = item && typeof item.dataUrl === "string" ? IMAGE_URL_RE.exec(item.dataUrl) : null;
+      if (!m || !isSlug(item.slug)) continue;
+      try {
+        const bin = atob(m[2]);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        await saveAttachment(item.slug, new Blob([bytes], { type: m[1] }));
+        n++;
+      } catch (_) {
+        /* skip a damaged entry */
+      }
+    }
+    return n;
+  }
+
   const api = {
+    exportAll,
+    importAll,
     saveAttachment,
     saveAttachmentDownscaled,
     getAttachment,

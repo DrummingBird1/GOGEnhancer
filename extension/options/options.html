@@ -344,6 +344,7 @@
         <button id="importTagsCsv" class="ghost">Tags ← CSV</button>
         <input type="file" id="importTagsCsvFile" accept=".csv,text/csv" hidden />
         <button id="clearHistory" class="danger">Clear price history</button>
+        <button id="clearOldHistory" class="danger">Clear history not seen in a year</button>
         <button id="clearTags" class="danger">Clear tags &amp; notes</button>
         <button id="clearAll" class="danger">Reset everything</button>
       </div>
@@ -424,7 +425,7 @@
           <span class="dev-toggle-title">Backups to keep</span>
           <span class="dev-toggle-sub">Older ones are deleted from the folder. 1–60.</span>
         </div>
-        <input type="number" id="backupKeep" min="1" max="60" step="1" class="dev-num" disabled />
+        <input type="number" id="backupKeep" aria-label="Backups to keep" min="1" max="60" step="1" class="dev-num" disabled />
       </div>
       <div class="sync-conflicts" id="syncConflicts" hidden></div>
       <div class="card-actions wrap">
@@ -506,7 +507,7 @@
           </span>
         </div>
         <div class="dev-num-suffixed">
-          <input type="number" id="wishlistAlertPercent" min="1" max="90" step="1" class="dev-num" />
+          <input type="number" id="wishlistAlertPercent" aria-label="Wishlist alert threshold" min="1" max="90" step="1" class="dev-num" />
           <span class="dev-num-suffix">%</span>
         </div>
       </div>
@@ -519,7 +520,7 @@
             Range 10–500. Higher = richer sparkline, more storage usage.
           </span>
         </div>
-        <input type="number" id="historyMaxEntries" min="10" max="500" step="10" class="dev-num" />
+        <input type="number" id="historyMaxEntries" aria-label="Price history depth" min="10" max="500" step="10" class="dev-num" />
       </div>
 
       <div class="dev-row">
@@ -533,8 +534,8 @@
           </span>
         </div>
         <div class="dev-num-suffixed">
-          <input type="number" id="monthlyBudgetAmount" min="0" step="1" class="dev-num" />
-          <select id="monthlyBudgetCurrency" class="dev-select">
+          <input type="number" id="monthlyBudgetAmount" aria-label="Monthly spending budget" min="0" step="1" class="dev-num" />
+          <select id="monthlyBudgetCurrency" aria-label="Monthly spending budget" class="dev-select">
             <option value="ILS">₪ ILS</option>
             <option value="EUR">€ EUR</option>
             <option value="GBP">£ GBP</option>
@@ -613,6 +614,7 @@
   <script src="../lib/i18n-pages-options-messages.js"></script>
   <script src="../lib/storage.js"></script>
   <script src="../lib/validate.js"></script>
+  <script src="../lib/attachments.js"></script>
   <script src="../lib/net.js"></script>
   <script src="../lib/privacy-view.js"></script>
   <script src="../lib/migrations.js"></script>

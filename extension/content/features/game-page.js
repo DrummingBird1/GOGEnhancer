@@ -742,6 +742,7 @@
         <input type="number" id="gog-plus-alert-threshold" step="0.01" min="0"
           value="${alert && Number.isFinite(alert.threshold) ? Number(alert.threshold) : ""}" placeholder="9.99" />
         <button id="gog-plus-alert-save" type="button">Save</button>
+        <button id="gog-plus-alert-low" type="button" title="Alert me when the price falls 25% below the lowest I have seen">−25% of lowest</button>
         ${alert ? `<button id="gog-plus-alert-clear" type="button" class="gog-plus-alert-clear" title="Remove alert">×</button>` : ""}
       </div>
       <div class="gog-plus-alert-status${alert ? " is-active" : ""}">
@@ -772,6 +773,21 @@
         cur[slug] = { threshold: v, currency: alertCur, createdAt: Date.now() };
         await window.GOGPlusStorage.set({ priceAlerts: cur });
         refresh();
+      });
+      // One click: a threshold 25% under the lowest price seen so far (in the
+      // alert's currency), instead of typing a number.
+      wrap.querySelector("#gog-plus-alert-low")?.addEventListener("click", async () => {
+        const low = await window.GOGPlusPriceHistory.lowest(slug);
+        const rates = state.settings.rates || {};
+        const rateOf = (c) => (c === "USD" ? 1 : rates[c]);
+        const from = rateOf(low?.currency);
+        const to = rateOf(alertCur);
+        if (!low || !from || !to) {
+          window.GOGPlusToasts?.show("No recorded price to base an alert on yet", { variant: "muted" });
+          return;
+        }
+        input.value = ((low.price / from) * to * 0.75).toFixed(2);
+        saveBtn.click();
       });
       input.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
         if (e.key === "Enter") {
@@ -804,6 +820,8 @@
     `;
     return wrap;
   }
+
+  const NOTE_TEMPLATES = ["Play with friends", "Wait for a sale", "Check reviews first", "Gift idea"];
 
   async function renderTagsSection(slug) {
     const { tags = {}, notes = {}, tagColors = {}, gameStatus = {} } = await window.GOGPlusStorage.get({
@@ -844,6 +862,9 @@
         <button id="gog-plus-tag-add" type="button">Add</button>
       </div>
       <div id="gog-plus-tag-list" class="gog-plus-tag-list"></div>
+      <div class="gog-plus-note-templates" role="group" aria-label="Note templates">
+        ${NOTE_TEMPLATES.map((t) => `<button type="button" class="gog-plus-suggest-chip" data-tpl="${escapeHtml(t)}">+ ${escapeHtml(t)}</button>`).join("")}
+      </div>
       <textarea id="gog-plus-note" placeholder="Personal note…">${escapeHtml(note)}</textarea>
       <div id="gog-plus-note-history"></div>
       <button type="button" class="gog-plus-tag-dashboard-link" id="gog-plus-open-dashboard">
@@ -929,6 +950,14 @@
         await window.GOGPlusStorage.set({ notes: cur });
       };
       noteEl.addEventListener("input", debounce(saveNote, 400));
+      wrap.querySelector(".gog-plus-note-templates")?.addEventListener("click", (e) => {
+        const b = /** @type {HTMLElement} */ (e.target).closest("button[data-tpl]");
+        if (!b) return;
+        const line = b.getAttribute("data-tpl") || "";
+        noteEl.value = noteEl.value ? `${noteEl.value.replace(/\s+$/, "")}\n${line}` : line;
+        noteEl.focus();
+        noteEl.dispatchEvent(new Event("input", { bubbles: true }));
+      });
 
       // Earlier versions of this note (kept by the service worker — see
       // lib/note-history.js), with a one-click restore.

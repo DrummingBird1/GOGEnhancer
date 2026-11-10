@@ -434,6 +434,43 @@
     const links = window.GOGPlusLinks.openInLinks(title, slug);
     if (!links.length) return null;
     const wrap = sectionEl("Compare & look up", "links only — nothing is sent until you click");
+    const copyRow = el("div", "gog-plus-open-links");
+    /** @param {string} label @param {() => Promise<string> | string} make @param {string} done */
+    const copyBtn = (label, make, done) => {
+      const b = /** @type {HTMLButtonElement} */ (el("button", "gog-plus-itad-btn", label));
+      b.type = "button";
+      b.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(await make());
+          window.GOGPlusToasts?.show(done);
+        } catch (_) {
+          window.GOGPlusToasts?.show("Couldn't reach the clipboard", { variant: "muted" });
+        }
+      });
+      copyRow.appendChild(b);
+    };
+    const cleanUrl = () => `${location.origin}${location.pathname}`;
+    copyBtn("Copy clean link", cleanUrl, "Link copied");
+    copyBtn(
+      "Copy summary",
+      async () => {
+        const p = Dom.readGamePrices?.() || {};
+        const s = state.settings;
+        const fmt = (v) => (typeof v === "number" ? window.GOGPlusCurrencyFormat.formatPrice(v, p.currency || s.targetCurrency) : null);
+        const bits = [title];
+        if (p.final != null) {
+          const off = p.base && p.base > p.final ? ` (−${Math.round((1 - p.final / p.base) * 100)}%)` : "";
+          bits.push(`${fmt(p.final)}${off}`);
+        }
+        const low = await window.GOGPlusPriceHistory?.lowest?.(slug);
+        if (low && low.price) {
+          bits.push(`lowest seen ${window.GOGPlusCurrencyFormat.formatPrice(low.price, low.currency || p.currency)}`);
+        }
+        return `${bits.join(" — ")}\n${cleanUrl()}`;
+      },
+      "Summary copied"
+    );
+    wrap.appendChild(copyRow);
     const row = el("div", "gog-plus-open-links");
     for (const l of links) {
       const a = /** @type {HTMLAnchorElement} */ (el("a", "gog-plus-itad-btn", `${l.label} →`));

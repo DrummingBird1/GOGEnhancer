@@ -1558,6 +1558,8 @@ html.gog-plus-rtl [class*="price"] { unicode-bidi: isolate; }
   cursor: pointer;
 }
 .gog-plus-bar-btn:hover { border-color: var(--gp-cyan); }
+.gog-plus-wl-picked { outline: 3px solid var(--gp-cyan); outline-offset: 2px; }
+.gog-plus-note-templates { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 4px 0; }
 .gog-plus-bar-btn.is-on { background: color-mix(in srgb, var(--gp-cyan) 22%, transparent); border-color: var(--gp-cyan); }
 .gog-plus-bar-btn.is-primary { background: linear-gradient(135deg, var(--gp-magenta), var(--gp-cyan)); color: var(--gp-bg); border-color: transparent; font-weight: 700; }
 .gog-plus-bar-btn:disabled { opacity: 0.5; cursor: not-allowed; }

@@ -140,7 +140,22 @@ function followStorage() {
   });
 }
 
+/** The "text size" setting, which the game panel already honours, applies to the dashboard too. */
+async function applyTextSize() {
+  try {
+    const { uiScale } = await window.GOGPlusStorage.get({ uiScale: 1 });
+    const scale = Math.min(1.6, Math.max(0.8, Number(uiScale) || 1));
+    document.documentElement.style.zoom = scale === 1 ? "" : String(scale);
+  } catch (_) {
+    /* keep the default size */
+  }
+}
+
 async function init() {
+  await applyTextSize();
+  window.GOGPlusStorage.onChange(({ key }) => {
+    if (key === "uiScale") applyTextSize();
+  });
   await loadData();
   await renderAll();
   bind();

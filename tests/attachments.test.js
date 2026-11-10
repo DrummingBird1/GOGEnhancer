@@ -192,3 +192,23 @@ describe("lib/attachments.js", () => {
     });
   });
 });
+
+describe("backup round trip", () => {
+  it("exports stored images as data URLs and restores them, skipping malformed entries", async () => {
+    await Attachments.saveAttachment("game_a", new Blob(["abc"], { type: "image/jpeg" }));
+    const out = await Attachments.exportAll();
+    const mine = out.find((x) => x.slug === "game_a");
+    expect(mine.dataUrl).toMatch(/^data:image\/jpeg;base64,/);
+    await Attachments.deleteAttachment("game_a");
+    const n = await Attachments.importAll([
+      mine,
+      { slug: "Bad Slug!", dataUrl: mine.dataUrl },
+      { slug: "game_b", dataUrl: "data:text/html;base64,PHNjcmlwdD4=" },
+      null,
+    ]);
+    expect(n).toBe(1);
+    expect(await Attachments.getAttachment("game_a")).toBeDefined();
+    expect(await Attachments.getAttachment("game_b")).toBeUndefined();
+    await Attachments.deleteAttachment("game_a");
+  });
+});

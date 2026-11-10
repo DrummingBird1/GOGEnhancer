@@ -469,6 +469,23 @@
       exp.appendChild(b);
     }
     row.appendChild(exp);
+
+    // Can't decide? Pick one at random from the games on sale that aren't owned.
+    const pick = /** @type {HTMLButtonElement} */ (el("button", "gog-plus-bar-btn", "🎲 Pick one on sale"));
+    pick.type = "button";
+    pick.addEventListener("click", () => {
+      const pool = wishlistCards().filter((c) => c.real && c.model && c.model.discountPct > 0 && !c.model.owned && /** @type {HTMLElement} */ (c.el).offsetParent !== null);
+      if (!pool.length) {
+        window.GOGPlusToasts?.show("Nothing on sale in this list right now", { variant: "muted" });
+        return;
+      }
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      chosen.el.scrollIntoView?.({ block: "center", behavior: "smooth" });
+      chosen.el.classList.add("gog-plus-wl-picked");
+      setTimeout(() => chosen.el.classList.remove("gog-plus-wl-picked"), 3000);
+      window.GOGPlusToasts?.show(`How about: ${chosen.model.title || chosen.slug}`);
+    });
+    row.appendChild(pick);
     return row;
   }
 

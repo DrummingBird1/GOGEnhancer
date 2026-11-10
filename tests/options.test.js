@@ -71,6 +71,7 @@ function fixtureHtml() {
         <button id="importTagsCsv">import csv</button>
         <input type="file" id="importTagsCsvFile" hidden>
         <button id="clearHistory">clear history</button>
+        <button id="clearOldHistory">clear old history</button>
         <button id="clearTags">clear tags</button>
         <button id="clearAll">reset everything</button>
       </div>
@@ -738,6 +739,21 @@ describe("danger zone", () => {
     await new Promise((r) => setTimeout(r, 0));
     const s = await new Promise((r) => chrome.storage.local.get(["priceHistory"], r));
     expect(s.priceHistory).toEqual({});
+  });
+
+  it("clearOldHistory removes only games not seen for a year", async () => {
+    const recent = new Date().toISOString().slice(0, 10);
+    await new Promise((r) =>
+      chrome.storage.local.set(
+        { priceHistory: { old: [{ d: "2020-01-01", p: 1, c: "USD" }], fresh: [{ d: "2020-01-01", l: recent, p: 1, c: "USD" }] } },
+        r
+      )
+    );
+    await bootOptions();
+    document.getElementById("clearOldHistory").click();
+    await new Promise((r) => setTimeout(r, 0));
+    const s = await new Promise((r) => chrome.storage.local.get(["priceHistory"], r));
+    expect(Object.keys(s.priceHistory)).toEqual(["fresh"]);
   });
 
   it("clearHistory does nothing when the confirmation is declined", async () => {

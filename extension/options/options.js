@@ -401,10 +401,20 @@ function bind() {
   });
 
   // Export everything
+  // The note images live in IndexedDB, not in chrome.storage: add them as data.
+  const readImages = async () => {
+    try {
+      return (await window.GOGPlusAttachments?.exportAll()) || [];
+    } catch (_) {
+      return [];
+    }
+  };
+
   $("exportAll").addEventListener("click", async () => {
     const { sync, local } = await readAreas();
+    const noteImages = await readImages();
     const blob = new Blob(
-      [JSON.stringify({ exportedAt: new Date().toISOString(), version: 2, sync, local }, null, 2)],
+      [JSON.stringify({ exportedAt: new Date().toISOString(), version: 2, sync, local, noteImages }, null, 2)],
       { type: "application/json" }
     );
     const url = URL.createObjectURL(blob);
@@ -432,7 +442,8 @@ function bind() {
       return;
     }
     const { sync, local } = await readAreas();
-    const plaintext = JSON.stringify({ exportedAt: new Date().toISOString(), version: 2, sync, local });
+    const noteImages = await readImages();
+    const plaintext = JSON.stringify({ exportedAt: new Date().toISOString(), version: 2, sync, local, noteImages });
     const envelope = await encryptBackup(plaintext, password);
     // Prove the file can be opened with that password before offering it.
     try {
@@ -479,6 +490,7 @@ function bind() {
       const defaults = window.GOG_PLUS_DEFAULTS;
       const cleanSync = window.GOGPlusValidate.sanitizeStorage(data.sync || {}, defaults);
       const cleanLocal = window.GOGPlusValidate.sanitizeStorage(data.local || {}, defaults);
+      const incomingImages = Array.isArray(data.noteImages) ? data.noteImages : [];
       data = { sync: cleanSync.clean, local: cleanLocal.clean };
       const skippedKeys = [...cleanSync.skipped, ...cleanLocal.skipped];
       if (!confirm(tx("Import will OVERWRITE current settings. Continue?"))) return;
@@ -498,6 +510,7 @@ function bind() {
       // pre-v2 export where tags/notes still lived in sync) — run the same
       // migration pass an upgrade would, instead of loading the old shape as-is.
       await window.GOGPlusMigrations.run();
+      if (incomingImages.length) await window.GOGPlusAttachments?.importAll(incomingImages);
       flashSaved();
       load();
       alert(skippedKeys.length ? tx("Imported successfully.") + " (" + skippedKeys.length + " " + tx("unrecognised items were skipped.") + ")" : tx("Imported successfully."));
@@ -617,6 +630,25 @@ function bind() {
   $("clearHistory").addEventListener("click", async () => {
     if (!confirm(tx("Clear ALL price history? This cannot be undone."))) return;
     await window.GOGPlusStorage.set({ priceHistory: {} });
+    flashSaved();
+    load();
+  });
+  // Only the games whose price has not been seen for a year; the rest stays.
+  $("clearOldHistory").addEventListener("click", async () => {
+    const { priceHistory = {} } = await window.GOGPlusStorage.get({ priceHistory: {} });
+    const cutoff = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
+    const stale = Object.keys(priceHistory).filter((slug) => {
+      const list = priceHistory[slug];
+      const last = Array.isArray(list) && list.length ? list[list.length - 1] : null;
+      return !last || String(last.l || last.d || "") < cutoff;
+    });
+    if (!stale.length) {
+      alert(tx("Nothing older than a year was found."));
+      return;
+    }
+    if (!confirm(tx("Delete the price history of games not seen for a year? This cannot be undone.") + ` (${stale.length})`)) return;
+    for (const slug of stale) delete priceHistory[slug];
+    await window.GOGPlusStorage.set({ priceHistory });
     flashSaved();
     load();
   });
