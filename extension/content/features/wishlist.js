@@ -125,7 +125,15 @@
   function ensureWishlistFilters() {
     if (!state.settings.wishlistFilters) return;
     if (!location.pathname.includes("/account/wishlist")) return;
-    if (document.getElementById("gog-plus-wlfilters")) return;
+    const existing = document.getElementById("gog-plus-wlfilters");
+    if (existing) {
+      // A bar that was mounted before the real list had rendered can sit in a
+      // hidden container: move it by rebuilding it where the rows are.
+      const root = Dom.wishlistRoot();
+      if (!root || existing.parentElement === root) return;
+      keepFilter();
+      existing.remove();
+    }
     if (!keepFilterOnce) activeQuickFilter = "all";
     keepFilterOnce = false;
     if (barObserver) {

@@ -431,8 +431,14 @@
   function wishlistRoot() {
     // The legacy account page's own list container is the right place for the
     // filter bar; <main> is only a fallback for other layouts.
+    // The page can hold more than one such container (an empty hidden one next
+    // to the one that really lists the rows — seen on a real logged-in
+    // account): the bar belongs in the one that shows the rows.
+    const lists = Array.from(document.querySelectorAll(".account__products"));
     return (
-      document.querySelector(".account__products") ||
+      lists.find((l) => isRendered(l) && l.querySelector(".product-row--wishlist")) ||
+      lists.find(isRendered) ||
+      lists[0] ||
       visibleMains()[0] ||
       document.querySelector("[class*='wishlist']")
     );

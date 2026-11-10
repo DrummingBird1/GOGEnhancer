@@ -230,6 +230,11 @@ describe("app shell lookups", () => {
     expect(Dom.spaRoot().id).toBe("r");
   });
 
+  it("wishlistRoot picks the list that holds the rows when an empty one comes first", () => {
+    document.body.innerHTML = `<div class="account__products" id="empty"></div><div class="account__products" id="real"><div class="product-row--wishlist"></div></div>`;
+    expect(Dom.wishlistRoot().id).toBe("real");
+  });
+
   it("wishlistRoot finds main or a wishlist-classed container", () => {
     expect(Dom.wishlistRoot()).toBeNull();
     document.body.innerHTML = `<div class="my-wishlist" id="w"></div>`;
