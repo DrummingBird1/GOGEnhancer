@@ -176,9 +176,9 @@
       const onSale = e.p <= ref * 0.85;
       if (onSale) {
         const depth = round(((ref - e.p) / ref) * 100);
-        if (!run) run = { start: e.d, end: e.d, minPrice: e.p, depthPct: depth };
+        if (!run) run = { start: e.d, end: e.l || e.d, minPrice: e.p, depthPct: depth };
         else {
-          run.end = e.d;
+          run.end = e.l || e.d;
           run.minPrice = Math.min(run.minPrice, e.p);
           run.depthPct = Math.max(run.depthPct, depth);
         }

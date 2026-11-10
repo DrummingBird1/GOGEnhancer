@@ -59,7 +59,7 @@
       goal: 10,
       measure: (d, m) => {
         const days = new Set();
-        for (const list of Object.values(d.priceHistory || {})) for (const e of list || []) if (inMonth(e?.d, m)) days.add(e.d);
+        for (const list of Object.values(d.priceHistory || {})) for (const e of list || []) for (const day of [e?.d, e?.l]) if (inMonth(day, m)) days.add(day);
         return days.size;
       },
     },

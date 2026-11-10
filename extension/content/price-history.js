@@ -45,8 +45,10 @@
     let size = JSON.stringify(history).length;
     if (size <= TOTAL_BUDGET_BYTES) return;
     const slugs = Object.keys(history).sort((a, b) => {
-      const da = history[a][history[a].length - 1]?.d || "";
-      const db = history[b][history[b].length - 1]?.d || "";
+      const ea = history[a][history[a].length - 1];
+      const eb = history[b][history[b].length - 1];
+      const da = ea?.l || ea?.d || "";
+      const db = eb?.l || eb?.d || "";
       return da.localeCompare(db);
     });
     for (const slug of slugs) {
@@ -92,20 +94,26 @@
     history[slug] = history[slug] || [];
 
     const last = history[slug][history[slug].length - 1];
-    const today = new Date().toISOString().slice(0, 10);
+    // The LOCAL calendar day (not UTC), like the streak and the monthly goals.
+    const n = new Date();
+    const today = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
 
+    // `d` is the day this price was FIRST seen (the date of the event: a drop, a
+    // new low). `l` is the day it was last seen again — bumping `d` on every
+    // revisit made every digest and monthly challenge see "events" that were
+    // only visits.
     // Skip if we already recorded the same price today (but remember a list
     // price we hadn't captured yet)
-    if (last && last.d === today && last.p === price && last.c === currency) {
+    if (last && (last.l || last.d) === today && last.p === price && last.c === currency) {
       if (list !== undefined && last.b === undefined) {
         last.b = list;
         await save(history);
       }
       return;
     }
-    // Skip if same price as last entry, just update timestamp
+    // Skip if same price as last entry, just update the last-seen day
     if (last && last.p === price && last.c === currency) {
-      last.d = today;
+      if (last.d !== today) last.l = today;
       if (list !== undefined) last.b = list;
     } else {
       history[slug].push({ d: today, p: price, c: currency, ...(list !== undefined ? { b: list } : {}) });

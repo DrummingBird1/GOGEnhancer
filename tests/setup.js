@@ -100,6 +100,7 @@ globalThis.chrome = {
   },
   alarms: {
     create: vi.fn(),
+    get: vi.fn(async () => undefined),
     onAlarm: { addListener: (fn) => alarmListeners.push(fn) },
   },
   action: {

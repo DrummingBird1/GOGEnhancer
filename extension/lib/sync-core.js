@@ -149,6 +149,31 @@
     return l;
   }
 
+  const MAX_SKEW_MS = 5 * 60 * 1000;
+
+  /** @param {Side} side @param {number} now @returns {Side} */
+  function clampSide(side, now) {
+    if (side.kind === "none") return side;
+    return side.t > now + MAX_SKEW_MS ? { ...side, t: now + MAX_SKEW_MS } : side;
+  }
+
+  /**
+   * Two different values for a record neither device ever stamped: keep
+   * everything. Lists are united, two notes are both kept, otherwise the longer wins.
+   * @param {any} a @param {any} b
+   */
+  function mergeUnstamped(a, b) {
+    if (Array.isArray(a) && Array.isArray(b)) return [...new Set([...a, ...b])];
+    if (typeof a === "string" && typeof b === "string") {
+      if (a.includes(b)) return a;
+      if (b.includes(a)) return b;
+      return `${a}
+---
+${b}`;
+    }
+    return JSON.stringify(a).length >= JSON.stringify(b).length ? a : b;
+  }
+
   /** @param {SyncMeta} meta @param {string} key @returns {string[]} */
   function idsInMeta(meta, key) {
     const prefix = `${key}:`;
@@ -199,12 +224,21 @@
       ]);
       for (const id of ids) {
         const mid = metaId(key, id);
-        const ls = sideOf(id in lv, lv[id], local.meta[mid]);
-        const rs = sideOf(id in rv, rv[id], remote.meta[mid]);
-        const w = resolve(ls, rs);
+        // A device whose clock runs ahead must not be able to win every
+        // conflict forever: no stamp counts as later than "now" plus a little skew.
+        const ls = clampSide(sideOf(id in lv, lv[id], local.meta[mid]), now);
+        const rs = clampSide(sideOf(id in rv, rv[id], remote.meta[mid]), now);
+        // Records neither side ever stamped (data from before folder sync existed)
+        // cannot be ordered: merge them instead of letting string order pick one.
+        const bothUnstamped =
+          ls.kind === "value" && rs.kind === "value" && ls.t === 0 && rs.t === 0 && !same(ls.v, rs.v);
+        const w = bothUnstamped ? { kind: "value", t: 0, v: mergeUnstamped(ls.v, rs.v) } : resolve(ls, rs);
+        if (bothUnstamped) {
+          conflicts.push({ key, id, local: ls.v, remote: rs.v, kept: "local" });
+        }
         if (w.kind === "value") out[id] = w.v;
         record(mid, w);
-        if (baseMeta && ls.kind !== "none" && rs.kind !== "none") {
+        if (!bothUnstamped && baseMeta && ls.kind !== "none" && rs.kind !== "none") {
           const baseT = baseMeta[mid]?.t ?? 0;
           const differ = ls.kind !== rs.kind || (ls.kind === "value" && rs.kind === "value" && !same(ls.v, rs.v));
           if (differ && ls.t > baseT && rs.t > baseT) {

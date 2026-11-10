@@ -100,13 +100,20 @@ describe("one-a-day mode", () => {
 
   it("the hourly check leaves a daily-mode queue alone", async () => {
     await setSync({ desktopNotifications: true, notifyMode: "daily" });
-    await setLocal({ notifyQueue: [{ id: "x", kind: "sale", title: "T", message: "M", t: 1 }] });
+    await setLocal({ notifyQueue: [{ id: "x", kind: "sale", title: "T", message: "M", t: Date.now() - 3600e3 }] });
     fireAlarm("gog-plus-flush");
     await settle();
     expect(created()).toHaveLength(0);
     expect((await getLocal(["notifyQueue"])).notifyQueue).toHaveLength(1);
     expect(await fireMessage({ type: "force-flush" })).toEqual({ ok: true });
     expect(created()).toHaveLength(1);
+  });
+
+  it("releases a daily-mode queue that quiet hours held past its day", async () => {
+    await setSync({ desktopNotifications: true, notifyMode: "daily" });
+    await setLocal({ notifyQueue: [{ id: "x", kind: "sale", title: "T", message: "M", t: Date.now() - 30 * 3600e3 }] });
+    fireAlarm("gog-plus-flush");
+    await vi.waitFor(() => expect(created()).toHaveLength(1));
   });
 
   it("drops a queue nobody is listening for any more", async () => {

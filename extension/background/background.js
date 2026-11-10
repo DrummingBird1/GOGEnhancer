@@ -258,6 +258,8 @@ async function fireNotification(id, title, message, contextMessage) {
  * if they enabled one, gets the same text the desktop notification shows. */
 
 const NOTIFY_KEYS = [
+  "targetCurrency",
+  "rates",
   "desktopNotifications",
   "webhookEnabled",
   "webhookUrl",
@@ -312,6 +314,28 @@ async function deliver(s, id, title, message, context) {
 }
 
 /**
+ * The "only prices up to" setting is written in the user's target currency, so
+ * an item priced in another one is converted before it is compared. Without a
+ * usable rate the item is left as is, and the price filter is skipped for it
+ * rather than comparing numbers of different currencies.
+ * @param {any} item
+ * @param {{ targetCurrency?: string, rates?: Record<string, number> }} s
+ */
+function inTargetCurrency(item, s) {
+  if (item.price === undefined || !item.currency) return item;
+  const target = s.targetCurrency && s.targetCurrency !== "none" ? s.targetCurrency : item.currency;
+  if (item.currency === target) return item;
+  const rates = s.rates || {};
+  const from = item.currency === "USD" ? 1 : rates[item.currency];
+  const to = target === "USD" ? 1 : rates[target];
+  if (!from || !to) {
+    const { price: _drop, ...rest } = item;
+    return rest;
+  }
+  return { ...item, price: (item.price / from) * to, currency: target };
+}
+
+/**
  * Routes a notification through the user's rules.
  * @param {{ id: string, kind: string, title: string, message: string, context?: string,
  *   dropPct?: number, price?: number, currency?: string, atLow?: boolean }} item
@@ -321,7 +345,7 @@ async function emit(item) {
   const Policy = self.GOGPlusNotifyPolicy;
   const s = await self.GOGPlusStorage.get(NOTIFY_KEYS);
   if (!wantsNotifications(s)) return false;
-  if (!Policy.passesThresholds(item, s)) return false;
+  if (!Policy.passesThresholds(inTargetCurrency(item, s), s)) return false;
   if (Policy.deliveryFor(new Date(), s) === "queue") {
     await self.GOGPlusStorage.set({
       notifyQueue: Policy.enqueue(s.notifyQueue || [], { ...item, t: Date.now() }),
@@ -346,7 +370,13 @@ async function flushQueue({ force = false } = {}) {
     await self.GOGPlusStorage.set({ notifyQueue: [] });
     return;
   }
-  if (!force && s.notifyMode === "daily") return;
+  if (!force && s.notifyMode === "daily") {
+    // The daily job is the normal release. If it ran during quiet hours it
+    // released nothing, and without this the queue would wait for the next
+    // day's run: release it as soon as quiet hours end and it is a day old.
+    const oldest = Math.min(...queue.map((q) => q.t || Date.now()));
+    if (Date.now() - oldest < 20 * 3600 * 1000) return;
+  }
   if (!Policy.shouldFlush(new Date(), s, queue.length)) return;
   const sum = Policy.summarize(queue);
   if (!sum) return;
@@ -788,32 +818,37 @@ async function maybeNotifyWishlistJump(prevCount, newCount) {
 
 /* ---------------- lifecycle ---------------- */
 
+/**
+ * Every scheduled job. Alarms are not guaranteed to survive a browser restart
+ * or an update, and they were only ever created on install: a job could stop
+ * for good. This list is checked on every worker start, creating only what is
+ * missing (so a normal start does not reset anyone's schedule).
+ */
+const ALARM_DEFS = [
+  [FX_ALARM, FX_INTERVAL_MIN, 5000],
+  [MODS_ALARM, MODS_INTERVAL_MIN, 30000],
+  [WL_ALARM, WL_INTERVAL_MIN, 60000],
+  [DAILY_ALARM, DAILY_INTERVAL_MIN, 90000],
+  [DIGEST_ALARM, DIGEST_INTERVAL_MIN, 120000],
+  [FLUSH_ALARM, FLUSH_INTERVAL_MIN, 150000],
+  [AUTOSYNC_ALARM, AUTOSYNC_INTERVAL_MIN, 180000],
+];
+
+async function ensureAlarms() {
+  for (const [name, periodInMinutes, delay] of ALARM_DEFS) {
+    try {
+      const existing = await chrome.alarms.get(name);
+      if (!existing) chrome.alarms.create(name, { periodInMinutes, when: Date.now() + delay });
+    } catch (e) {
+      console.warn("[GOG+ bg] could not check alarm", name, e);
+    }
+  }
+}
+
 chrome.runtime.onInstalled.addListener(async (details) => {
   await self.GOGPlusMigrations.run();
   await ensureDefaults();
-
-  chrome.alarms.create(FX_ALARM, {
-    periodInMinutes: FX_INTERVAL_MIN,
-    when: Date.now() + 5000,
-  });
-  chrome.alarms.create(MODS_ALARM, {
-    periodInMinutes: MODS_INTERVAL_MIN,
-    when: Date.now() + 30000,
-  });
-  chrome.alarms.create(WL_ALARM, {
-    periodInMinutes: WL_INTERVAL_MIN,
-    when: Date.now() + 60000,
-  });
-  chrome.alarms.create(DAILY_ALARM, {
-    periodInMinutes: DAILY_INTERVAL_MIN,
-    when: Date.now() + 90000,
-  });
-  chrome.alarms.create(DIGEST_ALARM, {
-    periodInMinutes: DIGEST_INTERVAL_MIN,
-    when: Date.now() + 120000,
-  });
-  chrome.alarms.create(FLUSH_ALARM, { periodInMinutes: FLUSH_INTERVAL_MIN, when: Date.now() + 150000 });
-  chrome.alarms.create(AUTOSYNC_ALARM, { periodInMinutes: AUTOSYNC_INTERVAL_MIN, when: Date.now() + 180000 });
+  await ensureAlarms();
 
   if (details.reason === "install") {
     chrome.tabs.create({
@@ -832,7 +867,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
 chrome.runtime.onStartup.addListener(async () => {
   await ensureDefaults();
+  await ensureAlarms();
 });
+
+// A worker that was stopped and restarted by the browser (neither an install
+// nor a browser start) also gets here: make sure nothing is missing.
+ensureAlarms();
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === FX_ALARM) fetchLiveRates();
