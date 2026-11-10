@@ -11,7 +11,7 @@
   --border-strong: rgba(244, 234, 255, 0.22);
   --text-primary: #f4eaff;
   --text-secondary: rgba(244, 234, 255, 0.72);
-  --text-tertiary: rgba(244, 234, 255, 0.44);
+  --text-tertiary: rgba(244, 234, 255, 0.60);
   --accent-magenta: #c64fff;
   --accent-cyan: #00f0ff;
   --accent-green: #7fffa6;
@@ -48,13 +48,15 @@ html.gog-plus-theme--light {
   --bg-elevated: #f3eeff;
   --text-primary: #1a0a2a;
   --text-secondary: rgba(26, 10, 42, 0.72);
-  --text-tertiary: rgba(26, 10, 42, 0.50);
+  --text-tertiary: rgba(26, 10, 42, 0.64);
   --border: rgba(26, 10, 42, 0.10);
   --border-strong: rgba(26, 10, 42, 0.22);
+  /* Text-safe accents (4.5:1 or better on the light backgrounds). */
   --accent-magenta: #7a1fc7;
-  --accent-cyan: #00a8b8;
-  --accent-green: #1fa05c;
-  --accent-pink: #d63a82;
+  --accent-cyan: #00717e;
+  --accent-green: #137a42;
+  --accent-pink: #b3236a;
+  --danger: #b3236a;
 }
 html.gog-plus-theme--amoled {
   --bg-base: #000000;
@@ -290,6 +292,7 @@ a:hover { border-bottom-color: var(--accent-cyan); }
   max-width: 60ch;
 }
 .card.subtle { background: rgba(20, 9, 42, 0.5); }
+html.gog-plus-theme--light .card.subtle { background: var(--bg-elevated); }
 .card.subtle h2 { font-size: 16px; }
 
 /* Region presets */

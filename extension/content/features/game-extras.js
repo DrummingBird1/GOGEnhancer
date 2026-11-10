@@ -69,11 +69,38 @@
       return true;
     };
     paint();
-    // One tick a minute while the panel is on screen; stops when it's gone.
-    const timer = setInterval(() => {
-      if (!p.isConnected || !paint()) clearInterval(timer);
-    }, 60 * 1000);
+    trackTimer(p, paint);
     return p;
+  }
+
+  /**
+   * Countdown rows that are on screen, repainted by ONE shared timer once a
+   * minute. A row whose panel was rebuilt is dropped the moment the next one is
+   * made (a per-row timer kept every old panel alive until its next tick).
+   * @type {Set<{ p: HTMLElement, paint: () => boolean }>}
+   */
+  const liveTimers = new Set();
+  /** @type {ReturnType<typeof setInterval> | null} */
+  let timerHandle = null;
+  /** Test hook: forget every countdown and the shared timer. */
+  function stopTimers() {
+    liveTimers.clear();
+    if (timerHandle) clearInterval(timerHandle);
+    timerHandle = null;
+  }
+
+  /** @param {HTMLElement} p @param {() => boolean} paint */
+  function trackTimer(p, paint) {
+    for (const t of liveTimers) if (!t.p.isConnected) liveTimers.delete(t);
+    liveTimers.add({ p, paint });
+    if (timerHandle) return;
+    timerHandle = setInterval(() => {
+      for (const t of liveTimers) if (!t.p.isConnected || !t.paint()) liveTimers.delete(t);
+      if (!liveTimers.size && timerHandle) {
+        clearInterval(timerHandle);
+        timerHandle = null;
+      }
+    }, 60 * 1000);
   }
 
   /**
@@ -488,6 +515,6 @@
     renderFactsSection,
     renderLibrarySection,
     renderLinksSection,
-    _internals: { timerRow, realDiscountRows, pricePerHourRow, currencyTable, forecastRow, languageRow, ratingRow, changesRow },
+    _internals: { stopTimers, timerRow, realDiscountRows, pricePerHourRow, currencyTable, forecastRow, languageRow, ratingRow, changesRow },
   };
 })();

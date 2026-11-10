@@ -75,6 +75,7 @@ describe("Deal check", () => {
   });
 
   it("stops the countdown's interval once the panel is gone", () => {
+    X()._internals.stopTimers(); // an earlier test may have started the shared timer under real timers
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-06T12:00:00Z"));
     const clear = vi.spyOn(globalThis, "clearInterval");

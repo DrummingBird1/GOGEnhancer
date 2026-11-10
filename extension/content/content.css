@@ -26,7 +26,7 @@ html.gog-plus-disabled .gog-plus-toasts {
   --gp-surface: #14092a;
   --gp-text: #f4eaff;
   --gp-text-dim: rgba(244, 234, 255, 0.65);
-  --gp-text-muted: rgba(244, 234, 255, 0.40);
+  --gp-text-muted: rgba(244, 234, 255, 0.56);
   --gp-border: rgba(244, 234, 255, 0.12);
   --gp-border-strong: rgba(244, 234, 255, 0.25);
   --gp-gold: #ffd36b;
@@ -66,15 +66,18 @@ html.gog-plus-theme--light {
   --gp-bg: #f8f5ff;
   --gp-surface: #ffffff;
   --gp-text: #1a0a2a;
-  --gp-text-dim: rgba(26, 10, 42, 0.65);
-  --gp-text-muted: rgba(26, 10, 42, 0.45);
+  --gp-text-dim: rgba(26, 10, 42, 0.72);
+  --gp-text-muted: rgba(26, 10, 42, 0.64);
   --gp-border: rgba(26, 10, 42, 0.12);
   --gp-border-strong: rgba(26, 10, 42, 0.28);
   --gp-magenta: #7a1fc7;
-  --gp-cyan: #00a8b8;
-  --gp-green: #1fa05c;
-  --gp-pink: #d63a82;
+  --gp-cyan: #00717e;
+  --gp-green: #137a42;
+  --gp-pink: #b3236a;
+  --gp-gold: #7a5a00;
+  --gp-amber: #8a5a00;
 }
+html.gog-plus-theme--light .gog-plus-status-btn.active { color: var(--gp-text); }
 /* AMOLED — true black surfaces (no glow from the panel on OLED screens). */
 html.gog-plus-theme--amoled {
   --gp-bg: #000000;
@@ -1912,3 +1915,18 @@ html:has(#gog-plus-banner) body {
 .gog-plus-keyhelp dt { margin: 0; }
 .gog-plus-keyhelp dd { margin: 0; font-size: 13px; }
 .gog-plus-keyhelp kbd { border: 1px solid currentColor; border-radius: 4px; padding: 1px 6px; font-family: var(--gp-mono, monospace); font-size: 12px; }
+
+/* Light theme: the bars and the panel sit on the site's (usually dark) page, so
+   they carry their own light surface instead of a translucent dark one — dark
+   text on a dark page was unreadable. */
+html.gog-plus-theme--light .gog-plus-gamepanel,
+html.gog-plus-theme--light .gog-plus-catbar,
+html.gog-plus-theme--light .gog-plus-reviewbar,
+html.gog-plus-theme--light .gog-plus-wlfilters,
+html.gog-plus-theme--light .gog-plus-compare-tray,
+html.gog-plus-theme--light .gog-plus-quickadd-popover {
+  background: var(--gp-surface);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
