@@ -58,6 +58,34 @@ html.gog-plus-theme--light {
   --accent-green: #1fa05c;
   --accent-pink: #d63a82;
 }
+/* Numbers with units, prices and signs keep their own direction inside right-to-left text
+   (otherwise "1 USD = 3.650 ILS" and "50%-" come out scrambled in Hebrew). */
+.stat-value, .stat-sub, .yr-value, .yr-detail, .tag-pill-count {
+  unicode-bidi: isolate;
+}
+html.gog-plus-theme--amoled {
+  --bg-base: #000000;
+  --bg-surface: #050505;
+  --bg-elevated: #0b0b0b;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.3);
+  --accent-magenta: #b388ff;
+  --accent-cyan: #4de1ff;
+}
+html.gog-plus-theme--amber {
+  --bg-base: #120a00;
+  --bg-surface: #1a0f00;
+  --bg-elevated: #241500;
+  --text-primary: #ffd9a0;
+  --text-secondary: rgba(255, 217, 160, 0.78);
+  --text-tertiary: rgba(255, 217, 160, 0.55);
+  --border: rgba(255, 176, 0, 0.2);
+  --border-strong: rgba(255, 176, 0, 0.5);
+  --accent-magenta: #ffb000;
+  --accent-cyan: #ffcf5c;
+  --accent-green: #ffb000;
+  --accent-pink: #ff8c42;
+}
 html.gog-plus-theme--highcontrast {
   --bg-base: #000000;
   --bg-surface: #000000;

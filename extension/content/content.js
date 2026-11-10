@@ -75,7 +75,7 @@
     runFeatures();
   }
 
-  const KNOWN_THEMES = new Set(["neon", "classic", "crt", "sunset", "light", "auto", "native", "custom"]);
+  const KNOWN_THEMES = new Set(["neon", "classic", "crt", "sunset", "light", "auto", "highcontrast", "amoled", "amber", "native", "custom"]);
   const COLOR_RE = /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|hsla?\([\d\s.,%deg]+\))$/i;
 
   /** @param {boolean} plain */

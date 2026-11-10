@@ -92,6 +92,17 @@
       const note = document.createElement("span");
       note.className = "gog-plus-conv-note";
       note.textContent = ` ≈ ${formatPrice(value, state.settings.targetCurrency)}`;
+      // Click the converted amount to copy it (e.g. for a spreadsheet). The click
+      // is swallowed so it doesn't also open the game tile it sits inside.
+      const copyText = formatPrice(value, state.settings.targetCurrency);
+      note.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigator.clipboard?.writeText(copyText).then(
+          () => window.GOGPlusToasts?.show(`Copied ${copyText}`),
+          () => window.GOGPlusToasts?.show("Couldn't reach the clipboard", { variant: "muted" })
+        );
+      });
       if (state.settings.taxEstimator && state.settings.vatPercent > 0) {
         note.classList.add("gog-plus-with-tax");
       }
@@ -112,7 +123,7 @@
             }</span>`
           : "";
         note.dataset.gogPlusTip = `
-          <strong>Conversion details</strong><br>
+          <strong>Conversion details</strong> <small>· click to copy</small><br>
           ${formatPrice(price, state.pageCurrency.code)} ${state.pageCurrency.code} → ${formatPrice(
             value,
             state.settings.targetCurrency

@@ -128,7 +128,7 @@
     if (Array.isArray(def)) return Array.isArray(v);
     if (typeof def === "object") return isPlainObject(v);
     if (typeof def === "number") return typeof v === "number" && Number.isFinite(v);
-    return typeof v === def;
+    return typeof v === typeof def;
   }
 
   /**

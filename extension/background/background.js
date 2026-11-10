@@ -164,6 +164,8 @@ const THEME_BADGE_COLORS = {
   classic: "#8a2be2",
   crt: "#00ff66",
   sunset: "#ff7a00",
+  amoled: "#b388ff",
+  amber: "#ffb000",
   light: "#8a2be2",
 };
 

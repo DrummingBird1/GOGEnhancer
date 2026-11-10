@@ -75,6 +75,29 @@ html.gog-plus-theme--light {
   --gp-green: #1fa05c;
   --gp-pink: #d63a82;
 }
+/* AMOLED — true black surfaces (no glow from the panel on OLED screens). */
+html.gog-plus-theme--amoled {
+  --gp-bg: #000000;
+  --gp-surface: #050505;
+  --gp-border: rgba(255, 255, 255, 0.14);
+  --gp-border-strong: rgba(255, 255, 255, 0.3);
+  --gp-magenta: #b388ff;
+  --gp-cyan: #4de1ff;
+}
+/* Amber — a retro amber-phosphor monitor. */
+html.gog-plus-theme--amber {
+  --gp-bg: #120a00;
+  --gp-surface: #1a0f00;
+  --gp-text: #ffd9a0;
+  --gp-text-dim: rgba(255, 217, 160, 0.72);
+  --gp-text-muted: rgba(255, 217, 160, 0.5);
+  --gp-border: rgba(255, 176, 0, 0.22);
+  --gp-border-strong: rgba(255, 176, 0, 0.5);
+  --gp-magenta: #ffb000;
+  --gp-cyan: #ffcf5c;
+  --gp-green: #ffb000;
+  --gp-pink: #ff8c42;
+}
 /* High-contrast — pure black/white with saturated accents, aimed at users
    who need maximum text/background separation rather than a mood palette. */
 html.gog-plus-theme--highcontrast {
@@ -1858,6 +1881,9 @@ html.gog-plus-calm .gog-plus-more-hide { transition: none; }
   border: 0 !important;
 }
 
+
+/* The converted amount copies on click. */
+.gog-plus-conv-note { cursor: copy; }
 
 /* Room for the pinned DRM-free banner, so the site's footer is not hidden under it. */
 html:has(#gog-plus-banner) body {
