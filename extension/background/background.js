@@ -267,6 +267,7 @@ const NOTIFY_KEYS = [
   "webhookUrl",
   "notifyMode",
   "quietHours",
+  "quietDays",
   "notifyMinDiscount",
   "notifyMaxPrice",
   "notifyOnlyAtLow",
@@ -1019,7 +1020,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 if (chrome.omnibox) {
   chrome.omnibox.setDefaultSuggestion({
-    description: "Search your GOG Enhancer library — a game name, tag:rpg or status:backlog",
+    description: "Search your GOG Enhancer library — a game name, tag:rpg, status:backlog, year:2015, owned:yes",
   });
 
   chrome.omnibox.onInputChanged.addListener(async (text, suggest) => {
@@ -1030,6 +1031,8 @@ if (chrome.omnibox) {
       "purchaseLog",
       "wishlistSlugs",
       "priceHistory",
+      "ownedSlugs",
+      "gameFacts",
     ]);
     const { searchLibrary, suggestionFor } = self.GOGPlusLibrarySearch;
     suggest(searchLibrary(data, text).map(suggestionFor));

@@ -154,14 +154,63 @@
       e.preventDefault();
       tagFocused();
     } else if (e.key === "?") {
-      const onGame = window.GOGPlusGogDom.pageType() === "game";
-      window.GOGPlusToasts?.show(
-        onGame
-          ? "Keyboard: W wishlist · T tag · N note · A price alert"
-          : "Keyboard: J / K move between games · T tags the focused game",
-        { variant: "default" }
-      );
+      e.preventDefault();
+      showHelp();
     }
+  }
+
+  /**
+   * The keys that work on this kind of page, in a small dialog (Esc or the
+   * button closes it, and focus goes back to where it was).
+   */
+  function showHelp() {
+    if (document.getElementById("gog-plus-keyhelp")) return;
+    const onGame = window.GOGPlusGogDom.pageType() === "game";
+    /** @type {Array<[string, string]>} */
+    const rows = onGame
+      ? [
+          ["W", "Press the site's wishlist button (it toggles)"],
+          ["T", "Jump to the tag box"],
+          ["N", "Jump to the note box"],
+          ["A", "Jump to the price-alert box"],
+        ]
+      : [
+          ["J / K", "Move to the next / previous game"],
+          ["T", "Tag the focused game"],
+        ];
+    rows.push(["Ctrl / ⌘ + K", "Open the command palette"], ["?", "Show this help"]);
+    const previous = /** @type {HTMLElement | null} */ (document.activeElement);
+    const dlg = /** @type {HTMLDialogElement} */ (document.createElement("dialog"));
+    dlg.id = "gog-plus-keyhelp";
+    dlg.className = "gog-plus-keyhelp";
+    dlg.setAttribute("aria-label", "Keyboard shortcuts");
+    const h = document.createElement("h2");
+    h.textContent = "Keyboard shortcuts";
+    dlg.appendChild(h);
+    const dl = document.createElement("dl");
+    for (const [k, d] of rows) {
+      const dt = document.createElement("dt");
+      const kbd = document.createElement("kbd");
+      kbd.textContent = k;
+      dt.appendChild(kbd);
+      const dd = document.createElement("dd");
+      dd.textContent = d;
+      dl.append(dt, dd);
+    }
+    dlg.appendChild(dl);
+    const close = document.createElement("button");
+    close.type = "button";
+    close.textContent = "Close";
+    close.addEventListener("click", () => dlg.close());
+    dlg.appendChild(close);
+    dlg.addEventListener("close", () => {
+      dlg.remove();
+      previous?.focus?.();
+    });
+    document.body.appendChild(dlg);
+    if (typeof dlg.showModal === "function") dlg.showModal();
+    else dlg.setAttribute("open", "");
+    close.focus();
   }
 
   let installed = false;

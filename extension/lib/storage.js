@@ -89,6 +89,7 @@
     "panelOrder",
     "notifyMode",
     "quietHours",
+    "quietDays",
     "notifyMinDiscount",
     "notifyMaxPrice",
     "notifyOnlyAtLow",

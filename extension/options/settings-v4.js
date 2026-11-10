@@ -65,6 +65,26 @@
     return r;
   }
 
+  /**
+   * Seven weekday checkboxes (ids `${prefix}0` … `${prefix}6`, 0 = Sunday), named
+   * in the page's language by the browser itself, so they need no translation rows.
+   * @param {string} prefix
+   */
+  function weekdayBoxes(prefix) {
+    const box = el("span", "weekday-boxes");
+    const fmt = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { weekday: "short" });
+    for (let d = 0; d < 7; d++) {
+      const label = el("label", "weekday-box");
+      const input = /** @type {HTMLInputElement} */ (el("input"));
+      input.type = "checkbox";
+      input.id = `${prefix}${d}`;
+      // 2024-01-07 was a Sunday: day d of that week.
+      label.append(input, document.createTextNode(` ${fmt.format(new Date(2024, 0, 7 + d))}`));
+      box.appendChild(label);
+    }
+    return box;
+  }
+
   /** @param {string} id @param {Array<[string, string]>} options */
   function select(id, options) {
     const s = /** @type {HTMLSelectElement} */ (el("select", "dev-select"));
@@ -263,6 +283,7 @@
       row("Delivery", "Instantly as they happen, or one summary a day.", select("notifyMode", [["instant", "Instantly"], ["daily", "One summary a day"]])),
       toggle("quietEnabled", "Quiet hours", "Alerts that arrive during these hours wait, then arrive together when they end."),
       row("Quiet from / to", "24-hour clock; a window that crosses midnight is fine.", input("quietFrom", { type: "time" }), input("quietTo", { type: "time" })),
+      row("Quiet all day on", "Whole days with no notifications (for example Saturday); what arrives meanwhile waits and comes together afterwards.", weekdayBoxes("quietDay")),
       row("Smallest drop worth an alert", "Ignore price drops smaller than this percentage. 0 = off.", input("notifyMinDiscount", { type: "number", min: "0", max: "90", step: "1" }), el("span", "dev-num-suffix", "%")),
       row("Only prices up to", "Ignore alerts above this price, in your target currency. 0 = off.", input("notifyMaxPrice", { type: "number", min: "0", step: "1" })),
       toggle("notifyOnlyAtLow", "Only at the tracked low", "Alert only when the price is the lowest you've recorded for that game."),
@@ -303,7 +324,7 @@
   async function load() {
     const s = await Storage().get([
       ...SIMPLE_CHECKS, ...SIMPLE_SELECTS, ...SIMPLE_NUMBERS.map((n) => n[0]),
-      "preferredLanguages", "myPc", "quietHours", "tagAlerts", "webhookUrl", "targetCurrency", "tags", "theme",
+      "preferredLanguages", "myPc", "quietHours", "quietDays", "tagAlerts", "webhookUrl", "targetCurrency", "tags", "theme",
     ]);
     for (const k of SIMPLE_CHECKS) if ($(k)) /** @type {HTMLInputElement} */ ($(k)).checked = !!s[k];
     for (const k of SIMPLE_SELECTS) if ($(k)) /** @type {HTMLSelectElement} */ ($(k)).value = s[k];
@@ -314,6 +335,7 @@
     if ($("quietEnabled")) /** @type {HTMLInputElement} */ ($("quietEnabled")).checked = !!q.enabled;
     if ($("quietFrom")) /** @type {HTMLInputElement} */ ($("quietFrom")).value = q.from || "22:00";
     if ($("quietTo")) /** @type {HTMLInputElement} */ ($("quietTo")).value = q.to || "08:00";
+    for (let d = 0; d < 7; d++) if ($(`quietDay${d}`)) /** @type {HTMLInputElement} */ ($(`quietDay${d}`)).checked = Array.isArray(s.quietDays) && s.quietDays.includes(d);
     if ($("webhookUrl")) /** @type {HTMLInputElement} */ ($("webhookUrl")).value = s.webhookUrl || "";
     renderTagAlerts(s.tagAlerts || {}, s.tags || {}, s.targetCurrency);
     renderProfileHint();
@@ -424,6 +446,13 @@
       flash();
     };
     for (const id of ["quietEnabled", "quietFrom", "quietTo"]) $(id)?.addEventListener("change", saveQuiet);
+    const saveQuietDays = async () => {
+      const days = [];
+      for (let d = 0; d < 7; d++) if ($(`quietDay${d}`)?.checked) days.push(d);
+      await Storage().set({ quietDays: days });
+      flash();
+    };
+    for (let d = 0; d < 7; d++) $(`quietDay${d}`)?.addEventListener("change", saveQuietDays);
 
     $("tagAlertAdd")?.addEventListener("click", async () => {
       const tag = /** @type {HTMLInputElement} */ ($("tagAlertTag")).value.trim().slice(0, 40);

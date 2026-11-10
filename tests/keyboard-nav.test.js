@@ -156,11 +156,16 @@ describe("T and ?", () => {
     expect(window.GOGPlusCardBadges.openQuickAddTag).not.toHaveBeenCalled();
   });
 
-  it("? shows the shortcut help", () => {
+  it("? opens a help dialog listing the keys for this page, and Close removes it", () => {
     press("?", { shiftKey: true });
-    expect(window.GOGPlusToasts.show).toHaveBeenCalledWith(
-      expect.stringContaining("J / K"),
-      expect.anything()
-    );
+    const dlg = document.getElementById("gog-plus-keyhelp");
+    expect(dlg).not.toBeNull();
+    expect(dlg.textContent).toContain("J / K");
+    expect(dlg.textContent).toContain("command palette");
+    // a second ? does not stack another one
+    press("?", { shiftKey: true });
+    expect(document.querySelectorAll("#gog-plus-keyhelp")).toHaveLength(1);
+    dlg.querySelector("button").click();
+    expect(document.getElementById("gog-plus-keyhelp")).toBeNull();
   });
 });

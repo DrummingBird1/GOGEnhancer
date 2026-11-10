@@ -113,6 +113,7 @@
    * @property {string[]} panelOrder section ids in the user's drag order
    * @property {"instant" | "daily"} notifyMode send notifications as they happen, or batch them into one a day
    * @property {{ enabled: boolean, from: string, to: string }} quietHours "HH:MM" window with no notifications (they queue instead)
+   * @property {number[]} quietDays weekdays (0 = Sunday … 6 = Saturday) with no notifications all day (they queue instead)
    * @property {number} notifyMinDiscount ignore alerts for drops smaller than this percent (0 = off)
    * @property {number} notifyMaxPrice only alert for prices at or under this amount in the target currency (0 = off)
    * @property {boolean} notifyOnlyAtLow only alert when the price is at its tracked low
@@ -315,6 +316,7 @@
     // v4 expansion: notifications + sync + automation
     notifyMode: "instant",
     quietHours: { enabled: false, from: "22:00", to: "08:00" },
+    quietDays: [],
     notifyMinDiscount: 0,
     notifyMaxPrice: 0,
     notifyOnlyAtLow: false,

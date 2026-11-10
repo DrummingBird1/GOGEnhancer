@@ -188,7 +188,7 @@ code.
   never logs in to your account and never sends any of it anywhere.
 
 ▸ Calmer notifications and a calmer look
-  Quiet hours, one summary a day, price thresholds, alerts by tag, an
+  Quiet hours and weekdays, one summary a day, price thresholds, alerts by tag, an
   optional season radar and a richer weekly digest. Fold, dock and reorder
   the game panel; calm mode, a one-click plain look, colour-vision palettes,
   text-size scaling and settings profiles. Optionally, notifications can

@@ -650,6 +650,30 @@ try {
     check("dashboard: the text-size setting scales the page", zoom === "1.25", zoom);
     await setSettings({ sync: { uiScale: 1 } });
     await dash.close();
+
+    // Quiet weekdays on the options page (real storage), and the ? help dialog on a game page.
+    const o2 = await context.newPage();
+    await o2.goto(`chrome-extension://${extId}/options/options.html`);
+    await o2.waitForSelector("#quietDay6", { state: "attached", timeout: 5000 }).catch(() => {});
+    const boxes = await o2.evaluate(() => [...document.querySelectorAll(".weekday-box")].length);
+    await o2.evaluate(() => { const c = document.getElementById("quietDay6"); c.checked = true; c.dispatchEvent(new Event("change", { bubbles: true })); });
+    await new Promise((r) => setTimeout(r, 500));
+    const days = await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get("quietDays", (v) => r(v.quietDays))));
+    check("options: seven weekday boxes, and ticking one saves quiet days", boxes === 7 && JSON.stringify(days) === "[6]", `${boxes} ${JSON.stringify(days)}`);
+    await o2.close();
+    await setSettings({ sync: { quietDays: [], keyboardNav: true } });
+
+    const g2 = await open("/en/game/alpha_game");
+    await g2.waitForSelector("#gog-plus-gamepanel", { timeout: 6000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 1200));
+    await g2.evaluate(() => document.body.focus());
+    await g2.keyboard.press("?");
+    const help = await g2.waitForSelector("#gog-plus-keyhelp", { timeout: 3000 }).then(() => g2.evaluate(() => document.getElementById("gog-plus-keyhelp").textContent), () => "");
+    check("game page: ? opens the shortcut help for game pages, and Esc closes it", /Jump to the note box/.test(help), help.slice(0, 120));
+    await g2.keyboard.press("Escape");
+    const gone = await g2.waitForFunction(() => !document.getElementById("gog-plus-keyhelp"), null, { timeout: 2000 }).then(() => true, () => false);
+    check("…and Esc closes it", gone);
+    await g2.close();
   }
 
   console.log("v4 — game page (deal check, offer timer, languages, collapsible panel, review filter)");

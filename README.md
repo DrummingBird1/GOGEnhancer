@@ -95,7 +95,7 @@ An unofficial third-party extension for GOG.com — live currency conversion, pr
 
 #### Sync, notifications & look (v4)
 - 🔄 **Automatic folder sync** (on a 30-minute alarm, and when the dashboard opens, when the browser still remembers the folder permission and the file isn't passphrase-encrypted), a conflicts list, and dated backups kept in the folder (written at most once a day, when you open the dashboard).
-- 🔔 **Quiet hours**, a **one-summary-a-day** mode, thresholds, **alerts by tag**, an optional **season radar**, a richer weekly digest you can save as a web page, a wishlist card you can save as a PNG — and an optional **webhook to an address you own** (see the permissions table).
+- 🔔 **Quiet hours and quiet weekdays**, a **one-summary-a-day** mode, thresholds, **alerts by tag**, an optional **season radar**, a richer weekly digest you can save as a web page, a wishlist card you can save as a PNG — and an optional **webhook to an address you own** (see the permissions table).
 - 🎨 **Fold / dock / reorder** the game panel, **calm mode**, a one-click **plain look**, colour-vision palettes, text-size scaling, settings profiles, and a short **tour** after the update.
 
 ### Visual upgrade module

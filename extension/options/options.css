@@ -592,6 +592,8 @@ button.danger:hover {
 }
 .dev-select:focus { outline: none; border-color: var(--accent-cyan); }
 .dev-num-suffixed { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.weekday-boxes { display: inline-flex; flex-wrap: wrap; gap: 4px 10px; justify-content: flex-end; }
+.weekday-box { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; cursor: pointer; }
 .dev-num-suffix { color: var(--text-tertiary); font-family: var(--mono); font-size: 13px; }
 
 /* FX error surface */

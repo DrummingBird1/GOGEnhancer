@@ -50,6 +50,21 @@
   }
 
   /**
+   * Is today one of the weekdays the user keeps free of notifications
+   * (0 = Sunday … 6 = Saturday)?
+   * @param {Date} now local time
+   * @param {number[] | null | undefined} days
+   */
+  function inQuietDay(now, days) {
+    return Array.isArray(days) && days.includes(now.getDay());
+  }
+
+  /** Quiet hours or a quiet weekday. @param {Date} now @param {{ quietHours?: QuietHours, quietDays?: number[] }} s */
+  function isQuiet(now, s) {
+    return inQuietHours(now, s.quietHours) || inQuietDay(now, s.quietDays);
+  }
+
+  /**
    * Does an item clear the user's thresholds? Items that carry no price or
    * discount (a refund reminder, a sale announcement) are never filtered out —
    * the thresholds are about deals.
@@ -66,12 +81,12 @@
   /**
    * What to do with an item right now.
    * @param {Date} now
-   * @param {{ notifyMode?: "instant" | "daily", quietHours?: QuietHours }} s
+   * @param {{ notifyMode?: "instant" | "daily", quietHours?: QuietHours, quietDays?: number[] }} s
    * @returns {"send" | "queue"}
    */
   function deliveryFor(now, s) {
     if (s.notifyMode === "daily") return "queue";
-    return inQuietHours(now, s.quietHours) ? "queue" : "send";
+    return isQuiet(now, s) ? "queue" : "send";
   }
 
   /**
@@ -103,10 +118,10 @@
    * Should a queued batch go out now? In "daily" mode it goes once the quiet
    * window (if any) is over; in "instant" mode it is whatever quiet hours held
    * back, released when they end.
-   * @param {Date} now @param {{ quietHours?: QuietHours }} s @param {number} queued
+   * @param {Date} now @param {{ quietHours?: QuietHours, quietDays?: number[] }} s @param {number} queued
    */
   function shouldFlush(now, s, queued) {
-    return queued > 0 && !inQuietHours(now, s.quietHours);
+    return queued > 0 && !isQuiet(now, s);
   }
 
   /* ---------------- per-tag alerts ---------------- */
@@ -187,6 +202,8 @@
   const api = {
     parseClock,
     inQuietHours,
+    inQuietDay,
+    isQuiet,
     passesThresholds,
     deliveryFor,
     enqueue,

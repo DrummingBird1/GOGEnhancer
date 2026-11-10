@@ -97,3 +97,32 @@ describe("omnibox helpers", () => {
     );
   });
 });
+
+describe("year / owned / wishlist operators", () => {
+  const S = window.GOGPlusLibrarySearch;
+  const data = {
+    tags: { alpha_game: ["rpg"], beta_game: ["rpg"], gamma_game: [] },
+    wishlistSlugs: ["beta_game"],
+    ownedSlugs: { alpha_game: "2026-01-01", gamma_game: "2026-01-02" },
+    gameFacts: { alpha_game: { rd: "2015-05-19", title: "Alpha: The Game" }, beta_game: { rd: "2020-02-02" }, gamma_game: { rd: "2011-11-11" } },
+  };
+  const slugs = (q) => S.searchLibrary(data, q, 10).map((r) => r.slug).sort();
+
+  it("year: matches a year or a range, only for games whose date is known", () => {
+    expect(slugs("year:2015")).toEqual(["alpha_game"]);
+    expect(slugs("year:2010-2016")).toEqual(["alpha_game", "gamma_game"]);
+    expect(slugs("year:abc")).toEqual([]);
+  });
+
+  it("owned: and wishlist: filter on yes / no", () => {
+    expect(slugs("owned:yes")).toEqual(["alpha_game", "gamma_game"]);
+    expect(slugs("owned:no")).toEqual(["beta_game"]);
+    expect(slugs("wishlist:yes")).toEqual(["beta_game"]);
+    expect(slugs("owned:maybe")).toEqual([]);
+  });
+
+  it("combine with the older operators, and a remembered title is used", () => {
+    expect(slugs("tag:rpg owned:yes")).toEqual(["alpha_game"]);
+    expect(S.searchLibrary(data, "alpha", 3)[0].title).toBe("Alpha: The Game");
+  });
+});

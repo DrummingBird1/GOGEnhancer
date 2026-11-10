@@ -8,6 +8,10 @@
  *   witcher            substring of the game's title or any of its tags
  *   tag:rpg            has a tag containing "rpg"
  *   status:backlog     play status is exactly "backlog"
+ *   year:2015          released in 2015 (year:2010-2015 for a range) — known for
+ *                      games whose page you opened
+ *   owned:yes / no     in your library (as learned from gog.com's own labels)
+ *   wishlist:yes       on your wishlist
  */
 // @ts-check
 
@@ -31,6 +35,8 @@
    * @property {Record<string, any>} [purchaseLog]
    * @property {string[]} [wishlistSlugs]
    * @property {Record<string, any>} [priceHistory]
+   * @property {Record<string, any>} [ownedSlugs]
+   * @property {Record<string, any>} [gameFacts]
    */
 
   /**
@@ -46,6 +52,9 @@
   function searchLibrary(data, query, limit = 6) {
     const tags = data.tags || {};
     const status = data.gameStatus || {};
+    const facts = data.gameFacts || {};
+    const owned = data.ownedSlugs || {};
+    const wished = new Set(data.wishlistSlugs || []);
     const slugs = new Set([
       ...Object.keys(tags),
       ...Object.keys(data.notes || {}),
@@ -53,13 +62,14 @@
       ...Object.keys(data.purchaseLog || {}),
       ...(data.wishlistSlugs || []),
       ...Object.keys(data.priceHistory || {}),
+      ...Object.keys(owned),
     ]);
 
     const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
     /** @type {Array<SearchResult & { score: number }>} */
     const hits = [];
     for (const slug of slugs) {
-      const title = humanize(slug);
+      const title = typeof facts[slug]?.title === "string" && facts[slug].title ? facts[slug].title : humanize(slug);
       const lowerTitle = title.toLowerCase();
       const slugTags = (tags[slug] || []).map((t) => t.toLowerCase());
       let score = 0;
@@ -71,6 +81,18 @@
         } else if (term.startsWith("status:")) {
           const want = term.slice(7);
           if (!want || status[slug] !== want) ok = false;
+        } else if (term.startsWith("year:")) {
+          const m = /^(\d{4})(?:-(\d{4}))?$/.exec(term.slice(5));
+          const y = parseInt(String(facts[slug]?.rd || "").slice(0, 4), 10);
+          if (!m || !Number.isFinite(y) || y < +m[1] || y > +(m[2] || m[1])) ok = false;
+        } else if (term.startsWith("owned:")) {
+          const want = term.slice(6);
+          if (want !== "yes" && want !== "no") ok = false;
+          else if ((slug in owned) !== (want === "yes")) ok = false;
+        } else if (term.startsWith("wishlist:")) {
+          const want = term.slice(9);
+          if (want !== "yes" && want !== "no") ok = false;
+          else if (wished.has(slug) !== (want === "yes")) ok = false;
         } else if (lowerTitle.startsWith(term)) {
           score += 3;
         } else if (lowerTitle.includes(` ${term}`)) {

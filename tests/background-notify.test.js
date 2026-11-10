@@ -371,3 +371,23 @@ describe("weekly digest: offers ending soon", () => {
     expect((await getLocal(["weeklyDigest"])).weeklyDigest.endingSoon).toEqual([]);
   });
 });
+
+describe("quiet weekdays", () => {
+  it("holds everything back on a chosen weekday, and releases it the next day", async () => {
+    const NP = self.GOGPlusNotifyPolicy;
+    const saturday = new Date(2026, 10, 14, 12, 0); // 14 Nov 2026 is a Saturday
+    const sunday = new Date(2026, 10, 15, 12, 0);
+    expect(saturday.getDay()).toBe(6);
+    expect(NP.deliveryFor(saturday, { notifyMode: "instant", quietDays: [6] })).toBe("queue");
+    expect(NP.deliveryFor(sunday, { notifyMode: "instant", quietDays: [6] })).toBe("send");
+    expect(NP.shouldFlush(saturday, { quietDays: [6] }, 3)).toBe(false);
+    expect(NP.shouldFlush(sunday, { quietDays: [6] }, 3)).toBe(true);
+  });
+
+  it("is off when no day is chosen, and combines with quiet hours", () => {
+    const NP = self.GOGPlusNotifyPolicy;
+    const night = new Date(2026, 10, 12, 23, 0);
+    expect(NP.deliveryFor(night, { notifyMode: "instant", quietDays: [] })).toBe("send");
+    expect(NP.deliveryFor(night, { notifyMode: "instant", quietDays: [], quietHours: { enabled: true, from: "22:00", to: "08:00" } })).toBe("queue");
+  });
+});
