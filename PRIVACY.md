@@ -22,7 +22,7 @@ server, does not log anything, does not use analytics, does not show ads, and
 does not share your data with anyone. It makes a small, fixed set of network
 requests, all to public unauthenticated endpoints, none of which transmit
 information about *you*: (a) currency exchange rates from
-`api.frankfurter.app`, (b) a periodic read of the public GOG mods page at
+`api.frankfurter.dev`, (b) a periodic read of the public GOG mods page at
 `gog.com/en/mods`, and (c), if you leave the "Price comparison table" feature
 on, a per-game title search against `cheapshark.com`'s public deals API when
 you open a game page. Two more go to GOG's own public APIs and exist only for
@@ -100,12 +100,12 @@ folder auto-sync and the weekly digest included). A further, non-scheduled
 request happens directly from the game-page content script itself — see 3.3
 below — and one more exists only if you set up your own webhook (3.7).
 
-### 3.1 `api.frankfurter.app` — currency exchange rates
+### 3.1 `api.frankfurter.dev` — currency exchange rates
 
-- **What is sent:** A simple `GET https://api.frankfurter.app/latest?from=USD&to=ILS,EUR,GBP,PLN`. No headers identifying you, no cookies, no referrer linking back to you, no User-Agent uniqueness.
+- **What is sent:** A simple `GET https://api.frankfurter.dev/v2/rates?base=USD&quotes=ILS,EUR,GBP,PLN,RUB`. No headers identifying you, no cookies, no referrer linking back to you, no User-Agent uniqueness.
 - **What is received:** A small JSON object with the day's published exchange rates from the European Central Bank.
 - **Frequency:** Once every 12 hours, plus once when you press "Refresh rates" manually.
-- **Why frankfurter.app:** They are a public, unauthenticated, ad-free, ECB-backed rate service that requires no API key. Their privacy policy is at https://www.frankfurter.app/.
+- **Why frankfurter.dev:** They are a public, unauthenticated, ad-free, ECB-backed rate service that requires no API key. Their privacy policy is at https://frankfurter.dev/.
 - **What this could reveal:** Your IP address (as with any HTTP request from a browser). The service has no way to associate that IP with your identity, your GOG account, or any of your data inside this extension.
 
 ### 3.2 `www.gog.com/en/mods` — moddable games list
@@ -166,7 +166,6 @@ below — and one more exists only if you set up your own webhook (3.7).
 | `alarms` | To schedule four periodic background jobs: exchange-rate refresh (12 h), mods-catalog refresh (24 h), wishlist sale-count badge update (6 h), and a once-daily local check for refund windows about to close |
 | `notifications` | **Opt-in only.** When you enable "Desktop notifications" in Advanced Options, the extension can show a system notification when a refund window has 1–2 days left or when new wishlist items go on sale. Uses `chrome.notifications`, which is local to the browser — nothing is transmitted off-device. Off by default. |
 | Host permission for `https://www.gog.com/*` | To run the content script on GOG pages and to fetch the public `/en/mods` page in the background |
-| Host permission for `https://api.frankfurter.app/*` | To fetch currency exchange rates |
 | Host permission for `https://www.cheapshark.com/*` | To fetch the cross-store price comparison table shown on game pages (opt-out toggle in the popup) |
 
 | Optional host permission for `https://*/*` | **Optional and never granted at install.** Declared as `optional_host_permissions` so that, *only if you enter your own webhook address*, the browser can ask you to allow that single origin. Without it nothing can be sent anywhere new. |

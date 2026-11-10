@@ -44,7 +44,7 @@ describe("permissions", () => {
   // that is the point. Update this array in the same commit as the documents.
   it("are exactly the ones the documents explain", () => {
     expect([...manifest.permissions].sort()).toEqual(["activeTab", "alarms", "notifications", "storage"]);
-    expect([...manifest.host_permissions].sort()).toEqual(["https://api.frankfurter.app/*", "https://www.cheapshark.com/*", "https://www.gog.com/*"]);
+    expect([...manifest.host_permissions].sort()).toEqual(["https://www.cheapshark.com/*", "https://www.gog.com/*"]);
     expect(manifest.optional_host_permissions).toEqual(["https://*/*"]);
   });
 
@@ -83,7 +83,7 @@ describe("network destinations (lib/net.js allow-list)", () => {
   it("any allow-listed host WITHOUT a host permission is a documented same-company API reached under the page's CORS rules", () => {
     const granted = new Set(manifest.host_permissions.map(hostOf));
     const corsOnly = NET_HOSTS.filter((h) => !granted.has(h));
-    expect(corsOnly.sort()).toEqual(["api.gog.com", "catalog.gog.com"]);
+    expect(corsOnly.sort()).toEqual(["api.frankfurter.dev", "api.gog.com", "catalog.gog.com"]);
     for (const h of corsOnly) expect(PRIVACY).toContain(h);
     expect(PRIVACY).toMatch(/no (?:additional )?permission/i);
   });

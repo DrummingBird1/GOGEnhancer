@@ -54,7 +54,7 @@ An unofficial third-party extension for GOG.com — live currency conversion, pr
 - **Learns only from pages you open** — ownership, ratings, languages and price facts are read from pages you visit yourself and stored locally. The extension fetches nothing extra to build them.
 
 ### Features
-- 💱 **Live currency rates** — fetched automatically from `api.frankfurter.app` every 12 hours. Editable manually.
+- 💱 **Live currency rates** — fetched automatically from `api.frankfurter.dev` every 12 hours. Editable manually.
 - 📈 **Price tracking** — every visit to a game page records a snapshot. A stats panel on the game page shows current / all-time low / average, plus a "Worth waiting?" verdict.
 - 🔍 **Compare on IsThereAnyDeal** — a button on the game page searches for the same title on Steam / Epic / Humble / Fanatical.
 - 🏷️ **Full tag dashboard** — a separate page with search, filtering, a count per tag, and CSV export. Autocomplete for existing tags.
@@ -111,7 +111,7 @@ Enabled via the "Design injection" toggle in the popup. When on:
 ### Honest privacy
 - **Only five domains** ever receive network requests — and every request is listed in Advanced Options (Privacy & transparency):
   1. `www.gog.com` — to read page content and inject UI, and the public mods list once a day.
-  2. `api.frankfurter.app` — for currency rates (no API key, no tracking).
+  2. `api.frankfurter.dev` — for currency rates (no API key, no tracking).
   3. `www.cheapshark.com` — the optional price-comparison table on game pages (free, keyless; turn it off in the popup).
   4. `api.gog.com` — GOG's own product API, asked once per game page which games a pack contains (only its numeric id is sent; on by default, switch it off under *Catalog, wishlist & library*).
   5. `catalog.gog.com` — GOG's own catalog API, used only if you turn on endless scrolling (off by default).
@@ -171,7 +171,7 @@ Shortcuts can be changed at `chrome://extensions/shortcuts`.
 | `alarms` | Scheduling background FX/mods/wishlist refreshes |
 | `notifications` | Opt-in only — desktop alerts for refund windows and wishlist deals |
 | Host: `www.gog.com` | Inject UI into GOG pages |
-| Host: `api.frankfurter.app` | Fetch currency rates |
+| Host: `api.frankfurter.dev` | Fetch currency rates |
 | Host: `www.cheapshark.com` | Optional cross-store price comparison on game pages |
 | Optional host: any `https://` origin | **Never granted at install.** Requested at runtime, for one origin only, if you enter your own webhook address in Advanced Options; only notification text is sent to it |
 
@@ -191,7 +191,7 @@ No permission is needed for folder sync (you grant one folder at a time, from a 
 - **Wishlist badge counter** — based on a live DOM count taken when you visit `/account/wishlist` (24h TTL). If you haven't visited recently, the badge stays empty until your next visit — the extension icon's tooltip will suggest visiting.
 - **Refund timer relies on a manually entered date** — GOG doesn't expose a purchase date through any public DOM, so the 30-day countdown depends on a date you type into the panel. No date typed, no countdown.
 - **Genre detection is partially automatic (since v2.6.0)** — Horror/Role-playing/Strategy are read from the real "Genre:" field on a game's own page and cached by slug (`gameGenres`) on first visit. Sci-fi and Indie still rely on matching known game titles by regex — on GOG these appear to sit under the broader "Tags" cloud rather than "Genre:", and that structure hasn't been fully verified. Until a specific game has been visited, all five genre buckets fall back to the regex.
-- **Cross-currency conversion always pivots through USD** — if either pair's rate is missing from `rates`, the conversion won't happen. All rates are fetched automatically every 12 hours from frankfurter.app.
+- **Cross-currency conversion always pivots through USD** — if either pair's rate is missing from `rates`, the conversion won't happen. All rates are fetched automatically every 12 hours from frankfurter.dev.
 - **Wishlist-wide price alerts, Wishlist deals, and Wishlist value only cover games you've visited** — all three rely on `priceHistory`, which is only built by visiting a game's own page. A wishlisted game you've never visited has no data to compare against, so it won't show up in alerts, in the popup's "Wishlist deals," or in the "Wishlist value" stat, even if its price has dropped.
 
 ---

@@ -7,7 +7,6 @@
   "permissions": ["storage", "activeTab", "alarms", "notifications"],
   "host_permissions": [
     "https://www.gog.com/*",
-    "https://api.frankfurter.app/*",
     "https://www.cheapshark.com/*"
   ],
   "optional_host_permissions": ["https://*/*"],
@@ -40,6 +39,7 @@
         "lib/browser-compat.js",
         "lib/defaults.js",
         "lib/storage.js",
+        "lib/validate.js",
         "lib/net.js",
         "lib/failure-log.js",
         "lib/streak.js",

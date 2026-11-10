@@ -43,7 +43,7 @@ code.
 
 ▸ Live currency conversion
   Converts prices to ILS, EUR, GBP, PLN, USD, or RUB using exchange rates
-  fetched from frankfurter.app (a free, public, ECB-backed rate service).
+  fetched from frankfurter.dev (a free, public, ECB-backed rate service).
   Works whether GOG shows you USD, EUR, or any other locale — full
   cross-currency conversion via the rate matrix.
 
@@ -223,7 +223,7 @@ code.
 ▸ Privacy-first
   No analytics, no third-party tracking, no Google Fonts, no remote code.
   All your tags, notes, and history stay on your device. Five outbound
-  destinations only: exchange rates from frankfurter.app, the public GOG
+  destinations only: exchange rates from frankfurter.dev, the public GOG
   mods catalog, GOG's own product API (api.gog.com — once per game page, to
   see what a pack contains; toggleable), GOG's own catalog API
   (catalog.gog.com — only if you turn on endless scrolling), and
@@ -258,7 +258,7 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
 
 ▸ המרת מטבע חיה (cross-currency מלא)
   ממיר מחירים לשקלים / יורו / לירה / זלוטי / דולר / רובל. שערים נמשכים
-  אוטומטית מ-frankfurter.app (שירות חינמי מבוסס הבנק המרכזי האירופי).
+  אוטומטית מ-frankfurter.dev (שירות חינמי מבוסס הבנק המרכזי האירופי).
   עובד גם כשה-GOG מציג EUR/GBP מקומיים — לא רק USD.
 
 ▸ מעקב היסטוריית מחירים + סימוני מבצעים
@@ -413,7 +413,7 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
 ▸ פרטיות לפני הכל
   שום analytics, שום tracking, שום Google Fonts, שום קוד מרוחק. תגיות,
   הערות, היסטוריה — הכל נשאר אצלך. חמישה יעדים חיצוניים בלבד: שערי מטבע
-  מ-frankfurter.app, קטלוג mods פומבי של GOG, ה-API של המוצרים של GOG עצמה
+  מ-frankfurter.dev, קטלוג mods פומבי של GOG, ה-API של המוצרים של GOG עצמה
   (api.gog.com — פעם אחת בכל דף משחק, כדי לראות מה חבילה מכילה; ניתן
   לכיבוי), ה-API של הקטלוג של GOG עצמה (catalog.gog.com — רק אם מפעילים
   גלילה אינסופית), ו(אופציונלי, ברירת מחדל פעיל, ניתן לכיבוי) בדיקת שם
@@ -445,7 +445,7 @@ exact answers:
 > Used by the popup's "Reload tab" button so the user can refresh the GOG.com page they are currently viewing after toggling features.
 
 ### `alarms`
-> Used to schedule periodic background refreshes: exchange rates every 12 hours from frankfurter.app, the public GOG mods catalog every 24 hours, the wishlist sale-count badge every 6 hours, and a once-daily check that fires desktop notifications when a tracked refund window is about to close (only if the user opted in).
+> Used to schedule periodic background refreshes: exchange rates every 12 hours from frankfurter.dev, the public GOG mods catalog every 24 hours, the wishlist sale-count badge every 6 hours, and a once-daily check that fires desktop notifications when a tracked refund window is about to close (only if the user opted in).
 
 ### `notifications`
 > Used exclusively for optional, opt-in alerts the user controls from Advanced Options: a system notification when a manually-marked refund window has 1–2 days remaining, and a system notification when the count of wishlist items on sale jumps. All notifications use the local chrome.notifications API — nothing is transmitted off-device. The toggle is OFF by default; nothing fires until the user enables it.
@@ -453,8 +453,8 @@ exact answers:
 ### Host permission: `https://www.gog.com/*`
 > Required to run the content script that adds currency conversion, badges, tags UI, and Hebrew translations on GOG.com pages, and to fetch the public /en/mods catalog page in the background. This extension is single-purpose for GOG.com and does not interact with other domains in the user's browser.
 
-### Host permission: `https://api.frankfurter.app/*`
-> Required to fetch USD-to-target-currency exchange rates from the Frankfurter public API. No user data is sent — only a public GET request for rates.
+### No host permission for exchange rates (`api.frankfurter.dev`)
+> Exchange rates are fetched from the Frankfurter public API, which allows cross-origin reads, so the extension declares no host permission for it (version 4.5.0 removed the old one). No user data is sent — only a public GET request for rates.
 
 ### No permission for folder sync or the address-bar keyword
 > The optional folder sync uses the browser's own folder picker (File System Access API): the user grants one folder at a time, from a click, and the extension only touches the sync file (and, if the user enables dated backups, backup files) in it. The background auto-sync only runs while the browser still remembers that grant and cannot prompt. The address-bar keyword ("gog") is declared in the manifest and needs no permission. Neither makes a network request.

@@ -243,7 +243,7 @@ try {
       pickerLeftAlone: document.getElementById("uiLanguage").options[0].textContent,
     }));
     check("options: the page is right-to-left and its heading is Hebrew", o.dir === "rtl" && /הגדרות מתקדמות/.test(o.title || ""), JSON.stringify(o));
-    check("options: a sentence with a link in it is translated as a whole, link intact", /כל 12 שעות/.test(o.sentence || "") && o.link === "frankfurter.app", o.sentence);
+    check("options: a sentence with a link in it is translated as a whole, link intact", /כל 12 שעות/.test(o.sentence || "") && o.link === "frankfurter.dev", o.sentence);
     check("options: the language picker keeps each language's own name", o.pickerLeftAlone === "English", o.pickerLeftAlone);
     // what the page draws later is translated too, and switching back restores the English
     await options.selectOption("#uiLanguage", "de");

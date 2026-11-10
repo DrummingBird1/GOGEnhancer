@@ -3,7 +3,7 @@
  *
  * Responsibilities:
  *   - Run settings migration on install/update
- *   - Periodically fetch live FX rates from frankfurter.app
+ *   - Periodically fetch live FX rates from frankfurter.dev
  *   - Periodically scrape /mods page for the list of moddable games
  *   - Periodically check wishlist for items on sale → toolbar badge
  *   - Deliver notifications under the user's rules (quiet hours, one-a-day
@@ -15,6 +15,7 @@
 import "../lib/browser-compat.js";
 import "../lib/defaults.js";
 import "../lib/storage.js";
+import "../lib/validate.js";
 import "../lib/net.js";
 import "../lib/migrations.js";
 import "../lib/purchases.js";
@@ -54,17 +55,53 @@ async function ensureDefaults() {
 const FX_ALARM = "gog-plus-fx";
 const FX_INTERVAL_MIN = 12 * 60;
 
+/**
+ * Rates come from Frankfurter. v2 ("/v2/rates") is the current API and also
+ * carries RUB; the old v1 endpoint is deprecated, so it is only the fallback.
+ * @param {any} data
+ * @returns {Record<string, number>}
+ */
+function parseFxResponse(data) {
+  /** @type {Record<string, number>} */
+  const out = {};
+  if (Array.isArray(data)) {
+    // v2: [{ base, quote, rate }]
+    for (const row of data) {
+      if (row && typeof row.quote === "string" && typeof row.rate === "number" && row.rate > 0) out[row.quote] = row.rate;
+    }
+  } else if (data && data.rates && typeof data.rates === "object") {
+    // v1: { rates: { ILS: 3.1 } }
+    for (const [k, v] of Object.entries(data.rates)) if (typeof v === "number" && v > 0) out[k] = v;
+  }
+  return out;
+}
+
+const FX_URLS = [
+  "https://api.frankfurter.dev/v2/rates?base=USD&quotes=ILS,EUR,GBP,PLN,RUB",
+  "https://api.frankfurter.dev/v1/latest?from=USD&to=ILS,EUR,GBP,PLN",
+];
+
 async function fetchLiveRates() {
   try {
-    const url = "https://api.frankfurter.app/latest?from=USD&to=ILS,EUR,GBP,PLN";
-    const res = await self.GOGPlusNet.request("fx", url, { method: "GET" });
-    if (!res.ok) throw new Error(`status ${res.status}`);
-    const data = await res.json();
-    if (!data || !data.rates) throw new Error("no rates");
+    /** @type {Record<string, number>} */
+    let fresh = {};
+    let lastErr = "no rates";
+    for (const url of FX_URLS) {
+      try {
+        const res = await self.GOGPlusNet.request("fx", url, { method: "GET" });
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        fresh = parseFxResponse(await res.json());
+        if (Object.keys(fresh).length) break;
+        lastErr = "no rates";
+      } catch (e) {
+        lastErr = String(/** @type {any} */ (e)?.message || e);
+      }
+    }
+    if (!Object.keys(fresh).length) throw new Error(lastErr);
 
     const next = {};
     ["ILS", "EUR", "GBP", "PLN", "RUB"].forEach((c) => {
-      if (typeof data.rates[c] === "number") next[c] = data.rates[c];
+      if (typeof fresh[c] === "number") next[c] = fresh[c];
     });
 
     const { rates: prior } = await self.GOGPlusStorage.get({ rates: DEFAULTS.rates });

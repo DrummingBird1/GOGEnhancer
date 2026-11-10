@@ -43,7 +43,7 @@ const LOCAL = {
   challengesDone: {},
   syncFolderName: "GOG sync",
   failureLog: [{ feature: "card badges", message: "no tiles", page: "/games", count: 2, first: Date.now() - 5000, last: Date.now() - 1000 }],
-  netLog: [{ t: Date.now() - 60000, kind: "fx", host: "api.frankfurter.app", path: "/latest", status: 200, ok: true }],
+  netLog: [{ t: Date.now() - 60000, kind: "fx", host: "api.frankfurter.dev", path: "/latest", status: 200, ok: true }],
   weeklyDigest: { generatedAt: Date.now(), dropsThisWeek: 4, refundClosing: [{ slug: "alpha_game", daysLeft: 2 }], priceAlertHits: [{ slug: "zeta_arena", price: 9.5, currency: "USD", threshold: 10 }], wishlistDrops: [{ slug: "delta_racer", price: 20, currency: "USD", dropPct: 55 }], endingSoon: [] },
 };
 const SYNC = { uiLanguage: LANG, onboardingComplete: true, lastSeenVersion: "3.9.0", theme: "neon", monthlyBudget: { amount: 50, currency: "USD" }, monthlyGoal: 2, preferredLanguages: ["English", "Hebrew"], webhookEnabled: false };

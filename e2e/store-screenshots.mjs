@@ -60,9 +60,9 @@ const demoLocal = () => ({
     endingSoon: [],
   },
   netLog: [
-    { t: Date.now() - 5 * 60000, kind: "fx", host: "api.frankfurter.app", path: "/latest", status: 200, ok: true },
+    { t: Date.now() - 5 * 60000, kind: "fx", host: "api.frankfurter.dev", path: "/latest", status: 200, ok: true },
     { t: Date.now() - 2 * 3600000, kind: "mods", host: "www.gog.com", path: "/en/mods", status: 200, ok: true },
-    { t: Date.now() - 26 * 3600000, kind: "fx", host: "api.frankfurter.app", path: "/latest", status: 200, ok: true },
+    { t: Date.now() - 26 * 3600000, kind: "fx", host: "api.frankfurter.dev", path: "/latest", status: 200, ok: true },
   ],
   lastSeenVersion: "4.0.0", // the popup is shown without the "what's new" panel
   achievements: { "first-tag": day(30), curator: day(20), "note-taker": day(18), finisher: day(18), tripwire: day(9), "streak-3": day(3) },

@@ -466,7 +466,19 @@
   async function saveWebhook() {
     const Policy = window.GOGPlusNotifyPolicy;
     const raw = /** @type {HTMLInputElement} */ ($("webhookUrl")).value.trim();
+    const dropOldPermission = async (keepOrigin) => {
+      // Drop the browser-level grant for the previous webhook address.
+      try {
+        const { webhookUrl: prev } = await Storage().get({ webhookUrl: "" });
+        const prevUrl = prev && Policy.sanitizeWebhookUrl(prev);
+        const prevOrigin = prevUrl && Policy.webhookOrigin(prevUrl);
+        if (prevOrigin && prevOrigin !== keepOrigin) await chrome.permissions.remove({ origins: [prevOrigin] });
+      } catch (_) {
+        // Best-effort: the privacy list also offers a revoke button.
+      }
+    };
     if (!raw) {
+      await dropOldPermission(null);
       await Storage().set({ webhookUrl: "", webhookEnabled: false });
       /** @type {HTMLInputElement} */ ($("webhookEnabled")).checked = false;
       webhookSay("Webhook removed.");
@@ -488,6 +500,7 @@
       webhookSay("Permission wasn't granted, so the webhook can't be used. Nothing was saved.", true);
       return;
     }
+    await dropOldPermission(Policy.webhookOrigin(url));
     await Storage().set({ webhookUrl: url });
     flash();
     webhookSay(`Saved. Notifications will be posted to ${new URL(url).origin}. Press “Send a test” to check it.`);

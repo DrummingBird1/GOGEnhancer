@@ -173,10 +173,15 @@ async function load() {
 // Minimal RFC4180-ish CSV parser. Handles quoted fields, embedded commas,
 // escaped double-quotes ("") and CRLF/LF line endings.
 function parseCsv(text) {
+  text = String(text).replace(/^\uFEFF/, "");
+  // Spreadsheets in many locales write ";" instead of ",": decide from the header line.
+  const head = text.split(/\r\n|\r|\n/, 1)[0] || "";
+  const delim = (head.match(/;/g) || []).length > (head.match(/,/g) || []).length ? ";" : ",";
   const rows = [];
   let row = [];
   let cell = "";
   let inQuotes = false;
+  const endRow = () => { row.push(cell); rows.push(row); row = []; cell = ""; };
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (inQuotes) {
@@ -186,18 +191,11 @@ function parseCsv(text) {
       } else {
         cell += c;
       }
-    } else {
-      if (c === '"') inQuotes = true;
-      else if (c === ",") { row.push(cell); cell = ""; }
-      else if (c === "\r") { /* ignore */ }
-      else if (c === "\n") {
-        row.push(cell);
-        rows.push(row);
-        row = []; cell = "";
-      } else {
-        cell += c;
-      }
-    }
+    } else if (c === '"') inQuotes = true;
+    else if (c === delim) { row.push(cell); cell = ""; }
+    else if (c === "\r") { if (text[i + 1] === "\n") i++; endRow(); } // CRLF, or a lone CR (old Mac)
+    else if (c === "\n") endRow();
+    else cell += c;
   }
   if (cell.length || row.length) {
     row.push(cell);
@@ -384,10 +382,7 @@ function bind() {
   // (the webhook address) — never written into a backup file and never taken
   // from one. A backup that carried them could be shared by accident, or point
   // a second browser at a folder it has no access to.
-  const PER_BROWSER_KEYS = [
-    "syncFolderName", "lastFolderSyncAt", "syncBaseMeta", "syncConflicts", "autoSync", "autoBackup",
-    "lastAutoBackupAt", "webhookUrl", "webhookEnabled", "notifyQueue", "tourSeen", "netLog", "failureLog", "failureSeenAt",
-  ];
+  const PER_BROWSER_KEYS = window.GOGPlusValidate.PER_BROWSER_KEYS;
   const withoutPerBrowser = (obj) => Object.fromEntries(Object.entries(obj || {}).filter(([k]) => !PER_BROWSER_KEYS.includes(k)));
   const readAreas = async () => ({
     sync: withoutPerBrowser(await new Promise((r) => chrome.storage.sync.get(null, r))),
@@ -420,9 +415,21 @@ function bind() {
       )
     );
     if (!password) return;
+    const again = prompt(tx("Type the password again to confirm it."));
+    if (again !== password) {
+      alert(tx("The two passwords did not match. Nothing was exported."));
+      return;
+    }
     const { sync, local } = await readAreas();
     const plaintext = JSON.stringify({ exportedAt: new Date().toISOString(), version: 2, sync, local });
     const envelope = await encryptBackup(plaintext, password);
+    // Prove the file can be opened with that password before offering it.
+    try {
+      await decryptBackup(envelope, password);
+    } catch (_) {
+      alert(tx("The encrypted file could not be verified, so it was not saved. Try again."));
+      return;
+    }
     const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -447,7 +454,22 @@ function bind() {
         if (!password) return;
         data = JSON.parse(await decryptBackup(data, password));
       }
+      // The dated backups the extension writes into the sync folder are one
+      // flat { format, data } object; the Export button writes { sync, local }.
+      // Accept both, split the flat one by storage area.
+      if (data && data.format === "gog-enhancer-backup" && window.GOGPlusValidate.isPlainObject(data.data)) {
+        const { SYNC_KEYS } = window.GOGPlusStorageKeys;
+        const split = { sync: {}, local: {} };
+        for (const [k, v] of Object.entries(data.data)) (SYNC_KEYS.has(k) ? split.sync : split.local)[k] = v;
+        data = split;
+      }
       if (!data || (!data.sync && !data.local)) throw new Error("invalid format");
+      // Only known keys of the right type survive; slug-keyed data is rebuilt.
+      const defaults = window.GOG_PLUS_DEFAULTS;
+      const cleanSync = window.GOGPlusValidate.sanitizeStorage(data.sync || {}, defaults);
+      const cleanLocal = window.GOGPlusValidate.sanitizeStorage(data.local || {}, defaults);
+      data = { sync: cleanSync.clean, local: cleanLocal.clean };
+      const skippedKeys = [...cleanSync.skipped, ...cleanLocal.skipped];
       if (!confirm(tx("Import will OVERWRITE current settings. Continue?"))) return;
       const setArea = (area, items) =>
         new Promise((resolve, reject) => {
@@ -467,7 +489,7 @@ function bind() {
       await window.GOGPlusMigrations.run();
       flashSaved();
       load();
-      alert(tx("Imported successfully."));
+      alert(skippedKeys.length ? tx("Imported successfully.") + " (" + skippedKeys.length + " " + tx("unrecognised items were skipped.") + ")" : tx("Imported successfully."));
     } catch (err) {
       alert(tx("Import failed: " + err.message));
     } finally {
@@ -483,7 +505,7 @@ function bind() {
     try {
       const text = await file.text();
       const rows = parseCsv(text);
-      if (!rows.length) throw new Error(tx("Empty CSV."));
+      if (rows.length < 2) throw new Error(tx("Empty CSV."));
       // Header row check (case-insensitive); accept any column order.
       const header = rows[0].map((c) => c.trim().toLowerCase());
       const slugIdx = header.indexOf("slug");
@@ -499,7 +521,7 @@ function bind() {
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         const slug = (row[slugIdx] || "").trim();
-        if (!slug) continue;
+        if (!window.GOGPlusValidate.isSlug(slug)) continue;
         if (tagsIdx >= 0 && row[tagsIdx]) {
           incomingTags[slug] = row[tagsIdx]
             .split(";")
@@ -507,7 +529,7 @@ function bind() {
             .filter(Boolean);
         }
         if (noteIdx >= 0 && row[noteIdx]) {
-          incomingNotes[slug] = row[noteIdx];
+          incomingNotes[slug] = row[noteIdx].replace(/^'(?=[=+\-@\t\r])/, "");
         }
         if (statusIdx >= 0 && row[statusIdx]) {
           const s = row[statusIdx].trim().toLowerCase();
@@ -562,15 +584,15 @@ function bind() {
       notes: {},
       gameStatus: {},
     });
-    const rows = [["slug", "tags", "note", "status"]];
+    const { csvCell, CSV_BOM } = window.GOGPlusValidate;
+    const rows = [["slug", "tags", "note", "status"].join(",")];
     const slugs = new Set([...Object.keys(tags), ...Object.keys(notes), ...Object.keys(gameStatus)]);
     for (const slug of slugs) {
       const t = (tags[slug] || []).join("; ");
-      const n = (notes[slug] || "").replace(/"/g, '""').replace(/\r?\n/g, " ");
-      const s = gameStatus[slug] || "";
-      rows.push([slug, `"${t.replace(/"/g, '""')}"`, `"${n}"`, s]);
+      const n = (notes[slug] || "").replace(/\r?\n/g, " ");
+      rows.push([csvCell(slug), csvCell(t), csvCell(n), csvCell(gameStatus[slug] || "")].join(","));
     }
-    const csv = rows.map((r) => r.join(",")).join("\n");
+    const csv = CSV_BOM + rows.join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -589,7 +611,9 @@ function bind() {
   });
   $("clearTags").addEventListener("click", async () => {
     if (!confirm(tx("Clear ALL tags and notes? This cannot be undone."))) return;
-    await window.GOGPlusStorage.set({ tags: {}, notes: {} });
+    // The note revision history keeps old note text, so it goes too; so do the
+    // tag colours, order and per-tag alerts that only make sense with the tags.
+    await window.GOGPlusStorage.set({ tags: {}, notes: {}, noteHistory: {}, tagColors: {}, tagOrder: [], tagAlerts: {} });
     flashSaved();
     load();
   });
@@ -622,6 +646,22 @@ function bind() {
       indexedDB.deleteDatabase("gog-plus-attachments");
     } catch (_) {
       // Non-fatal — the rest of the reset already succeeded.
+    }
+    // The remembered sync-folder handle is also stored in IndexedDB, and the
+    // webhook's host permission is a browser-level grant: neither is in
+    // chrome.storage, so a reset has to drop them explicitly. (Files already
+    // written into the sync folder are the user's own and are not deleted.)
+    try {
+      indexedDB.deleteDatabase("gog-plus-sync");
+    } catch (_) {
+      // Non-fatal.
+    }
+    try {
+      const granted = await chrome.permissions.getAll();
+      const extra = (granted.origins || []).filter((o) => o !== "https://www.gog.com/*" && o !== "https://www.cheapshark.com/*");
+      if (extra.length) await chrome.permissions.remove({ origins: extra });
+    } catch (_) {
+      // Non-fatal.
     }
     flashSaved();
     setTimeout(() => location.reload(), 500);

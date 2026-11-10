@@ -51,7 +51,7 @@
     {
       id: "refresh-rates",
       label: "Refresh exchange rates now",
-      hint: "Force-fetch from frankfurter.app",
+      hint: "Force-fetch from frankfurter.dev",
       run: () => chrome.runtime.sendMessage({ type: "force-fx-refresh" }),
     },
     {

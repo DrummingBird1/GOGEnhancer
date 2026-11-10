@@ -298,7 +298,7 @@
     const everything = await new Promise((r) => chrome.storage.local.get(null, r));
     const syncPrefs = await new Promise((r) => chrome.storage.sync.get(null, r));
     // Per-browser state and secrets never go into a file that lives in a cloud folder.
-    const PER_BROWSER = ["syncFolderName", "lastFolderSyncAt", "syncBaseMeta", "syncConflicts", "webhookUrl", "webhookEnabled", "lastAutoBackupAt", "autoSync", "autoBackup", "notifyQueue"];
+    const PER_BROWSER = globalThis.GOGPlusValidate?.PER_BROWSER_KEYS || ["syncFolderName", "lastFolderSyncAt", "syncBaseMeta", "syncConflicts", "webhookUrl", "webhookEnabled", "lastAutoBackupAt", "autoSync", "autoBackup", "notifyQueue", "tourSeen", "netLog", "failureLog", "failureSeenAt"];
     const payload = { ...syncPrefs, ...everything };
     for (const k of PER_BROWSER) delete payload[k];
     let body = JSON.stringify({ format: "gog-enhancer-backup", exportedAt: new Date(opts.now ?? Date.now()).toISOString(), data: payload }, null, 2);

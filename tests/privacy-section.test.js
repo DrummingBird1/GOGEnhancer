@@ -38,14 +38,14 @@ describe("formatBytes / ago", () => {
 
 describe("recentRows", () => {
   const log = [
-    { t: NOW - 9000e3, kind: "fx", host: "api.frankfurter.app", path: "/latest", status: 200, ok: true },
+    { t: NOW - 9000e3, kind: "fx", host: "api.frankfurter.dev", path: "/latest", status: 200, ok: true },
     { t: NOW - 60e3, kind: "catalog", host: "catalog.gog.com", path: "/v1/catalog", status: null, ok: false, error: "offline" },
     { t: NOW - 30e3, kind: "webhook", host: "discord.com", path: "", status: 500, ok: false },
   ];
 
   it("lists newest first with a purpose, a place and a result", () => {
     const rows = V().recentRows(log, 20, NOW);
-    expect(rows.map((r) => r.where)).toEqual(["discord.com", "catalog.gog.com/v1/catalog", "api.frankfurter.app/latest"]);
+    expect(rows.map((r) => r.where)).toEqual(["discord.com", "catalog.gog.com/v1/catalog", "api.frankfurter.dev/latest"]);
     expect(rows[0]).toMatchObject({ what: "A notification sent to your own webhook", result: "failed (500)", ok: false });
     expect(rows[1].result).toBe("failed — offline");
     expect(rows[2]).toMatchObject({ what: "Currency exchange rates", result: "OK (200)", ok: true });
@@ -104,21 +104,21 @@ describe("the request list", () => {
   it("summarises per address and offers the recent requests", async () => {
     await setLocal({
       netLog: [
-        { t: NOW - 1000, kind: "fx", host: "api.frankfurter.app", path: "/latest", status: 200, ok: true },
-        { t: NOW - 500, kind: "fx", host: "api.frankfurter.app", path: "/latest", status: null, ok: false, error: "offline" },
+        { t: NOW - 1000, kind: "fx", host: "api.frankfurter.dev", path: "/latest", status: 200, ok: true },
+        { t: NOW - 500, kind: "fx", host: "api.frankfurter.dev", path: "/latest", status: null, ok: false, error: "offline" },
       ],
     });
     await S().renderNet();
     const rows = [...$("privNet").querySelectorAll("table")[0].querySelectorAll("tbody tr")];
     expect(rows).toHaveLength(1);
-    expect(rows[0].textContent).toContain("api.frankfurter.app");
+    expect(rows[0].textContent).toContain("api.frankfurter.dev");
     expect(rows[0].textContent).toContain("Currency exchange rates");
     expect(rows[0].querySelector(".priv-bad").textContent).toBe("1");
     expect($("privNet").querySelector("details table tbody").children).toHaveLength(2);
   });
 
   it("can be cleared", async () => {
-    await setLocal({ netLog: [{ t: NOW, kind: "fx", host: "api.frankfurter.app", path: "/", status: 200, ok: true }] });
+    await setLocal({ netLog: [{ t: NOW, kind: "fx", host: "api.frankfurter.dev", path: "/", status: 200, ok: true }] });
     await S().clearLog();
     expect((await getLocal("netLog")).netLog).toEqual([]);
     expect($("privNet").textContent).toContain("Nothing yet");
@@ -200,8 +200,8 @@ describe("wiring", () => {
   it("refreshes the list when the log changes", async () => {
     await S().init();
     expect($("privNet").textContent).toContain("Nothing yet");
-    await window.GOGPlusStorage.set({ netLog: [{ t: Date.now(), kind: "fx", host: "api.frankfurter.app", path: "/", status: 200, ok: true }] });
+    await window.GOGPlusStorage.set({ netLog: [{ t: Date.now(), kind: "fx", host: "api.frankfurter.dev", path: "/", status: 200, ok: true }] });
     await settle();
-    expect($("privNet").textContent).toContain("api.frankfurter.app");
+    expect($("privNet").textContent).toContain("api.frankfurter.dev");
   });
 });

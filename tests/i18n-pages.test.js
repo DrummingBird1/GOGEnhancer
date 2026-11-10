@@ -14,7 +14,7 @@ P().add([
   ["{n} game", "משחק {1}", "{1} игра", "{1} gra", "{1} Spiel", "{1} jeu", "{1} juego"],
   ["Mark as {}", "סמן כ{1}", "Отметить: {1}", "Oznacz jako {1}", "Markieren als {1}", "Marquer comme {1}", "Marcar como {1}"],
   ["Playing", "משחק", "Играю", "Gram", "Spiele gerade", "En cours", "Jugando"],
-  ["Fetched from <1>frankfurter.app</1> every <2>12</2> hours.", "כל <2>12</2> שעות מתקבל מ־<1>frankfurter.app</1>.", "Раз в <2>12</2> ч. из <1>frankfurter.app</1>.", "Co <2>12</2> godz. z <1>frankfurter.app</1>.", "Alle <2>12</2> Std. von <1>frankfurter.app</1>.", "Toutes les <2>12</2> h depuis <1>frankfurter.app</1>.", "Cada <2>12</2> h desde <1>frankfurter.app</1>."],
+  ["Fetched from <1>frankfurter.dev</1> every <2>12</2> hours.", "כל <2>12</2> שעות מתקבל מ־<1>frankfurter.dev</1>.", "Раз в <2>12</2> ч. из <1>frankfurter.dev</1>.", "Co <2>12</2> godz. z <1>frankfurter.dev</1>.", "Alle <2>12</2> Std. von <1>frankfurter.dev</1>.", "Toutes les <2>12</2> h depuis <1>frankfurter.dev</1>.", "Cada <2>12</2> h desde <1>frankfurter.dev</1>."],
   ["Across <1>{n}</1> drops, <2>{}</2> leads.", "ב־<1>{1}</1> ירידות, <2>{2}</2> מובילה.", "Из <1>{1}</1> снижений лидирует <2>{2}</2>.", "Z <1>{1}</1> spadków prowadzi <2>{2}</2>.", "Bei <1>{1}</1> Preissenkungen führt <2>{2}</2>.", "Sur <1>{1}</1> baisses, <2>{2}</2> mène.", "De <1>{1}</1> bajadas, lidera <2>{2}</2>."],
 ]);
 
@@ -106,7 +106,7 @@ describe("apply", () => {
   });
 
   it("does not loop on its own writes", async () => {
-    document.body.innerHTML = `<p id="p">Fetched from <a>frankfurter.app</a> every <b>12</b> hours.</p><i title="Save">x</i>`;
+    document.body.innerHTML = `<p id="p">Fetched from <a>frankfurter.dev</a> every <b>12</b> hours.</p><i title="Save">x</i>`;
     P().apply(document.body, "he");
     await tick(30);
     const before = document.body.innerHTML;
@@ -123,10 +123,10 @@ describe("apply", () => {
 
 describe("a sentence with highlighted words", () => {
   it("is translated as one piece, with the highlights moved to where the translation puts them", () => {
-    document.body.innerHTML = `<p id="p">Fetched from <a href="#x">frankfurter.app</a> every <b>12</b> hours.</p>`;
+    document.body.innerHTML = `<p id="p">Fetched from <a href="#x">frankfurter.dev</a> every <b>12</b> hours.</p>`;
     P().apply(document.body, "he");
     const p = document.getElementById("p");
-    expect(p.textContent).toBe("כל 12 שעות מתקבל מ־frankfurter.app.");
+    expect(p.textContent).toBe("כל 12 שעות מתקבל מ־frankfurter.dev.");
     expect(p.querySelector("a").getAttribute("href")).toBe("#x"); // the very same element, attributes intact
     expect(p.firstChild.nodeType).toBe(3);
     expect(p.children[0].tagName).toBe("B");
@@ -141,20 +141,20 @@ describe("a sentence with highlighted words", () => {
   });
 
   it("restores the original structure when switching back, and between languages", () => {
-    document.body.innerHTML = `<p id="p">Fetched from <a>frankfurter.app</a> every <b>12</b> hours.</p>`;
+    document.body.innerHTML = `<p id="p">Fetched from <a>frankfurter.dev</a> every <b>12</b> hours.</p>`;
     const [a, b] = [document.querySelector("a"), document.querySelector("b")];
     P().apply(document.body, "de");
-    expect(document.getElementById("p").textContent).toBe("Alle 12 Std. von frankfurter.app.");
+    expect(document.getElementById("p").textContent).toBe("Alle 12 Std. von frankfurter.dev.");
     P().apply(document.body, "fr");
-    expect(document.getElementById("p").textContent).toBe("Toutes les 12 h depuis frankfurter.app.");
+    expect(document.getElementById("p").textContent).toBe("Toutes les 12 h depuis frankfurter.dev.");
     P().apply(document.body, "en");
     const p = document.getElementById("p");
-    expect(p.textContent).toBe("Fetched from frankfurter.app every 12 hours.");
+    expect(p.textContent).toBe("Fetched from frankfurter.dev every 12 hours.");
     expect([...p.children]).toEqual([a, b]);
   });
 
   it("is left alone when the page has already redrawn it", async () => {
-    document.body.innerHTML = `<p id="p">Fetched from <a>frankfurter.app</a> every <b>12</b> hours.</p>`;
+    document.body.innerHTML = `<p id="p">Fetched from <a>frankfurter.dev</a> every <b>12</b> hours.</p>`;
     P().apply(document.body, "he");
     const p = document.getElementById("p");
     p.innerHTML = `Something <b>new</b> here`;

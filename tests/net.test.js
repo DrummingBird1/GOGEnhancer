@@ -62,7 +62,7 @@ describe("request", () => {
     globalThis.fetch = vi.fn(async () => {
       throw new TypeError("Failed to fetch");
     });
-    await expect(Net().request("fx", "https://api.frankfurter.app/latest")).rejects.toThrow("Failed to fetch");
+    await expect(Net().request("fx", "https://api.frankfurter.dev/latest")).rejects.toThrow("Failed to fetch");
     await flush();
     const log = await getLog();
     expect(log[0]).toMatchObject({ kind: "fx", ok: false, status: null });
@@ -89,7 +89,7 @@ describe("getJson", () => {
 describe("the log", () => {
   it("is capped at LOG_MAX entries, newest kept", async () => {
     for (let i = 0; i < Net().LOG_MAX + 15; i++) {
-      await Net().record({ kind: "fx", host: "api.frankfurter.app", path: `/${i}`, status: 200, ok: true });
+      await Net().record({ kind: "fx", host: "api.frankfurter.dev", path: `/${i}`, status: 200, ok: true });
     }
     const log = await getLog();
     expect(log).toHaveLength(Net().LOG_MAX);
@@ -104,11 +104,11 @@ describe("the log", () => {
 
   it("summarizes per host: count, failures, last seen", () => {
     const rows = Net().summarize([
-      { t: 1, kind: "fx", host: "api.frankfurter.app", ok: true },
-      { t: 5, kind: "fx", host: "api.frankfurter.app", ok: false },
+      { t: 1, kind: "fx", host: "api.frankfurter.dev", ok: true },
+      { t: 5, kind: "fx", host: "api.frankfurter.dev", ok: false },
       { t: 3, kind: "catalog", host: "catalog.gog.com", ok: true },
     ]);
-    expect(rows[0]).toMatchObject({ host: "api.frankfurter.app", count: 2, failed: 1, last: 5 });
+    expect(rows[0]).toMatchObject({ host: "api.frankfurter.dev", count: 2, failed: 1, last: 5 });
     expect(rows[1]).toMatchObject({ host: "catalog.gog.com", count: 1, failed: 0 });
     expect(Net().summarize(undefined)).toEqual([]);
   });

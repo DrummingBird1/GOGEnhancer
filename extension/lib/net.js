@@ -27,7 +27,7 @@
    * @type {Record<string, { kind: string, why: string }>}
    */
   const HOSTS = {
-    "api.frankfurter.app": { kind: "fx", why: "Currency exchange rates" },
+    "api.frankfurter.dev": { kind: "fx", why: "Currency exchange rates" },
     "www.gog.com": { kind: "mods", why: "The public GOG mods page" },
     "www.cheapshark.com": { kind: "compare", why: "Cross-store price comparison" },
     "catalog.gog.com": { kind: "catalog", why: "GOG's own catalog API — endless scrolling" },

@@ -93,7 +93,7 @@ export async function startHarness({ live = false, extPath, viewport = { width: 
         ? route.fulfill({ status: 200, contentType: "text/html", body: page() })
         : route.fulfill({ status: 404, body: "not a fixture" });
     }
-    if (url.hostname === "api.frankfurter.app") {
+    if (url.hostname === "api.frankfurter.dev") {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ rates: { ILS: 4 } }) });
     }
     if (url.hostname === "www.cheapshark.com") {

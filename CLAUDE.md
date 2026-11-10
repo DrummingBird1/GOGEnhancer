@@ -13,7 +13,7 @@ Any agent or contributor can pick up from here; this section is the only "where 
 - **Released:** v4.0.0 (tag `v4.0.0`, GitHub Release with the Web Store zip and the experimental Firefox zip, Pages live). `main` has since only taken Dependabot bumps. The version in `extension/manifest.json` is still `4.0.0`; no next release is cut or in progress.
 - **Not done, and only the maintainer can do it:** Chrome Web Store / Edge submission (nothing is published there yet, so README install wording that implies otherwise is wrong), a run with a real logged-in account / real cloud folder / real webhook, a real Firefox run, and native-speaker review of the six non-English translations.
 - **A post-release audit has found follow-ups** (a 2026-10-23 sweep: a few dozen confirmed or likely defects across the content scripts, backup/sync import paths, the service worker and the docs). They are tracked **privately by the maintainer, not in this repo and not as public issues** — some concern security, so do not describe them in public issues, PRs or commit messages until fixed (describe the fix neutrally). Most are **not verified**: re-read the code and reproduce before fixing. Ask the maintainer for the list before starting a "next release"; do not rediscover it from scratch.
-- **Known and visible without the private list:** (1) endless scrolling can append tiles that are already on screen (`content/features/catalog-endless.js`, the cause of the canary failures that auto-opened and auto-closed issues #16, #18 and #22 — so a green canary does not mean it is fixed); (2) the FX source `api.frankfurter.app` now redirects to `api.frankfurter.dev`, which is not in `lib/net.js` `HOSTS` or in the privacy documents — fix code, allow-list, `tests/privacy-audit.test.js` and all privacy documents together (see "Privacy boundary"); (3) the Buy Me a Coffee / Patreon links in the extension pages and docs return 404 and need the maintainer's decision.
+- **Known and visible without the private list:** (1) endless scrolling can append tiles that are already on screen (`content/features/catalog-endless.js`, the cause of the canary failures that auto-opened and auto-closed issues #16, #18 and #22 — so a green canary does not mean it is fixed); (2) the FX source `api.frankfurter.dev` now redirects to `api.frankfurter.dev`, which is not in `lib/net.js` `HOSTS` or in the privacy documents — fix code, allow-list, `tests/privacy-audit.test.js` and all privacy documents together (see "Privacy boundary"); (3) the Buy Me a Coffee / Patreon links in the extension pages and docs return 404 and need the maintainer's decision.
 - **Open PRs** are Dependabot bumps plus maintainer PRs for `SECURITY.md`, a public `ROADMAP.md` and a lockfile audit fix. The vitest 5 bump is the fix for a dev-only advisory but is a major version: run the full gates (`npm test`, `npm run lint`, `npm run typecheck`, `npm run coverage`) before merging it.
 - **Do not** merge a release, tag, publish, or submit to a store without the maintainer's explicit go-ahead in that conversation; an earlier go-ahead (for 4.0.0) does not carry over.
 
@@ -259,7 +259,7 @@ Each per-feature pass marks the nodes it processed with a class (`gog-plus-card-
 ES module service worker. Three responsibilities:
 
 1. **`chrome.alarms`-driven jobs**:
-   - `gog-plus-fx` (every 12 h) — `fetch('https://api.frankfurter.app/latest?from=USD&to=ILS,EUR,GBP,PLN')`, merge into `rates`. On failure, stores the message in `lastFxError`; on success, clears it.
+   - `gog-plus-fx` (every 12 h) — Frankfurter v2 `/v2/rates?base=USD&quotes=ILS,EUR,GBP,PLN,RUB` (v1 as fallback), merge into `rates`. On failure, stores the message in `lastFxError`; on success, clears it.
    - `gog-plus-mods` (every 24 h) — `fetch('https://www.gog.com/en/mods')`, regex-extract game slugs, store as `modsList`.
    - `gog-plus-wishlist` (every 6 h) — update toolbar badge from cached count (see below).
    - `gog-plus-daily` (every 24 h) — local-only. Scans `purchaseLog`, fires `chrome.notifications` for refund windows with 1–2 days left. Only runs if the user enabled `desktopNotifications`; dedupes via `notifLog`.
@@ -281,7 +281,7 @@ Don't try to make the SW scrape `/account/wishlist` directly — it won't work.
 
 ### Privacy boundary (manifest + permissions)
 
-`host_permissions` is intentionally minimal: **`https://www.gog.com/*`, `https://api.frankfurter.app/*`, and `https://www.cheapshark.com/*`** — the last one powers the opt-out "Price comparison table" on the game page (`lib/price-compare.js`), a free keyless deal-aggregation API. No Google Fonts, no analytics, no remote code. Before adding a new host:
+`host_permissions` is intentionally minimal: **`https://www.gog.com/*` and `https://www.cheapshark.com/*`** (exchange rates from `api.frankfurter.dev` need no host permission — the API allows cross-origin reads; it is on the `lib/net.js` allow-list) — the last one powers the opt-out "Price comparison table" on the game page (`lib/price-compare.js`), a free keyless deal-aggregation API. No Google Fonts, no analytics, no remote code. Before adding a new host:
 
 1. Add it to `host_permissions` in `manifest.json`.
 2. Update `PRIVACY.md`'s network-requests section (§3) and its permissions table.

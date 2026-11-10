@@ -6,6 +6,8 @@ import { vi } from "vitest";
 // path against, so this polyfills the full API rather than hand-rolling a
 // partial fake.
 import "fake-indexeddb/auto";
+// Shared validation helpers (also loaded by the manifest / pages / service worker).
+import "../extension/lib/validate.js";
 
 const stores = { sync: {}, local: {} };
 const onChangedListeners = [];

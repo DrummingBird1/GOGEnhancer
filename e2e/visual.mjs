@@ -95,7 +95,7 @@ try {
   await capture("popup", page, { mask: ["#rateStrip"] });
   await page.close();
 
-  await setSettings({ local: { netLog: [{ t: Date.parse("2026-10-03T11:59:00Z"), kind: "fx", host: "api.frankfurter.app", path: "/latest", status: 200, ok: true }], tags: { alpha_game: ["rpg"] } } });
+  await setSettings({ local: { netLog: [{ t: Date.parse("2026-10-03T11:59:00Z"), kind: "fx", host: "api.frankfurter.dev", path: "/latest", status: 200, ok: true }], tags: { alpha_game: ["rpg"] } } });
   page = await context.newPage();
   await page.setViewportSize({ width: 1100, height: 900 });
   await page.goto(`chrome-extension://${extId}/options/options.html`);
