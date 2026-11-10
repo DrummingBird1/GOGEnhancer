@@ -28,6 +28,7 @@ beforeEach(() => {
 
 describe("filter-builder.js", () => {
   it("renders tag/status/genre/misc chip groups when opened", () => {
+    state.allTags = { a: ["favorite"], b: ["roguelike"] };
     state.tagOrder = ["favorite", "roguelike"];
     toggleFilterBuilder();
     const pop = document.getElementById("filterBuilderPopover");
@@ -85,6 +86,7 @@ describe("filter-builder.js", () => {
   });
 
   it("HTML-escapes tag names instead of URI-encoding them, so the token round-trips as plain text", () => {
+    state.allTags = { a: ['co-op & "fun"'] };
     state.tagOrder = ['co-op & "fun"'];
     toggleFilterBuilder();
     const pop = document.getElementById("filterBuilderPopover");
@@ -97,6 +99,7 @@ describe("filter-builder.js", () => {
   });
 
   it("a tag name that looks like HTML doesn't break the popover markup", () => {
+    state.allTags = { a: ['<img src=x onerror="alert(1)">'] };
     state.tagOrder = ['<img src=x onerror="alert(1)">'];
     expect(() => toggleFilterBuilder()).not.toThrow();
     const pop = document.getElementById("filterBuilderPopover");

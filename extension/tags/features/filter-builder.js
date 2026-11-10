@@ -53,15 +53,19 @@
     const pop = $("filterBuilderPopover");
     if (!pop) return;
 
-    const tagChips = (state.tagOrder.length
-      ? state.tagOrder
-      : Object.keys(
-          Object.values(state.allTags).reduce((acc, arr) => {
-            (arr || []).forEach((t) => (acc[t] = true));
-            return acc;
-          }, {})
-        )
-    )
+    // Every tag that exists (the saved order first, then the rest): a new tag
+    // used to be missing once a manual order existed, and a deleted one lingered.
+    const existingTags = Object.keys(
+      Object.values(state.allTags).reduce((acc, arr) => {
+        (arr || []).forEach((t) => (acc[t] = true));
+        return acc;
+      }, {})
+    );
+    const ordered = [
+      ...state.tagOrder.filter((t) => existingTags.includes(t)),
+      ...existingTags.filter((t) => !state.tagOrder.includes(t)).sort(),
+    ];
+    const tagChips = ordered
       .slice(0, 20)
       .map(
         (t) =>

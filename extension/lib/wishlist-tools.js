@@ -193,7 +193,12 @@
   }
 
   /** @param {string} s */
-  const csvCell = (s) => (/[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
+  // A cell that starts with = + - @ (or tab/CR) would run as a formula in a spreadsheet;
+  // tag names and titles can come from other people's packs.
+  const csvCell = (s) => {
+    s = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
 
   /**
    * @param {WishRow[]} rows @param {Ctx} [ctx]

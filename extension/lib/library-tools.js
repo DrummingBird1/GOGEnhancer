@@ -283,7 +283,8 @@
         for (const e of hist) lines.push(`| ${e.d} | ${e.p.toFixed(2)} ${e.c} |`);
         lines.push("");
       }
-      files.push({ path: `GOG/Games/${slug}.md`, content: lines.join("\n") });
+      const fileSlug = String(slug).replace(/[^a-z0-9_-]/gi, "_").slice(0, 120) || "_";
+      files.push({ path: `GOG/Games/${fileSlug}.md`, content: lines.join("\n") });
       index.push(`- [[${slug}|${title}]]${data.gameStatus?.[slug] ? ` — ${data.gameStatus[slug]}` : ""}`);
     }
     files.unshift({ path: "GOG/Index.md", content: index.join("\n") + "\n" });

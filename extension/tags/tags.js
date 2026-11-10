@@ -182,9 +182,13 @@ function applyThemeClassToHtml(theme, customColors) {
 }
 
 function bind() {
+  /** @type {ReturnType<typeof setTimeout> | null} */
+  let searchTimer = null;
   $("search").addEventListener("input", (e) => {
     state.searchTerm = e.target.value.trim().toLowerCase();
-    renderGames();
+    // A large library redraws every card (and reads IndexedDB per card): wait for a pause in typing.
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => renderGames(), 150);
   });
   $("exportCsv").addEventListener("click", exportCsv);
   $("densityToggle").addEventListener("click", async () => {
