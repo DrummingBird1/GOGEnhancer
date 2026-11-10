@@ -528,6 +528,130 @@ try {
     await page.close();
   }
 
+  console.log("v4.5 — small extras (wishlist pick, copy buttons, note templates, one-click alert, image backup, old history, text size)");
+  {
+    const stored = (area, key) => sw.evaluate(([a, k]) => new Promise((r) => chrome.storage[a].get(k, (v) => r(v[k]))), [area, key]);
+
+    // Wishlist: a random discounted game that is not owned.
+    await setSettings({ sync: { wishlistFilters: true, wishlistSmart: true, targetCurrency: "ILS" }, local: { notInterested: {} } });
+    let page = await open("/en/account/wishlist");
+    await page.waitForSelector("#gog-plus-wlfilters", { timeout: 6000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 1000));
+    const pickBtn = await page.$("#gog-plus-wlfilters button:has-text('Pick one on sale')");
+    check("wishlist: the 'Pick one on sale' button is there", !!pickBtn);
+    if (pickBtn) {
+      const seen = new Set();
+      for (let i = 0; i < 8; i++) {
+        await pickBtn.click();
+        const t = await page.evaluate(() => document.querySelector(".gog-plus-wl-picked .product-row__title")?.textContent.trim() || null);
+        if (t) seen.add(t);
+      }
+      check("…it highlights only games that are on sale and not owned", seen.size > 0 && [...seen].every((t) => /Deal Game|Cheap Game/.test(t)), [...seen].join());
+    }
+    check("wishlist: no uncaught page errors", page.errors.length === 0, page.errors.join(" | "));
+    await page.close();
+
+    // Game page: copy buttons, note templates, one-click alert.
+    await setSettings({
+      sync: { targetCurrency: "ILS", priceCompareTable: false },
+      local: { priceHistory: { alpha_game: [{ d: "2026-01-01", p: 2, c: "USD" }] }, notes: {}, priceAlerts: {} },
+    });
+    page = await open("/en/game/alpha_game?utm_source=x");
+    await page.waitForSelector("#gog-plus-gamepanel", { timeout: 6000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 800));
+    await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: "https://www.gog.com" }).catch(() => {});
+    const copied = [];
+    for (const label of ["Copy clean link", "Copy summary"]) {
+      await page.click(`#gog-plus-gamepanel button:has-text('${label}')`);
+      await new Promise((r) => setTimeout(r, 400));
+      copied.push(await page.evaluate(() => navigator.clipboard.readText()).catch((e) => `ERR ${e.message}`));
+    }
+    check("game page: 'Copy clean link' copies the address without the query string", copied[0] === "https://www.gog.com/en/game/alpha_game", JSON.stringify(copied));
+    check("game page: 'Copy summary' has the title, the discount, the lowest price seen and the link", /Alpha Game/i.test(copied[1] || "") && /lowest seen/.test(copied[1] || "") && /alpha_game$/.test(copied[1] || ""), JSON.stringify(copied[1]));
+
+    await page.click('#gog-plus-gamepanel button[data-tpl="Wait for a sale"]');
+    await page.click('#gog-plus-gamepanel button[data-tpl="Gift idea"]');
+    await new Promise((r) => setTimeout(r, 800));
+    const note = (await stored("local", "notes"))?.alpha_game;
+    check("game page: note templates append lines and the note is saved", note === "Wait for a sale\nGift idea", JSON.stringify(note));
+
+    await page.click("#gog-plus-alert-low");
+    await new Promise((r) => setTimeout(r, 800));
+    const alert = (await stored("local", "priceAlerts"))?.alpha_game;
+    check("game page: '−25% of lowest' stores a threshold from the recorded history (2 USD × 4 × 0.75 = 6 ₪)", alert && alert.threshold === 6 && alert.currency === "ILS", JSON.stringify(alert));
+    check("game page: no uncaught page errors", page.errors.length === 0, page.errors.join(" | "));
+    await page.close();
+
+    // Options page against a real IndexedDB: image backup round trip, downloads, old history.
+    const opt = await context.newPage();
+    const optErrors = [];
+    opt.on("pageerror", (e) => optErrors.push(e.message));
+    await opt.goto(`chrome-extension://${extId}/options/options.html`);
+    const idb = await opt.evaluate(async () => {
+      const A = window.GOGPlusAttachments;
+      const bytes = Uint8Array.from([255, 216, 255, 224, 1, 2, 3]);
+      await A.saveAttachment("alpha_game", new Blob([bytes], { type: "image/jpeg" }));
+      const out = await A.exportAll();
+      await A.deleteAttachment("alpha_game");
+      const gone = (await A.getAttachment("alpha_game")) === undefined;
+      const n = await A.importAll([...out, { slug: "../evil", dataUrl: out[0].dataUrl }, { slug: "x", dataUrl: "data:text/html;base64,AAAA" }]);
+      const back = await A.getAttachment("alpha_game");
+      const buf = back ? new Uint8Array(await back.blob.arrayBuffer()) : null;
+      await A.deleteAttachment("alpha_game");
+      return { exported: out.length, gone, n, same: !!buf && buf.join() === bytes.join() };
+    });
+    check("options: note images survive an export → delete → import round trip in a real IndexedDB, bytes intact", idb.exported >= 1 && idb.gone && idb.n === 1 && idb.same, JSON.stringify(idb));
+
+    await opt.evaluate(async () => {
+      const A = window.GOGPlusAttachments;
+      await A.saveAttachment("alpha_game", new Blob([new Uint8Array([1, 2, 3])], { type: "image/jpeg" }));
+    });
+    const [download] = await Promise.all([opt.waitForEvent("download", { timeout: 8000 }).catch(() => null), opt.click("#exportAll")]);
+    let exported = null;
+    if (download) {
+      const { readFile } = await import("node:fs/promises");
+      exported = JSON.parse(await readFile(await download.path(), "utf8"));
+    }
+    check("options: the plain export file carries the note images", !!exported && Array.isArray(exported.noteImages) && exported.noteImages.some((i) => i.slug === "alpha_game" && /^data:image\/jpeg;base64,/.test(i.dataUrl)), exported ? Object.keys(exported).join() : "no download");
+    await opt.evaluate(() => window.GOGPlusAttachments.deleteAttachment("alpha_game"));
+
+    // Import that file back through the real Import button (confirm/alert answered).
+    if (download) {
+      opt.on("dialog", (d) => d.accept());
+      await opt.evaluate(() => window.GOGPlusAttachments.deleteAttachment("alpha_game"));
+      await opt.setInputFiles("#importFile", await download.path());
+      await new Promise((r) => setTimeout(r, 1500));
+      const restored = await opt.evaluate(async () => !!(await window.GOGPlusAttachments.getAttachment("alpha_game")));
+      check("options: importing that file through the Import button restores the image", restored);
+      await opt.evaluate(() => window.GOGPlusAttachments.deleteAttachment("alpha_game"));
+    }
+
+    const recent = new Date().toISOString().slice(0, 10);
+    await setSettings({ local: { priceHistory: { old_game: [{ d: "2020-01-01", p: 1, c: "USD" }], fresh_game: [{ d: "2020-01-01", l: recent, p: 1, c: "USD" }] } } });
+    await opt.reload();
+    opt.removeAllListeners("dialog");
+    opt.on("dialog", (d) => d.accept());
+    await opt.click("#clearOldHistory");
+    await new Promise((r) => setTimeout(r, 700));
+    const hist = await stored("local", "priceHistory");
+    check("options: 'Clear history not seen in a year' removes only the stale game", hist && !("old_game" in hist) && "fresh_game" in hist, JSON.stringify(Object.keys(hist || {})));
+    const labels = await opt.evaluate(() => ["backupKeep", "wishlistAlertPercent", "historyMaxEntries", "monthlyBudgetAmount"].map((id) => document.getElementById(id)?.getAttribute("aria-label") || ""));
+    check("options: the number fields have accessible names", labels.every(Boolean), labels.join(" | "));
+    check("options: no uncaught page errors", optErrors.length === 0, optErrors.join(" | "));
+    await shot(opt, "options-v45");
+    await opt.close();
+
+    // Dashboard: the text-size setting applies.
+    await setSettings({ sync: { uiScale: 1.25 } });
+    const dash = await context.newPage();
+    await dash.goto(`chrome-extension://${extId}/tags/tags.html`);
+    await new Promise((r) => setTimeout(r, 800));
+    const zoom = await dash.evaluate(() => document.documentElement.style.zoom);
+    check("dashboard: the text-size setting scales the page", zoom === "1.25", zoom);
+    await setSettings({ sync: { uiScale: 1 } });
+    await dash.close();
+  }
+
   console.log("v4 — game page (deal check, offer timer, languages, collapsible panel, review filter)");
   {
     await setSettings({ sync: { targetCurrency: "ILS", preferredLanguages: ["English", "Hebrew"], realDiscountCheck: true, offerTimer: true, languageMeter: true, reviewTools: true, priceCompareTable: false }, local: { priceHistory: {}, gameFacts: {}, panelCollapsed: {} } });
