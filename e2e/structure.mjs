@@ -68,7 +68,7 @@ async function record(page, selectors) {
     const stateEl = document.getElementById("gogcom-store-state");
     let stateKeys = [];
     try {
-      stateKeys = Object.keys(JSON.parse(stateEl?.textContent || "{}")).map((k) => k.replace(/=[^&]*/g, "=…").replace(/\/[0-9a-f]{8,}/g, "/…").replace(/[0-9a-f]{8}-[0-9a-f-]{27}/g, "…"));
+      stateKeys = Object.keys(JSON.parse(stateEl?.textContent || "{}")).filter((k) => !k.startsWith("sections.")).map((k) => k.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, "…").replace(/=[^&]*/g, "=…").replace(/\/[0-9a-f]{8,}/g, "/…"));
     } catch (_) {
       /* no state script */
     }
@@ -101,10 +101,14 @@ export function diff(before, now) {
   const missing = [];
   const appeared = [];
   const changed = [];
+  // Hooks that only exist while a promotion runs (giveaways, an offer's end
+  // date, the patrons' poll): their absence says nothing about the adapter.
+  const PROMO_ONLY = /takeover|giveaway|OfferEndsIn|PromoEndDate|gog-patrons-game-poll|gdsx-gpp/i;
   const cmpCounts = (label, a = {}, b = {}) => {
     for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
       const x = a[k] || 0;
       const y = b[k] || 0;
+      if (x > 0 && y === 0 && PROMO_ONLY.test(k)) continue;
       if (x > 0 && y === 0) missing.push(`${label} ${k}  (was ${x})`);
       else if (x === 0 && y > 0) appeared.push(`${label} ${k}  (now ${y})`);
       else if (x >= 5 && Math.abs(y - x) / x > 0.5) changed.push(`${label} ${k}  ${x} → ${y}`);

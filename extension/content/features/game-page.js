@@ -195,7 +195,7 @@
     const heroUrl = document
       .querySelector('meta[property="og:image"]')
       ?.getAttribute("content");
-    if (heroUrl && /^https?:\/\//.test(heroUrl)) {
+    if (heroUrl && window.GOGPlusValidate?.isGogImageUrl(heroUrl)) {
       panel.style.setProperty("--gp-hero-url", `url("${heroUrl.replace(/"/g, "")}")`);
       panel.classList.add("gog-plus-gamepanel--has-hero");
       // Spotify-style accent: sample the dominant color from the cover and

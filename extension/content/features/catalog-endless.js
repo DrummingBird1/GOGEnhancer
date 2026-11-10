@@ -290,7 +290,7 @@
     const a = /** @type {HTMLAnchorElement} */ (el("a", "gog-plus-more-link"));
     a.href = `/${lang}/game/${encodeURIComponent(it.slug)}`;
     const cover = el("span", "gog-plus-more-cover");
-    if (it.cover) {
+    if (it.cover && window.GOGPlusValidate?.isGogImageUrl(it.cover)) {
       const img = /** @type {HTMLImageElement} */ (el("img"));
       img.src = it.cover;
       img.alt = "";

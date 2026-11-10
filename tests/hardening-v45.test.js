@@ -189,3 +189,17 @@ describe("spreadsheet exports", () => {
     expect(csv).toContain("'=cmd");
   });
 });
+
+describe("image addresses the extension may load", () => {
+  it("accepts https addresses on GOG's own domains and nothing else", () => {
+    const ok = window.GOGPlusValidate.isGogImageUrl;
+    expect(ok("https://images.gog-statics.com/abc_product_card_v2_mobile_slider_639.jpg")).toBe(true);
+    expect(ok("https://items.gog.com/x.png")).toBe(true);
+    expect(ok("http://images.gog-statics.com/x.jpg")).toBe(false);
+    expect(ok("https://evil.example/x.jpg")).toBe(false);
+    expect(ok("https://gog.com.evil.example/x.jpg")).toBe(false);
+    expect(ok("https://notgog-statics.com/x.jpg")).toBe(false);
+    expect(ok("javascript:alert(1)")).toBe(false);
+    expect(ok(null)).toBe(false);
+  });
+});

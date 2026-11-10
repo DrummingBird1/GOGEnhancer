@@ -27,6 +27,24 @@
 
   /* ============== orchestration ============== */
 
+  /**
+   * Everything the extension put on the page that CSS alone does not hide, so
+   * that switching it off leaves the site looking like itself (the text the
+   * Hebrew translation rewrote comes back on the next page load).
+   */
+  function removeInjectedUi() {
+    try {
+      window.GOGPlusCatalog?.clearCatalog?.();
+    } catch (_) {
+      /* a half-built catalog bar must not stop the rest */
+    }
+    for (const id of ["gog-plus-reviewbar", "gog-plus-endless", "gog-plus-gamepanel", "gog-plus-wlfilters", "gog-plus-compare-tray"]) {
+      document.getElementById(id)?.remove();
+    }
+    document.querySelectorAll(".gog-plus-quickadd-btn, .gog-plus-quickadd-popover, .gog-plus-tilectl").forEach((el) => el.remove());
+    document.querySelectorAll(".gog-plus-expired").forEach((el) => el.classList.remove("gog-plus-expired"));
+  }
+
   function processAll() {
     if (!state.settings.enabled) {
       document.documentElement.classList.add("gog-plus-disabled");
@@ -37,6 +55,7 @@
         "gog-plus-skeletons",
         "gog-plus-rtl"
       );
+      removeInjectedUi();
       return;
     }
     document.documentElement.classList.remove("gog-plus-disabled");

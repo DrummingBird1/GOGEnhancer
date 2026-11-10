@@ -214,6 +214,19 @@ describe("following the site's light / dark mode", () => {
   });
 });
 
+describe("switching the extension off", () => {
+  it("removes the bars and boxes it added, not only hides the badges", async () => {
+    document.body.innerHTML = gridHtml([{ slug: "a" }]);
+    await boot();
+    await vi.advanceTimersByTimeAsync(400);
+    expect(document.getElementById("gog-plus-catbar")).not.toBeNull();
+    await set("sync", { enabled: false });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(document.getElementById("gog-plus-catbar")).toBeNull();
+    expect(document.querySelectorAll(".gog-plus-tilectl")).toHaveLength(0);
+  });
+});
+
 describe("route changes", () => {
   it("removes the catalog bar when leaving the catalog", async () => {
     document.body.innerHTML = gridHtml([{ slug: "a" }]);

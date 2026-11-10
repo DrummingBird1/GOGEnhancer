@@ -48,7 +48,7 @@ extension:
 | Your feature toggles (which UI pieces are on, including the refund timer and desktop notifications switches) | `chrome.storage.sync` | So your preferences survive across devices if you are signed into Chrome with sync enabled |
 | Your currency choice, VAT rate, region preset, and selected theme | `chrome.storage.sync` | Same — small preferences that should travel with you |
 | Tags, per-tag colors, your custom tag ordering, and notes you add to games | `chrome.storage.local` | Personal organization on the GOG store |
-| Price snapshots from game pages you visit | `chrome.storage.local` | Personal price-history charts (up to 100 snapshots per game; duplicates of the same price are collapsed) |
+| Price snapshots from game pages you visit | `chrome.storage.local` | Personal price-history charts (100 snapshots per game by default, adjustable from 10 to 500; duplicates of the same price are collapsed; if the total grows past about 2 MB, the games updated least recently are dropped first) |
 | Manual purchase dates you enter for the refund-window timer | `chrome.storage.local` | Local-only countdown of GOG's 30-day refund window |
 | Dedup log for desktop notifications you've already received | `chrome.storage.local` | So we don't fire the same alert twice |
 | Cached list of moddable games | `chrome.storage.local` | To show the "★ MOD" badge without re-fetching constantly |
@@ -104,7 +104,7 @@ below — and one more exists only if you set up your own webhook (3.7).
 
 - **What is sent:** A simple `GET https://api.frankfurter.dev/v2/rates?base=USD&quotes=ILS,EUR,GBP,PLN,RUB`. No headers identifying you, no cookies, no referrer linking back to you, no User-Agent uniqueness.
 - **What is received:** A small JSON object with the day's published exchange rates from the European Central Bank.
-- **Frequency:** Once every 12 hours, plus once when you press "Refresh rates" manually.
+- **Frequency:** Once every 12 hours, plus once when you press the refresh button (the popup's "↻ rates" or "Refresh now" in Advanced Options).
 - **Why frankfurter.dev:** They are a public, unauthenticated, ad-free, ECB-backed rate service that requires no API key. Their privacy policy is at https://frankfurter.dev/.
 - **What this could reveal:** Your IP address (as with any HTTP request from a browser). The service has no way to associate that IP with your identity, your GOG account, or any of your data inside this extension.
 
@@ -112,7 +112,7 @@ below — and one more exists only if you set up your own webhook (3.7).
 
 - **What is sent:** A standard `GET https://www.gog.com/en/mods` with `credentials: "omit"` (no cookies). This is the same request anyone gets when visiting that public page.
 - **What is received:** The HTML of the public mods catalog page, which we parse to extract game slugs.
-- **Frequency:** Once every 24 hours, plus when you press "Refresh mods" manually in Advanced Settings.
+- **Frequency:** Once every 24 hours, plus when you press the mods list's "force run" in Advanced Options.
 - **Why:** To keep the list of "★ MOD" badges accurate without your having to visit `/mods` yourself.
 - **What this could reveal:** That you visited a public page. GOG cannot tie this request to your account because we explicitly omit your cookies.
 
@@ -138,7 +138,7 @@ below — and one more exists only if you set up your own webhook (3.7).
 
 - **What happens:** Only when you press "Sync now" on the options page, the extension reads `gog-enhancer-sync.json` from the folder you picked, merges it with your local data, and writes back whichever side changed. Folder access is granted by you through the browser's own folder picker, one folder at a time, and can be revoked in the browser or by pressing "Stop syncing".
 - **Why it's not a network request:** Everything happens against files on your own disk. If your folder is synced by a cloud client, that client — not this extension — does the uploading.
-- **Automatic runs (since v4):** if you switch on "Sync automatically", the same read-merge-write also runs when you open the tag dashboard and every 30 minutes in the background, and "Keep dated backups" additionally writes timestamped copies into the same folder (keeping the number you choose). The background run cannot show a permission prompt or ask for a passphrase, so it simply does nothing when either is needed.
+- **Automatic runs (since v4):** if you switch on "Sync automatically", the same read-merge-write also runs when you open the tag dashboard and every 30 minutes in the background, and "Keep dated backups" additionally writes timestamped copies into the same folder (at most once a day, when you open the tag dashboard — not by the background timer) (keeping the number you choose). The background run cannot show a permission prompt or ask for a passphrase, so it simply does nothing when either is needed.
 
 ### 3.7 Your own webhook — *optional, off by default, requires your approval*
 
@@ -154,6 +154,7 @@ below — and one more exists only if you set up your own webhook (3.7).
 - **`catalog.gog.com` — endless scrolling.** `GET https://catalog.gog.com/v1/catalog?…` with the same filter and sort parameters the catalog page you are looking at already uses, plus a page number — only while "Endless scrolling" is on (off by default), once each time you scroll to the end of the list. It continues the list you are already viewing and appends nothing it cannot match to it.
 - **What this could reveal:** your IP address and the product id or catalog filters of pages you are already viewing, to GOG — the company whose site you are on, not a new third party.
 - **Frequency and visibility:** only as described; each request appears in the list under Advanced Options → Privacy & transparency.
+- **Cover images.** The insights panel samples a game's cover colour, and appended endless-scrolling cards show covers, by loading the same image address the page itself shows. The extension loads such an image only if it is an `https` address on GOG's own domains (`gog.com`, `gog-statics.com`); any other address is ignored. These are image loads by the browser, not requests of the extension's own, so they are not in the request list.
 
 ---
 

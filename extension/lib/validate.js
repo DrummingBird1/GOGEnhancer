@@ -174,8 +174,24 @@
     return String(s).replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").replace(/^\.+/, "_").slice(0, 120) || "_";
   }
 
+  /**
+   * An image address the extension may load by itself (cover colour sampling,
+   * appended catalog cards): https, on GOG's own domains — the same CDN the
+   * page's own images come from. Anything else is never requested.
+   * @param {unknown} u
+   */
+  function isGogImageUrl(u) {
+    if (typeof u !== "string" || u.length > 600) return false;
+    try {
+      const url = new URL(u);
+      return url.protocol === "https:" && /(^|\.)(gog-statics\.com|gog\.com)$/.test(url.hostname);
+    } catch (_) {
+      return false;
+    }
+  }
+
   const api = {
-    PER_BROWSER_KEYS, isSlug, isPlainObject, isDate, isCurrency, safeHex, slugMap,
+    isGogImageUrl, PER_BROWSER_KEYS, isSlug, isPlainObject, isDate, isCurrency, safeHex, slugMap,
     sanitizeStorage, csvCell, CSV_BOM, safeFileName,
   };
   if (typeof window !== "undefined") /** @type {any} */ (window).GOGPlusValidate = api;

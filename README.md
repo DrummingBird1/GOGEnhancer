@@ -87,14 +87,14 @@ An unofficial third-party extension for GOG.com — live currency conversion, pr
 - ♾️ **Endless scrolling** (opt-in, off by default) — when you reach the end of a catalog page, the next page is added below it, from GOG's own catalog API (`catalog.gog.com`, the same call the site makes).
 
 #### Game page & library (v4)
-- 🎮 **Language check**, **what changed since your last visit**, review filter, **similar games you own**, **what a pack really contains** (read from the bundle's own page, or from GOG's product API once per game page — only a numeric id is sent) with a heads-up when it overlaps what you own, "open in" links to Steam / IsThereAnyDeal / PCGamingWiki, and the `W` / `N` / `A` shortcuts.
+- 🎮 **Language check**, **what changed since your last visit**, review filter, **similar games you own**, **what a pack really contains** (read from the bundle's own page, or from GOG's product API once per game page — only a numeric id is sent) with a heads-up when it overlaps what you own, "open in" links to Steam / IsThereAnyDeal / PCGamingWiki / HowLongToBeat / SteamDB, and the `W` / `N` / `A` shortcuts.
 - 📚 **Learns your library as you browse** (from the site's own "IN LIBRARY" label), which powers hide-owned, real library statistics, a weighted backlog roulette, a monthly "games to finish" goal, and **Wrapped / collector cards** you can save as PNG.
 - 📝 **Note version history**, an **Obsidian vault** export (`.zip`), and CSV / line exports for **Notion, Google Sheets and Trello**.
 - 🏆 **36 achievements** in three tiers (a few hidden), a **streak** of days you've browsed and three **monthly challenges** — all local.
 - ♿ **A dashboard you can use from the keyboard** — a skip link, tags reordered with `Alt`+`↑`/`↓`, menus and dialogs that hold focus, and spoken (screen-reader) announcements of changes.
 
 #### Sync, notifications & look (v4)
-- 🔄 **Automatic folder sync** (on a 30-minute alarm, and when the dashboard opens, when the browser still remembers the folder permission and the file isn't passphrase-encrypted), a conflicts list, and dated backups kept in the folder.
+- 🔄 **Automatic folder sync** (on a 30-minute alarm, and when the dashboard opens, when the browser still remembers the folder permission and the file isn't passphrase-encrypted), a conflicts list, and dated backups kept in the folder (written at most once a day, when you open the dashboard).
 - 🔔 **Quiet hours**, a **one-summary-a-day** mode, thresholds, **alerts by tag**, an optional **season radar**, a richer weekly digest you can save as a web page, a wishlist card you can save as a PNG — and an optional **webhook to an address you own** (see the permissions table).
 - 🎨 **Fold / dock / reorder** the game panel, **calm mode**, a one-click **plain look**, colour-vision palettes, text-size scaling, settings profiles, and a short **tour** after the update.
 
@@ -109,7 +109,7 @@ Enabled via the "Design injection" toggle in the popup. When on:
 - Nine themes (Neon, Classic GOG, CRT Green, Sunset, Light, High contrast, Custom, Auto, Native) — Auto follows your system's light/dark preference; Native follows gog.com's own look.
 
 ### Honest privacy
-- **Only five domains** ever receive network requests — and every request is listed in Advanced Options (Privacy & transparency):
+- **Only five domains** (plus the one webhook address you may type yourself, only if you turn that on) ever receive network requests — and every request is listed in Advanced Options (Privacy & transparency):
   1. `www.gog.com` — to read page content and inject UI, and the public mods list once a day.
   2. `api.frankfurter.dev` — for currency rates (no API key, no tracking).
   3. `www.cheapshark.com` — the optional price-comparison table on game pages (free, keyless; turn it off in the popup).
