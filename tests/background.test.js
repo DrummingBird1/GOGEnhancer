@@ -48,6 +48,24 @@ beforeEach(() => {
 });
 
 describe("force-fx-refresh", () => {
+  it("asks for, and stores, the Brazilian real, Australian and Canadian dollar as well", async () => {
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { base: "USD", quote: "ILS", rate: 3.7 },
+        { base: "USD", quote: "BRL", rate: 5.6 },
+        { base: "USD", quote: "AUD", rate: 1.55 },
+        { base: "USD", quote: "CAD", rate: 1.4 },
+        { base: "USD", quote: "XYZ", rate: 9 }, // a currency nobody asked for is not stored
+      ],
+    });
+    await fireMessage({ type: "force-fx-refresh" });
+    expect(String(globalThis.fetch.mock.calls[0][0])).toContain("quotes=ILS,EUR,GBP,PLN,RUB,BRL,AUD,CAD");
+    const s = await getSync(["rates"]);
+    expect(s.rates).toMatchObject({ ILS: 3.7, BRL: 5.6, AUD: 1.55, CAD: 1.4 });
+    expect(s.rates.XYZ).toBeUndefined();
+  });
+
   it("merges new rates into storage and clears lastFxError on success", async () => {
     globalThis.fetch.mockResolvedValue({
       ok: true,

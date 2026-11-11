@@ -102,7 +102,7 @@ below — and one more exists only if you set up your own webhook (3.7).
 
 ### 3.1 `api.frankfurter.dev` — currency exchange rates
 
-- **What is sent:** A simple `GET https://api.frankfurter.dev/v2/rates?base=USD&quotes=ILS,EUR,GBP,PLN,RUB`. No headers identifying you, no cookies, no referrer linking back to you, no User-Agent uniqueness.
+- **What is sent:** A simple `GET https://api.frankfurter.dev/v2/rates?base=USD&quotes=ILS,EUR,GBP,PLN,RUB,BRL,AUD,CAD`. No headers identifying you, no cookies, no referrer linking back to you, no User-Agent uniqueness.
 - **What is received:** A small JSON object with the day's published exchange rates from the European Central Bank.
 - **Frequency:** Once every 12 hours, plus once when you press the refresh button (the popup's "↻ rates" or "Refresh now" in Advanced Options).
 - **Why frankfurter.dev:** They are a public, unauthenticated, ad-free, ECB-backed rate service that requires no API key. Their privacy policy is at https://frankfurter.dev/.

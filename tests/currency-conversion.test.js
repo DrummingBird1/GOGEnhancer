@@ -167,3 +167,22 @@ describe("a price the site changes in place", () => {
     expect(document.querySelector("#p .gog-plus-conv-note")).toBe(first);
   });
 });
+
+describe("the newer store currencies", () => {
+  it("have symbols and default rates, and are formatted with two decimals", () => {
+    const F = window.GOGPlusCurrencyFormat;
+    expect(F.symbolFor("BRL")).toBe("R$");
+    expect(F.symbolFor("AUD")).toBe("A$");
+    expect(F.symbolFor("CAD")).toBe("C$");
+    expect(F.formatPrice(12.5, "BRL")).toBe("R$12.50");
+    for (const c of ["BRL", "AUD", "CAD"]) expect(window.GOG_PLUS_DEFAULTS.rates[c]).toBeGreaterThan(0);
+  });
+
+  it("convert a Brazilian-real page to the target currency", () => {
+    setup("BRL", "R$");
+    state.settings.rates = { ...state.settings.rates, BRL: 5 };
+    document.body.innerHTML = '<span id="p">R$ 129,90</span>';
+    applyCurrencyConversion(document.body);
+    expect(document.querySelector("#p .gog-plus-conv-note").textContent).toContain("104");
+  });
+});

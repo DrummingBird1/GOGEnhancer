@@ -242,7 +242,7 @@
 
     // currency + region
     targetCurrency: "ILS",
-    rates: { ILS: 3.65, EUR: 0.92, GBP: 0.79, RUB: 92.0, PLN: 4.0 },
+    rates: { ILS: 3.65, EUR: 0.92, GBP: 0.79, RUB: 92.0, PLN: 4.0, BRL: 5.4, AUD: 1.52, CAD: 1.38 },
     ratesUpdatedAt: 0,
     lastFxError: null,
     vatPercent: 18,

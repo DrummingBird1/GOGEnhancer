@@ -90,7 +90,7 @@ async function load() {
   if ($("uiLanguage")) $("uiLanguage").value = s.uiLanguage || "en";
 
   // Rate inputs
-  ["ILS", "EUR", "GBP", "PLN", "RUB"].forEach((c) => {
+  ["ILS", "EUR", "GBP", "PLN", "RUB", "BRL", "AUD", "CAD"].forEach((c) => {
     const inp = $(`rate-${c}`);
     if (inp && s.rates[c] !== undefined) inp.value = s.rates[c];
   });
@@ -238,7 +238,7 @@ function bind() {
   });
 
   // Rate inputs
-  ["ILS", "EUR", "GBP", "PLN", "RUB"].forEach((c) => {
+  ["ILS", "EUR", "GBP", "PLN", "RUB", "BRL", "AUD", "CAD"].forEach((c) => {
     const inp = $(`rate-${c}`);
     if (!inp) return;
     inp.addEventListener("change", async () => {

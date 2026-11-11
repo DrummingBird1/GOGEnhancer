@@ -15,7 +15,7 @@ function check(name, ok, detail = "") {
   console.log(`${ok ? "  ✓" : "  ✗"} ${name}${!ok && detail ? `\n      ${detail}` : ""}`);
 }
 
-// rates are "per 1 USD": ILS 4, EUR 0.9, GBP 0.8, PLN 4, RUB 90. Target: ILS.
+// rates are "per 1 USD": ILS 4, EUR 0.9, GBP 0.8, PLN 4, RUB 90, BRL 5, AUD 1.5, CAD 1.25. Target: ILS.
 const CASES = [
   { code: "usd", css: '::before { content: "$ " }', base: "49.99", final: "24.99", want: /₪\s?100\b/, label: "USD 24.99 → ₪100" },
   { code: "eur", css: '::after { content: " €" }', base: "49,99", final: "24,99", want: /₪\s?111\b/, label: "EUR 24,99 € → ₪111" },
@@ -23,13 +23,16 @@ const CASES = [
   { code: "pln", css: '::after { content: " zł" }', base: "199,99", final: "99,99", want: /₪\s?100\b/, label: "PLN 99,99 zł → ₪100" },
   { code: "pln", css: '::after { content: " zł" }', base: "2 199,99", final: "1 097,99", want: /₪\s?1[ ,.  ]?098\b/, label: "PLN 1 097,99 zł (space thousands) → ₪1,098" },
   { code: "rub", css: '::after { content: " ₽" }', base: "5 499", final: "2 499", want: /₪\s?111\b/, label: "RUB 2 499 ₽ → ₪111" },
-  { code: "brl", css: '::before { content: "R$ " }', base: "259,90", final: "129,90", want: null, label: "BRL R$ 129,90 (no rate configured) → no absurd figure" },
+  { code: "brl", css: '::before { content: "R$ " }', base: "259,90", final: "129,90", want: /₪\s?104\b/, label: "BRL R$ 129,90 → ₪104" },
+  { code: "aud", css: '::before { content: "A$ " }', base: "59.99", final: "29.99", want: /₪\s?80\b/, label: "AUD A$ 29,99 → ₪80" },
+  { code: "cad", css: '::before { content: "C$ " }', base: "49.99", final: "24.99", want: /₪\s?80\b/, label: "CAD C$ 24.99 → ₪80" },
+  { code: "brl", css: '::before { content: "R$ " }', base: "259,90", final: "129,90", want: null, noRate: true, label: "BRL without a configured rate → no absurd figure" },
   { code: "ils", css: '::before { content: "₪" }', base: "89.90", final: "44.90", want: "none", label: "ILS ₪44.90 on an ILS target → no note" },
 ];
 
 const h = await startHarness({ extPath: new URL("../extension", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1") });
 await h.setSettings({
-  sync: { currencyConverter: true, targetCurrency: "ILS", taxEstimator: false, rates: { ILS: 4, EUR: 0.9, GBP: 0.8, PLN: 4, RUB: 90 }, priceCompareTable: false },
+  sync: { currencyConverter: true, targetCurrency: "ILS", taxEstimator: false, rates: { ILS: 4, EUR: 0.9, GBP: 0.8, PLN: 4, RUB: 90, BRL: 5, AUD: 1.5, CAD: 1.25 }, priceCompareTable: false },
   local: { priceHistory: {} },
 });
 
@@ -46,7 +49,7 @@ await h.context.route("https://www.gog.com/en/game/alpha_game", (route) => {
 
 for (const c of CASES) {
   current = c;
-  await h.setSettings({ local: { priceHistory: {} } });
+  await h.setSettings({ sync: { rates: c.noRate ? { ILS: 4, EUR: 0.9, GBP: 0.8, PLN: 4, RUB: 90 } : { ILS: 4, EUR: 0.9, GBP: 0.8, PLN: 4, RUB: 90, BRL: 5, AUD: 1.5, CAD: 1.25 } }, local: { priceHistory: {} } });
   const page = await h.context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -60,7 +63,7 @@ for (const c of CASES) {
   if (c.want === "none") ok = notes.length === 0;
   else if (c.want === null) ok = notes.every((n) => !/₪\s?\d{4,}/.test(n)) && (!hist || hist.p < 1000);
   else ok = c.want.test(joined);
-  const recorded = c.want === null || c.want === "none" ? true : !!hist && hist.c === c.code.toUpperCase();
+  const recorded = c.want === "none" ? true : !!hist && hist.c === c.code.toUpperCase();
   check(`${c.label}`, ok && recorded && errors.length === 0, `notes=[${joined}] recorded=${JSON.stringify(hist)} errors=${errors.join(" | ")}`);
   await page.close();
 }

@@ -14,13 +14,15 @@ function check(name, ok, detail = "") {
 }
 
 // rates per 1 USD; target ILS
-const RATES = { ILS: 4, EUR: 0.9, GBP: 0.8, PLN: 4, RUB: 90 };
+const RATES = { ILS: 4, EUR: 0.9, GBP: 0.8, PLN: 4, RUB: 90, BRL: 5, AUD: 1.5, CAD: 1.25 };
 const STORES = [
   ["US_USD_en-US", "USD"],
   ["DE_EUR_en-US", "EUR"],
   ["GB_GBP_en-US", "GBP"],
   ["PL_PLN_en-US", "PLN"],
   ["BR_BRL_en-US", "BRL"],
+  ["AU_AUD_en-US", "AUD"],
+  ["CA_CAD_en-US", "CAD"],
   ["IL_ILS_en-US", "ILS"],
 ];
 
@@ -51,10 +53,10 @@ for (const [lc, code] of STORES) {
   const wantCode = code.toLowerCase();
   const gotCurrency = (info.bodyCurrency || "").replace(/^_?prices-in-/, "");
   const absurd = info.notes.some((n) => /₪\s?\d{4,}/.test(n)) && code !== "RUB";
-  const converted = code === "ILS" ? info.notes.length === 0 : code === "BRL" ? !absurd : info.notes.length > 0 && !absurd;
+  const converted = code === "ILS" ? info.notes.length === 0 : info.notes.length > 0 && !absurd;
   check(
     `${code}: page says ${gotCurrency || "?"}, shows ${info.shown}, note ${JSON.stringify(info.notes.slice(0, 2))}, recorded ${hist ? `${hist.p} ${hist.c}` : "nothing"}`,
-    info.panel && converted && errors.length === 0 && (code === "BRL" || (hist && hist.c === code)) && gotCurrency === wantCode,
+    info.panel && converted && errors.length === 0 && (hist && hist.c === code) && gotCurrency === wantCode,
     JSON.stringify({ info, hist, errors })
   );
   await h.cleanup();

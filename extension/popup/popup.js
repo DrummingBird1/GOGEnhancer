@@ -86,7 +86,7 @@ function renderBroken(s) {
   box.hidden = false;
 }
 
-const CUR_SYMBOLS = { USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽" };
+const CUR_SYMBOLS = { USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽", BRL: "R$", AUD: "A$", CAD: "C$" };
 
 function slugToTitle(slug) {
   return slug

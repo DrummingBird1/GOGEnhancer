@@ -192,7 +192,7 @@
     const list = el("datalist");
     list.id = "tagAlertTagOptions";
     const amount = input("tagAlertAmount", { type: "number", min: "0", step: "0.01", placeholder: "10.00" });
-    const cur = select("tagAlertCurrency", ["USD", "EUR", "GBP", "ILS", "PLN", "RUB"].map((c) => [c, c]));
+    const cur = select("tagAlertCurrency", ["USD", "EUR", "GBP", "ILS", "PLN", "RUB", "BRL", "AUD", "CAD"].map((c) => [c, c]));
     const btn = /** @type {HTMLButtonElement} */ (el("button", "ghost", "Add tag alert"));
     btn.type = "button";
     btn.id = "tagAlertAdd";

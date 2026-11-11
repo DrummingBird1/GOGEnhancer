@@ -27,6 +27,9 @@ function fixtureHtml() {
         <input id="rate-GBP" type="number">
         <input id="rate-PLN" type="number">
         <input id="rate-RUB" type="number">
+        <input id="rate-BRL" type="number">
+        <input id="rate-AUD" type="number">
+        <input id="rate-CAD" type="number">
         <button id="refreshRates">refresh</button>
         <input id="vatPercent" type="number">
         <input id="vatLabel" type="text">
@@ -306,6 +309,19 @@ describe("rate inputs, VAT, and other simple fields", () => {
     const s = await new Promise((r) => chrome.storage.sync.get(["rates"], r));
     expect(s.rates.ILS).toBe(4);
     expect(s.rates.EUR).toBe(0.9); // untouched
+  });
+
+  it("shows and edits the rates of the Brazilian real, Australian and Canadian dollar too", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ rates: { ILS: 3.65, BRL: 5.5 } }, r));
+    await bootOptions();
+    expect(document.getElementById("rate-BRL").value).toBe("5.5");
+    const inp = document.getElementById("rate-CAD");
+    inp.value = "1.41";
+    inp.dispatchEvent(new Event("change"));
+    await new Promise((r) => setTimeout(r, 0));
+    const s = await new Promise((r) => chrome.storage.sync.get(["rates"], r));
+    expect(s.rates.CAD).toBe(1.41);
+    expect(s.rates.BRL).toBe(5.5);
   });
 
   it("ignores a non-numeric or non-positive rate edit", async () => {

@@ -77,8 +77,8 @@ function parseFxResponse(data) {
 }
 
 const FX_URLS = [
-  "https://api.frankfurter.dev/v2/rates?base=USD&quotes=ILS,EUR,GBP,PLN,RUB",
-  "https://api.frankfurter.dev/v1/latest?from=USD&to=ILS,EUR,GBP,PLN",
+  "https://api.frankfurter.dev/v2/rates?base=USD&quotes=ILS,EUR,GBP,PLN,RUB,BRL,AUD,CAD",
+  "https://api.frankfurter.dev/v1/latest?from=USD&to=ILS,EUR,GBP,PLN,BRL,AUD,CAD",
 ];
 
 async function fetchLiveRates() {
@@ -100,7 +100,7 @@ async function fetchLiveRates() {
     if (!Object.keys(fresh).length) throw new Error(lastErr);
 
     const next = {};
-    ["ILS", "EUR", "GBP", "PLN", "RUB"].forEach((c) => {
+    ["ILS", "EUR", "GBP", "PLN", "RUB", "BRL", "AUD", "CAD"].forEach((c) => {
       if (typeof fresh[c] === "number") next[c] = fresh[c];
     });
 
@@ -476,7 +476,7 @@ async function checkPriceAlerts() {
     if (notifLog[key]) continue;
 
     const sym =
-      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽" })[alert.currency] ||
+      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽", BRL: "R$", AUD: "A$", CAD: "C$" })[alert.currency] ||
       alert.currency;
     const sameCur = hist.filter((e) => e.c === latest.c).map((e) => e.p);
     const peak = Math.max(...sameCur);
@@ -549,7 +549,7 @@ async function checkWishlistWideAlerts() {
     if (notifLog[key]) continue;
 
     const sym =
-      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽" })[latest.c] || latest.c;
+      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽", BRL: "R$", AUD: "A$", CAD: "C$" })[latest.c] || latest.c;
     const low = Math.min(...hist.filter((e) => e.c === latest.c).map((e) => e.p));
     const outcome = await emit({
       id: key,
@@ -600,7 +600,7 @@ async function checkTagAlerts() {
     const key = `tagAlert:${hit.slug}:${hit.tag}:${hit.threshold}`;
     if (notifLog[key]) continue;
     const sym =
-      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽" })[hit.currency] || hit.currency;
+      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽", BRL: "R$", AUD: "A$", CAD: "C$" })[hit.currency] || hit.currency;
     const hist = priceHistory[hit.slug] || [];
     const latest = hist[hist.length - 1];
     const low = Math.min(...hist.filter((e) => e.c === latest?.c).map((e) => e.p));

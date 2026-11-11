@@ -31,7 +31,7 @@
       .join(" ");
 
   /** @type {Record<string, string>} */
-  const SYMBOLS = { USD: "$", EUR: "€", GBP: "£", ILS: "₪", PLN: "zł", RUB: "₽" };
+  const SYMBOLS = { USD: "$", EUR: "€", GBP: "£", ILS: "₪", PLN: "zł", RUB: "₽", BRL: "R$", AUD: "A$", CAD: "C$" };
 
   /**
    * @typedef {{

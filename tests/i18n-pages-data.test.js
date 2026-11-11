@@ -19,7 +19,7 @@ const PAGES = {
 
 /** What a page may show without a row: names, codes, addresses, numbers and sizes. */
 const TECHNICAL = new Set([
-  "GOG Enhancer", "GOG Enhancer 4", "v4.0.0", "v2.4", "ILS", "EUR", "GBP", "PLN", "RUB", "USD", "zł", "₪ ILS", "€ EUR", "£ GBP", "₽ RUB", "zł PLN", "$ USD",
+  "GOG Enhancer", "GOG Enhancer 4", "v4.0.0", "v2.4", "ILS", "EUR", "GBP", "PLN", "RUB", "BRL", "AUD", "CAD", "USD", "zł", "₪ ILS", "€ EUR", "£ GBP", "₽ RUB", "zł PLN", "R$ BRL", "A$ AUD", "C$ CAD", "R$", "A$", "C$", "$ USD",
   "1 USD =", "frankfurter.dev", "api.frankfurter.dev", "www.gog.com", "www.cheapshark.com", "api.gog.com", "catalog.gog.com", "gog.com",
   "Ko-fi", "☕ Ko-fi", "Patreon", "💜 Patreon", "https://discord.com/api/webhooks/…", "Windows 11", "Ryzen 5 5600", "RTX 3060", "Hebrew, English",
   "J", "K", "T", "?", "Alt", "G", "H", "Shift", "English", "עברית (Hebrew)", "Русский (Russian)", "Polski (Polish)", "Deutsch (German)", "Français (French)", "Español (Spanish)",
