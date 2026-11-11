@@ -9,6 +9,14 @@ import "fake-indexeddb/auto";
 // Shared validation helpers (also loaded by the manifest / pages / service worker).
 import "../extension/lib/validate.js";
 
+// happy-dom 21 added Element.checkVisibility(), but it has no layout engine, so it calls
+// every element empty and hidden. The adapter treats a missing checkVisibility as "rendered"
+// (what older happy-dom did and what the unit tests were written for); the real layout is
+// covered by the Playwright suite in e2e/.
+for (const proto of [globalThis.Element?.prototype, globalThis.HTMLElement?.prototype]) {
+  if (proto && "checkVisibility" in proto) Object.defineProperty(proto, "checkVisibility", { value: undefined, configurable: true, writable: true });
+}
+
 const stores = { sync: {}, local: {} };
 const onChangedListeners = [];
 const runtimeListeners = {
