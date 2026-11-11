@@ -108,5 +108,8 @@
     ["Releases on GitHub", "GitHub 上的发布版本"],
     ["Got it", "知道了"],
     ["💱 24 currencies instead of five, two more interface languages (中文, Português), and the extension's own text on gog.com now follows your language", "💱 24 种货币取代原来的 5 种，新增两种界面语言（中文、Português），扩展在 gog.com 上的文字也会跟随你的语言"],
+    ["🐛 Fixed: the Advanced Options page showed no exchange-rate boxes and an empty currency list for the monthly budget — they are back, for all 24 currencies", "🐛 已修复：高级设置页面没有显示汇率输入框，每月预算的货币列表也是空的——现已恢复，覆盖全部 24 种货币"],
+    ["✨ A new logo and refreshed icons — a violet-to-cyan tile with a plus and a spark", "✨ 全新标志和图标——紫色到青色的方块，带有加号和火花"],
+    ["🖼️ New store screenshots and promo images in English and Hebrew", "🖼️ 全新的商店截图和宣传图，提供英文和希伯来文版本"],
   ]);
 })();

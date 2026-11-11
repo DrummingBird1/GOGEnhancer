@@ -99,6 +99,11 @@
       "🩺 “Check this page” reports which lookups still work on the page you have open, and the popup offers a one-click, address-free report when a feature stops working after a site change",
       "🦊 An experimental Firefox build is attached to the release (clean under web-ext lint, but not yet tried in a real Firefox)",
     ],
+    "4.5.1": [
+      "🐛 Fixed: the Advanced Options page showed no exchange-rate boxes and an empty currency list for the monthly budget — they are back, for all 24 currencies",
+      "✨ A new logo and refreshed icons — a violet-to-cyan tile with a plus and a spark",
+      "🖼️ New store screenshots and promo images in English and Hebrew",
+    ],
   };
 
   // Dotted-numeric version compare (3.9.0 < 3.10.0, unlike string sort).

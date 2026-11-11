@@ -93,7 +93,10 @@ const write = (p, s) => writeFileSync(join(ROOT, p), s);
 /** @param {string} cmd @param {string[]} args @param {{ allowFail?: boolean }} [o] */
 function run(cmd, args, o = {}) {
   console.log(`  $ ${cmd} ${args.join(" ")}`);
-  const r = spawnSync(cmd, args, { cwd: ROOT, stdio: "inherit", shell: process.platform === "win32" });
+  // With a shell on Windows the arguments are not quoted for us — quote the ones with spaces.
+  const win = process.platform === "win32";
+  const q = (a) => (win && /[\s"']/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a);
+  const r = spawnSync(cmd, args.map(q), { cwd: o.cwd || ROOT, stdio: "inherit", shell: win });
   if (r.status !== 0 && !o.allowFail) throw new Error(`${cmd} ${args[0] || ""} failed (exit ${r.status})`);
 }
 const git = (...a) => execFileSync("git", ["-c", `safe.directory=${ROOT}`, ...a], { cwd: ROOT, encoding: "utf8" }).trim();

@@ -107,5 +107,8 @@
     ["Releases on GitHub", "Versões no GitHub"],
     ["Got it", "Entendi"],
     ["💱 24 currencies instead of five, two more interface languages (中文, Português), and the extension's own text on gog.com now follows your language", "💱 24 moedas em vez de cinco, mais dois idiomas de interface (中文, Português), e o texto da própria extensão no gog.com agora segue o seu idioma"],
+    ["🐛 Fixed: the Advanced Options page showed no exchange-rate boxes and an empty currency list for the monthly budget — they are back, for all 24 currencies", "🐛 Corrigido: a página de configurações avançadas não mostrava as caixas de taxas de câmbio e a lista de moedas do orçamento mensal estava vazia — elas voltaram, para as 24 moedas"],
+    ["✨ A new logo and refreshed icons — a violet-to-cyan tile with a plus and a spark", "✨ Um novo logo e ícones renovados — um bloco do violeta ao ciano com um sinal de mais e uma faísca"],
+    ["🖼️ New store screenshots and promo images in English and Hebrew", "🖼️ Novas capturas de tela e imagens promocionais da loja, em inglês e hebraico"],
   ]);
 })();
