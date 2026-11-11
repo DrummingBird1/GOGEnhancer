@@ -8,7 +8,7 @@ await import("../extension/lib/storage.js");
 const DEFAULTS = window.GOG_PLUS_DEFAULTS;
 const { SYNC_KEYS, LOCAL_KEYS } = window.GOGPlusStorageKeys;
 
-// Guard against the "falls through to local" trap the CLAUDE.md warns about:
+// Guard against the "falls through to local" trap the ARCHITECTURE.md warns about:
 // a persisted key added to lib/defaults.js without a matching entry in the
 // SYNC_KEYS / LOCAL_KEYS partition in lib/storage.js is routed to local by
 // default — silently, and usually not what you want for a preference. These

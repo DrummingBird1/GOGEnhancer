@@ -26,7 +26,7 @@ Uma extensão de terceiros não oficial para o GOG.com: conversão de moedas em 
 | Arquivo / pasta | Finalidade |
 |---|---|
 | **`extension/`** | **A extensão distribuída** — `manifest.json` mais `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `tour/`, `icons/`. É a pasta que você carrega com "Carregar sem compactação" e a que vai para o zip. |
-| **`store/`** | Material da loja que **não faz parte** da extensão: `STORE_LISTING.md` (textos do painel), `listings/` (descrição da loja, um arquivo por idioma), `screenshots/` (dez por idioma, geradas por `e2e/store-screenshots.mjs`), `brand/` (logo e imagens promocionais), `release-images/` (banners de versão, veja `CLAUDE.md`). Enviado separadamente, nunca incluído no zip. |
+| **`store/`** | Material da loja que **não faz parte** da extensão: `STORE_LISTING.md` (textos do painel), `listings/` (descrição da loja, um arquivo por idioma), `screenshots/` (dez por idioma, geradas por `e2e/store-screenshots.mjs`), `brand/` (logo e imagens promocionais), `release-images/` (banners de versão, veja `ARCHITECTURE.md`). Enviado separadamente, nunca incluído no zip. |
 | **`docs/`** | O site da extensão no GitHub Pages — página inicial, guia, política de privacidade, registro de alterações. |
 | `PRIVACY.md` | Política de privacidade (também disponível em um endereço público: `docs/privacy.html`) |
 | `README.he.md`, `README.ru.md`, `README.pl.md`, `README.de.md`, `README.fr.md`, `README.es.md`, `README.zh-CN.md`, `README.pt-BR.md` | Traduções completas deste arquivo, uma por idioma de interface |
@@ -36,7 +36,7 @@ Uma extensão de terceiros não oficial para o GOG.com: conversão de moedas em 
 | `dist/` | Resultados do build (ignorados pelo git). Regenerados por `build.ps1` |
 | `tests/`, `package.json`, `vitest.config.js`, `eslint.config.js` | Vitest e ESLint para os módulos utilitários puros. Não incluídos no zip da extensão. |
 | `.github/workflows/` | GitHub Actions: `test.yml` executa lint e testes em push/PR, `release.yml` gera o zip e publica uma versão ao enviar uma tag `v*.*.*`, `canary.yml` é uma verificação agendada do site real |
-| `CLAUDE.md` | Notas do projeto para assistentes de IA |
+| `ARCHITECTURE.md` | Notas de arquitetura — estrutura, armazenamento, ordem de carga, limites de privacidade |
 | `README.md` | Versão em inglês deste arquivo |
 
 ---

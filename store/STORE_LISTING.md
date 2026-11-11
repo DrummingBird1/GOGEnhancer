@@ -448,7 +448,7 @@ exact answers:
 > Required to run the content script that adds currency conversion, badges, tags UI, and Hebrew translations on GOG.com pages, and to fetch the public /en/mods catalog page in the background. This extension is single-purpose for GOG.com and does not interact with other domains in the user's browser.
 
 ### No host permission for exchange rates (`api.frankfurter.dev`)
-> Exchange rates are fetched from the Frankfurter public API, which allows cross-origin reads, so the extension declares no host permission for it (version 4.5.0 removed the old one). No user data is sent — only a public GET request for rates.
+> Exchange rates are fetched from the Frankfurter public API, which allows cross-origin reads, so the extension declares no host permission for it (version 4.5.1 removed the old one). No user data is sent — only a public GET request for rates.
 
 ### No permission for folder sync or the address-bar keyword
 > The optional folder sync uses the browser's own folder picker (File System Access API): the user grants one folder at a time, from a click, and the extension only touches the sync file (and, if the user enables dated backups, backup files) in it. The background auto-sync only runs while the browser still remembers that grant and cannot prompt. The address-bar keyword ("gog") is declared in the manifest and needs no permission. Neither makes a network request.
@@ -460,7 +460,7 @@ exact answers:
 > Never granted at install and never used unless the user turns on the optional "send notifications to my own webhook" setting and types an https address. At that moment the extension requests access to that single origin through the browser's own permission prompt, and only the notification's title and text are POSTed to it (no cookies, no referrer, no library data). The address is stored locally and excluded from every export and sync. If the user never sets a webhook, no network request is ever made under this permission. A broad optional pattern is required because the address is chosen by the user and cannot be known in advance.
 
 ### No host permission for the price comparison (`www.cheapshark.com`)
-> The optional cross-store price comparison asks CheapShark's public deals API, which allows cross-origin reads, so the extension declares no host permission for it (version 4.5.0 removed the old one, and the unused `activeTab` permission). Only the game's title is sent, as a public GET request; no user data, cookies or account information. Toggle off in the popup.
+> The optional cross-store price comparison asks CheapShark's public deals API, which allows cross-origin reads, so the extension declares no host permission for it (version 4.5.1 removed the old one, and the unused `activeTab` permission). Only the game's title is sent, as a public GET request; no user data, cookies or account information. Toggle off in the popup.
 
 ---
 
@@ -518,6 +518,6 @@ Before clicking "Submit for review", verify:
 - [ ] The detailed description matches what you actually shipped (don't promise features not in the build).
 - [ ] You have tested the extension in real Chrome on at least: GOG homepage, game page, wishlist, options page, tag dashboard, onboarding wizard.
 - [ ] You have visited /account/wishlist at least once after install so the badge has data to show.
-- [ ] This is an update to a live listing: 4.5.0 **removes** two permissions (`activeTab`, the CheapShark host), so users see no new prompt; any later change that adds a permission or host re-prompts every user.
+- [ ] This is an update to a live listing: 4.5.1 **removes** two permissions (`activeTab`, the CheapShark host), so users see no new prompt; any later change that adds a permission or host re-prompts every user.
 
 Reviews for permission expansions typically take 5–10 business days instead of the usual 1–2; an update that only removes permissions is usually quick.

@@ -3,7 +3,7 @@
 //   npm run verify            the gates every change must pass: unit tests, lint, typecheck, coverage
 //   npm run verify -- --e2e   …plus the end-to-end suite and the build of both zips
 //   npm run verify -- --full  …plus every local deep check in e2e/ (needs a Chromium that honours
-//                              --load-extension — see CLAUDE.md "Running and debugging")
+//                              --load-extension — see ARCHITECTURE.md "Running and debugging")
 //
 // Prints one line per step and a summary; exits 1 if any step failed. Steps that need a
 // saved login (live-account) or touch the real site (live-*) are never run from here.

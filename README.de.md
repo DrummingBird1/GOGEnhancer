@@ -26,7 +26,7 @@ Eine inoffizielle Erweiterung für GOG.com von Dritten: Währungsumrechnung zu a
 | Datei / Ordner | Zweck |
 |---|---|
 | **`extension/`** | **Die auslieferbare Erweiterung** — `manifest.json` plus `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `tour/`, `icons/`. Diesen Ordner lädst du mit „Entpackte Erweiterung laden“, und er wird auch zur ZIP-Datei gepackt. |
-| **`store/`** | Store-Material, das **nicht** zur Erweiterung gehört: `STORE_LISTING.md` (Texte für das Dashboard), `listings/` (Store-Beschreibung, eine Datei pro Sprache), `screenshots/` (zehn pro Sprache, erzeugt von `e2e/store-screenshots.mjs`), `brand/` (Logo und Werbebilder), `release-images/` (Release-Banner, siehe `CLAUDE.md`). Wird separat hochgeladen und nie in die ZIP-Datei gepackt. |
+| **`store/`** | Store-Material, das **nicht** zur Erweiterung gehört: `STORE_LISTING.md` (Texte für das Dashboard), `listings/` (Store-Beschreibung, eine Datei pro Sprache), `screenshots/` (zehn pro Sprache, erzeugt von `e2e/store-screenshots.mjs`), `brand/` (Logo und Werbebilder), `release-images/` (Release-Banner, siehe `ARCHITECTURE.md`). Wird separat hochgeladen und nie in die ZIP-Datei gepackt. |
 | **`docs/`** | Die Website der Erweiterung auf GitHub Pages — Startseite, Anleitung, Datenschutzerklärung, Änderungsprotokoll. |
 | `PRIVACY.md` | Datenschutzerklärung (auch unter einer öffentlichen Adresse erreichbar: `docs/privacy.html`) |
 | `README.he.md`, `README.ru.md`, `README.pl.md`, `README.de.md`, `README.fr.md`, `README.es.md`, `README.zh-CN.md`, `README.pt-BR.md` | Vollständige Übersetzungen dieser Datei, je eine pro Oberflächensprache |
@@ -36,7 +36,7 @@ Eine inoffizielle Erweiterung für GOG.com von Dritten: Währungsumrechnung zu a
 | `dist/` | Build-Ergebnisse (in gitignore). Von `build.ps1` erzeugt |
 | `tests/`, `package.json`, `vitest.config.js`, `eslint.config.js` | Vitest und ESLint für die reinen Hilfsmodule. Nicht in der ZIP der Erweiterung enthalten. |
 | `.github/workflows/` | GitHub Actions: `test.yml` führt Lint und Tests bei Push/PR aus, `release.yml` baut die ZIP und veröffentlicht ein Release beim Push eines `v*.*.*`-Tags, `canary.yml` ist eine geplante Prüfung der Live-Seite |
-| `CLAUDE.md` | Projektnotizen für KI-Assistenten |
+| `ARCHITECTURE.md` | Architekturnotizen — Aufbau, Speicher, Ladereihenfolge, Datenschutzgrenzen |
 | `README.md` | Englische Fassung dieser Datei |
 
 ---

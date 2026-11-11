@@ -11,7 +11,7 @@
 // (the stubs say TODO and --commit refuses to go on while a TODO remains), and
 // refuses to start from a dirty tree or a version that isn't newer.
 //
-// See CLAUDE.md, "GitHub workflow", for what the tag triggers.
+// See CONTRIBUTING.md for what the tag triggers (the release workflow publishes a GitHub Release with the zips).
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { execFileSync, spawnSync } from "node:child_process";

@@ -13,7 +13,7 @@ async function open(search) {
   document.body.innerHTML = body;
   window.history.replaceState({}, "", `/tour/whatsnew.html${search}`);
   window.close = vi.fn();
-  chrome.runtime.getManifest = () => ({ version: "4.5.0" });
+  chrome.runtime.getManifest = () => ({ version: "4.5.1" });
   await import("../extension/tour/whatsnew.js");
   document.dispatchEvent(new Event("DOMContentLoaded"));
   await vi.waitFor(() => expect(document.querySelectorAll("#wnBody li").length).toBeGreaterThan(0));
@@ -28,7 +28,7 @@ describe("the what's-new tab", () => {
   it("lists the changes of the new version for someone coming from 4.0.0", async () => {
     await open("?from=4.0.0");
     expect(document.getElementById("wnIntro").textContent).toContain("4.0.0");
-    expect(document.getElementById("wnIntro").textContent).toContain("4.5.0");
+    expect(document.getElementById("wnIntro").textContent).toContain("4.5.1");
     const items = [...document.querySelectorAll("#wnBody li")].map((l) => l.textContent);
     expect(items.some((t) => t.includes("24 currencies"))).toBe(true);
     expect(items.some((t) => t.includes("Frankfurter"))).toBe(true);
@@ -36,7 +36,7 @@ describe("the what's-new tab", () => {
 
   it("still shows the current version when it does not know the previous one", async () => {
     await open("");
-    expect(document.getElementById("wnPill").textContent).toBe("GOG Enhancer 4.5.0");
+    expect(document.getElementById("wnPill").textContent).toBe("GOG Enhancer 4.5.1");
     expect(document.querySelectorAll("#wnBody li").length).toBeGreaterThan(3);
   });
 

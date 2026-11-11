@@ -26,7 +26,7 @@
 | קובץ / תיקייה | תפקיד |
 |---|---|
 | **`extension/`** | **התוסף עצמו** — `manifest.json` + `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `tour/`, `icons/`. זו התיקייה שטוענים דרך "Load unpacked", וזו התיקייה היחידה שנארזת ל-zip. |
-| **`store/`** | חומרי Web-Store שהם **לא** חלק מהתוסף: `STORE_LISTING.md` (טקסט ללוח הבקרה), `screenshots/` (5 תמונות למסך החנות, נוצרות מחדש על ידי `e2e/store-screenshots.mjs`), `release-images/` (סקריפט ליצירת תמונת באנר לכל גרסה, ראו `CLAUDE.md`). מועלים/משמשים בנפרד, לא נכללים ב-zip. |
+| **`store/`** | חומרי Web-Store שהם **לא** חלק מהתוסף: `STORE_LISTING.md` (טקסט ללוח הבקרה), `screenshots/` (5 תמונות למסך החנות, נוצרות מחדש על ידי `e2e/store-screenshots.mjs`), `release-images/` (סקריפט ליצירת תמונת באנר לכל גרסה, ראו `ARCHITECTURE.md`). מועלים/משמשים בנפרד, לא נכללים ב-zip. |
 | **`docs/`** | אתר התדמית של התוסף, מתארח ב-GitHub Pages — עמוד נחיתה, מדריך, מדיניות פרטיות, יומן שינויים. |
 | `PRIVACY.md` | מדיניות הפרטיות — מתארחת גם בכתובת ציבורית (`docs/privacy.html`) לפני הגשה לחנות הרחבות |
 | `README.he.md` | הקובץ הזה |
@@ -37,7 +37,7 @@
 | `dist/` | פלטי build (לא נכללים ב-git). נוצרים מחדש על ידי `build.ps1` |
 | `tests/`, `package.json`, `vitest.config.js`, `eslint.config.js` | סביבת Vitest + ESLint למודולי utility. לא נשלח בתוך ה-zip של התוסף. |
 | `.github/workflows/` | GitHub Actions: `test.yml` מריץ lint+tests על כל push/PR, `release.yml` בונה את ה-zip ומפרסם Release בכל push של tag בפורמט `v*.*.*`, `canary.yml` בדיקה מתוזמנת של האתר החי |
-| `CLAUDE.md` | הערות פרויקט לכלי AI לכתיבת קוד |
+| `ARCHITECTURE.md` | הערות ארכיטקטורה — מבנה, אחסון, סדר טעינה וגבולות פרטיות |
 | `README.md` | הגרסה האנגלית של הקובץ הזה |
 
 ---

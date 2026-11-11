@@ -70,7 +70,7 @@ const demoLocal = (lang = "en") => localize({
     { t: Date.now() - 2 * 3600000, kind: "mods", host: "www.gog.com", path: "/en/mods", status: 200, ok: true },
     { t: Date.now() - 26 * 3600000, kind: "fx", host: "api.frankfurter.dev", path: "/latest", status: 200, ok: true },
   ],
-  lastSeenVersion: "4.5.0", // the popup is shown without the "what's new" panel
+  lastSeenVersion: "4.5.1", // the popup is shown without the "what's new" panel
   achievements: { "first-tag": day(30), curator: day(20), "note-taker": day(18), finisher: day(18), tripwire: day(9), "streak-3": day(3) },
 }, lang);
 
@@ -85,7 +85,7 @@ function localize(data, lang) {
 }
 
 const syncFor = (lang) => ({
-  uiLanguage: lang, theme: "neon", targetCurrency: lang === "he" ? "ILS" : "EUR", currencyConverter: true, designInjection: true, taxEstimator: false, onboardingComplete: true, lastSeenVersion: "4.5.0",
+  uiLanguage: lang, theme: "neon", targetCurrency: lang === "he" ? "ILS" : "EUR", currencyConverter: true, designInjection: true, taxEstimator: false, onboardingComplete: true, lastSeenVersion: "4.5.1",
   rates: { ILS: 3.6, EUR: 0.92, GBP: 0.79, PLN: 4.0 }, ratesUpdatedAt: Date.now() - 3600000, preferredLanguages: ["English", "Hebrew"],
   catalogTools: true, ownedDisplay: "dim", monthlyBudget: { amount: 60, currency: "USD" }, monthlyGoal: 2,
 });

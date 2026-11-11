@@ -9,7 +9,7 @@
  * other user-typed string and an innerHTML assignment (tooltips, the tag
  * dashboard, the game panel). Every call site that interpolates user data
  * into HTML MUST route it through this first — see the "No innerHTML for
- * user input" guard in CLAUDE.md.
+ * user input" guard in ARCHITECTURE.md.
  */
 // @ts-check
 

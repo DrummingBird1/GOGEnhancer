@@ -17,7 +17,7 @@
  * Nothing here changes the site's own DOM structure: sorting uses CSS `order`
  * on the grid items (the grid is a CSS grid), hiding is a class, and the
  * controls live in the cover host the badge feature already established — the
- * card anchor itself is never given `position: relative` (see CLAUDE.md).
+ * card anchor itself is never given `position: relative` (see ARCHITECTURE.md).
  * The site re-renders tiles when the page changes, so every pass is
  * idempotent and cheap.
  */

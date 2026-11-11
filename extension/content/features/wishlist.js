@@ -4,7 +4,7 @@
  * discount / price / distance to your tracked low, "near my low" and "ending
  * soon" filters, grouping, a live total, exports), and the content-script→
  * background round-trip that reports the discounted-item count for the
- * toolbar badge (see background/background.js and CLAUDE.md's "wishlist
+ * toolbar badge (see background/background.js and ARCHITECTURE.md's "wishlist
  * badge dance" section — the SW can't scrape /account/wishlist directly,
  * it's an Angular SPA route). Pulled out of the former single-file
  * content.js during the v2.8.0 module split.
@@ -303,7 +303,7 @@
             total,
             // The slug list itself — background.js has no other way to know
             // which games are wishlisted (it can't scrape the Angular SPA
-            // route directly; see CLAUDE.md's "wishlist badge dance").
+            // route directly; see ARCHITECTURE.md's "wishlist badge dance").
             // Enables wishlist-wide price alerts (checkWishlistWideAlerts).
             slugs: cards.map((c) => c.slug).filter(Boolean),
           });

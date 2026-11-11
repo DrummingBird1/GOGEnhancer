@@ -26,7 +26,7 @@ Une extension tierce non officielle pour GOG.com : conversion de devises aux tau
 | Fichier / dossier | Rôle |
 |---|---|
 | **`extension/`** | **L'extension livrable** — `manifest.json` plus `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `tour/`, `icons/`. C'est ce dossier que vous chargez avec « Charger l'extension non empaquetée » et ce qui est compressé en zip. |
-| **`store/`** | Matériel pour la boutique qui **ne fait pas partie** de l'extension : `STORE_LISTING.md` (textes pour le tableau de bord), `listings/` (description de la boutique, un fichier par langue), `screenshots/` (dix par langue, générées par `e2e/store-screenshots.mjs`), `brand/` (logo et visuels promotionnels), `release-images/` (bannières de version, voir `CLAUDE.md`). Envoyé séparément, jamais inclus dans le zip. |
+| **`store/`** | Matériel pour la boutique qui **ne fait pas partie** de l'extension : `STORE_LISTING.md` (textes pour le tableau de bord), `listings/` (description de la boutique, un fichier par langue), `screenshots/` (dix par langue, générées par `e2e/store-screenshots.mjs`), `brand/` (logo et visuels promotionnels), `release-images/` (bannières de version, voir `ARCHITECTURE.md`). Envoyé séparément, jamais inclus dans le zip. |
 | **`docs/`** | Le site de l'extension sur GitHub Pages — page d'accueil, guide, politique de confidentialité, journal des modifications. |
 | `PRIVACY.md` | Politique de confidentialité (aussi disponible à une adresse publique : `docs/privacy.html`) |
 | `README.he.md`, `README.ru.md`, `README.pl.md`, `README.de.md`, `README.fr.md`, `README.es.md`, `README.zh-CN.md`, `README.pt-BR.md` | Traductions complètes de ce fichier, une par langue d'interface |
@@ -36,7 +36,7 @@ Une extension tierce non officielle pour GOG.com : conversion de devises aux tau
 | `dist/` | Résultats de build (ignorés par git). Régénérés par `build.ps1` |
 | `tests/`, `package.json`, `vitest.config.js`, `eslint.config.js` | Vitest et ESLint pour les modules utilitaires purs. Non inclus dans le zip de l'extension. |
 | `.github/workflows/` | GitHub Actions : `test.yml` lance lint et tests à chaque push/PR, `release.yml` construit le zip et publie une version lors du push d'un tag `v*.*.*`, `canary.yml` est une vérification planifiée du site réel |
-| `CLAUDE.md` | Notes de projet pour les assistants IA |
+| `ARCHITECTURE.md` | Notes d'architecture — structure, stockage, ordre de chargement, frontière de confidentialité |
 | `README.md` | Version anglaise de ce fichier |
 
 ---

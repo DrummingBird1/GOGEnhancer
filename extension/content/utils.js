@@ -1,7 +1,7 @@
 /**
  * GOG+ content-script utilities shared across content/features/*.js.
  * Pulled out of the former single-file content.js during the module split —
- * see CLAUDE.md's content-script load-order section.
+ * see ARCHITECTURE.md's content-script load-order section.
  */
 // @ts-check
 

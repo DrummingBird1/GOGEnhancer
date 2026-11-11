@@ -288,7 +288,7 @@ function renderGames() {
 // a card's chart toggle is expanded. Same hand-built-SVG approach as
 // content/features/game-page.js's renderSparkline and card-badges.js's
 // buildMiniSparkline — each context builds its own, sized for its own use;
-// see CLAUDE.md's content-script load-order notes on why there's no shared
+// see ARCHITECTURE.md's content-script load-order notes on why there's no shared
 // abstraction across the content-script/dashboard boundary.
 /**
  * @param {Array<{d: string, p: number, c: string}>} entries

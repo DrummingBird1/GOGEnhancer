@@ -164,7 +164,7 @@ async function main() {
     if (d.appeared.length > 12) console.log(`  + …and ${d.appeared.length - 12} more new`);
     if (d.missing.length) failed = true;
   }
-  if (failed) console.log("\nA hook the adapter relies on is gone — see CLAUDE.md, \"When gog.com changes its markup\".");
+  if (failed) console.log("\nA hook the adapter relies on is gone — see ARCHITECTURE.md, \"When gog.com changes its markup\".");
   return failed ? 1 : 0;
 }
 

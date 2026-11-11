@@ -8,16 +8,15 @@ coverage/
 # Build artifacts and manual extractions (all under dist/)
 dist/
 
-# Local tooling config. The shared Claude Code settings and slash commands
-# (.claude/settings.json, .claude/commands/) ARE tracked; personal overrides are not.
-.claude/settings.local.json
-.claude/*.local.*
+# Personal assistant setup (kept local)
+.claude/
+CLAUDE.md
 .vscode/
 .idea/
 
-# AGENTS.md is a per-machine Codex mirror of CLAUDE.md (contains a
-# machine-specific working-dir path). Kept local, not shared.
+# Per-machine assistant files — personal, never shared
 AGENTS.md
+HANDOFF.local.md
 
 # A saved gog.com login for the logged-in e2e checks (node e2e/save-login.mjs) — a credential, never commit
 e2e/.auth/

@@ -2,7 +2,7 @@
  * GOG+ tag dashboard orchestrator (v2.8.0+, post module-split).
  *
  * Was a single ~1028-line top-level script through v2.7.0; the individual
- * features are now tags/state.js and tags/features/*.js — see CLAUDE.md's
+ * features are now tags/state.js and tags/features/*.js — see ARCHITECTURE.md's
  * content-script/tag-dashboard load-order notes. This file is left with
  * only what's genuinely orchestration: loading storage into state on boot,
  * wiring up the top-level DOM event listeners, and the density toggle.

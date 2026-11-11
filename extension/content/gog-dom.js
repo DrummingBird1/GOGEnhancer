@@ -88,7 +88,7 @@
    * The element badges should be anchored to: the smallest ancestor of the
    * cover image that is NOT the card itself. GOG's carousel/preview overlays
    * already use positioned ancestors, so modifying the card root explodes
-   * their layout (see CLAUDE.md "Card badge placement"). Walks up at most
+   * their layout (see ARCHITECTURE.md "Card badge placement"). Walks up at most
    * 3 levels until it finds a wrapper clearly smaller than the card.
    * @param {Element} card
    * @param {Element} [img]

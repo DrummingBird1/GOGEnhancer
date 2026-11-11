@@ -26,7 +26,7 @@ Nieoficjalne rozszerzenie dla GOG.com: przeliczanie cen po bieżących kursach, 
 | Plik / folder | Przeznaczenie |
 |---|---|
 | **`extension/`** | **Samo rozszerzenie** — `manifest.json` oraz `background/`, `content/`, `lib/`, `popup/`, `options/`, `onboarding/`, `tags/`, `tour/`, `icons/`. Ten folder wczytujesz jako „Załaduj rozpakowane” i to on trafia do pliku zip. |
-| **`store/`** | Materiały dla sklepu, które **nie należą** do rozszerzenia: `STORE_LISTING.md` (teksty do panelu), `listings/` (opis sklepu, po jednym pliku na język), `screenshots/` (po dziesięć na język, generowane przez `e2e/store-screenshots.mjs`), `brand/` (logo i grafiki promocyjne), `release-images/` (banery wydań, zob. `CLAUDE.md`). Wysyłane osobno, nigdy nie trafiają do zip. |
+| **`store/`** | Materiały dla sklepu, które **nie należą** do rozszerzenia: `STORE_LISTING.md` (teksty do panelu), `listings/` (opis sklepu, po jednym pliku na język), `screenshots/` (po dziesięć na język, generowane przez `e2e/store-screenshots.mjs`), `brand/` (logo i grafiki promocyjne), `release-images/` (banery wydań, zob. `ARCHITECTURE.md`). Wysyłane osobno, nigdy nie trafiają do zip. |
 | **`docs/`** | Strona rozszerzenia na GitHub Pages — strona główna, przewodnik, polityka prywatności, lista zmian. |
 | `PRIVACY.md` | Polityka prywatności (dostępna też pod publicznym adresem `docs/privacy.html`) |
 | `README.he.md`, `README.ru.md`, `README.pl.md`, `README.de.md`, `README.fr.md`, `README.es.md`, `README.zh-CN.md`, `README.pt-BR.md` | Pełne tłumaczenia tego pliku — po jednym na język interfejsu |
@@ -36,7 +36,7 @@ Nieoficjalne rozszerzenie dla GOG.com: przeliczanie cen po bieżących kursach, 
 | `dist/` | Wyniki budowania (w gitignore). Tworzone przez `build.ps1` |
 | `tests/`, `package.json`, `vitest.config.js`, `eslint.config.js` | Vitest i ESLint dla czystych modułów pomocniczych. Nie trafiają do zip rozszerzenia. |
 | `.github/workflows/` | GitHub Actions: `test.yml` uruchamia lint i testy przy push/PR, `release.yml` buduje zip i publikuje wydanie po wypchnięciu tagu `v*.*.*`, `canary.yml` to cykliczne sprawdzanie żywej strony |
-| `CLAUDE.md` | Notatki o projekcie dla asystentów AI |
+| `ARCHITECTURE.md` | Notatki o architekturze — układ, przechowywanie, kolejność ładowania, granice prywatności |
 | `README.md` | Angielska wersja tego pliku |
 
 ---

@@ -26,7 +26,7 @@ GOG.com 的非官方第三方扩展：实时汇率换算、价格历史、跨商
 | 文件 / 文件夹 | 用途 |
 |---|---|
 | **`extension/`** | **可发布的扩展本体**——`manifest.json` 以及 `background/`、`content/`、`lib/`、`popup/`、`options/`、`onboarding/`、`tags/`、`tour/`、`icons/`。“加载已解压的扩展程序”选的就是它，打包成 zip 的也是它。 |
-| **`store/`** | **不属于**扩展的商店素材：`STORE_LISTING.md`（后台所需文案）、`listings/`（商店描述，每种语言一个文件）、`screenshots/`（每种语言十张，由 `e2e/store-screenshots.mjs` 生成）、`brand/`（标志与宣传图）、`release-images/`（每个版本的横幅，见 `CLAUDE.md`）。单独上传，绝不打包进 zip。 |
+| **`store/`** | **不属于**扩展的商店素材：`STORE_LISTING.md`（后台所需文案）、`listings/`（商店描述，每种语言一个文件）、`screenshots/`（每种语言十张，由 `e2e/store-screenshots.mjs` 生成）、`brand/`（标志与宣传图）、`release-images/`（每个版本的横幅，见 `ARCHITECTURE.md`）。单独上传，绝不打包进 zip。 |
 | **`docs/`** | 扩展的网站，托管在 GitHub Pages——首页、使用指南、隐私政策、更新日志。 |
 | `PRIVACY.md` | 隐私政策（也托管在公开地址 `docs/privacy.html`） |
 | `README.he.md`、`README.ru.md`、`README.pl.md`、`README.de.md`、`README.fr.md`、`README.es.md`、`README.zh-CN.md`、`README.pt-BR.md` | 本文件的完整译本，每种界面语言一个 |
@@ -36,7 +36,7 @@ GOG.com 的非官方第三方扩展：实时汇率换算、价格历史、跨商
 | `dist/` | 构建产物（已加入 gitignore）。由 `build.ps1` 生成 |
 | `tests/`、`package.json`、`vitest.config.js`、`eslint.config.js` | 用于纯工具模块的 Vitest 与 ESLint。不包含在扩展 zip 中。 |
 | `.github/workflows/` | GitHub Actions：`test.yml` 在推送/PR 时运行 lint 与测试，`release.yml` 在推送 `v*.*.*` 标签时构建 zip 并发布 Release，`canary.yml` 是对真实网站的定时检查 |
-| `CLAUDE.md` | 给 AI 编程助手的项目说明 |
+| `ARCHITECTURE.md` | 架构说明——结构、存储、加载顺序、隐私边界 |
 | `README.md` | 本文件的英文版 |
 
 ---

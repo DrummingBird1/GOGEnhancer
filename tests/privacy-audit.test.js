@@ -9,7 +9,7 @@ import { resolve, relative, join } from "node:path";
 //   • a network destination added to lib/net.js without the same,
 //   • a network call that bypasses lib/net.js (and so its allow-list and log),
 //   • anything that could load or run remote code.
-// CLAUDE.md's "Doc consistency" rule describes the human process; this is the
+// ARCHITECTURE.md's "Doc consistency" rule describes the human process; this is the
 // part a machine can enforce.
 
 const ROOT = resolve(__dirname, "..");
@@ -35,7 +35,7 @@ const ofType = (...exts) => files.filter((f) => exts.some((e) => f.endsWith(e)))
 const PRIVACY = read("PRIVACY.md");
 const PRIVACY_HTML = read("docs/privacy.html");
 const STORE = read("store/STORE_LISTING.md");
-const CLAUDE = read("CLAUDE.md");
+const CLAUDE = read("ARCHITECTURE.md");
 
 const hostOf = (pattern) => pattern.replace(/^https:\/\//, "").replace(/\/\*$/, "");
 
@@ -71,7 +71,7 @@ describe("permissions", () => {
 });
 
 describe("network destinations (lib/net.js allow-list)", () => {
-  it.each(NET_HOSTS)("%s is declared in the policy, its web page, the store listing and CLAUDE.md or the privacy-boundary notes", (host) => {
+  it.each(NET_HOSTS)("%s is declared in the policy, its web page, the store listing and ARCHITECTURE.md or the privacy-boundary notes", (host) => {
     for (const doc of [PRIVACY, PRIVACY_HTML]) expect(doc).toContain(host);
     expect(STORE).toContain(host.replace(/^www\./, ""));
   });

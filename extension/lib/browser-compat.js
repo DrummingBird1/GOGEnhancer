@@ -1,5 +1,5 @@
 /**
- * GOG+ Firefox compatibility groundwork (v3.0.0, UNVERIFIED — see CLAUDE.md
+ * GOG+ Firefox compatibility groundwork (v3.0.0, UNVERIFIED — see ARCHITECTURE.md
  * and the README's browser-support note; only Chromium-based tooling is
  * available to actually test with here).
  *

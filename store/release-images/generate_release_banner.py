@@ -12,7 +12,7 @@ matches the brand palette used in store/*.py and docs/assets/hero-icon.png:
 dark near-black background, cyan + magenta glow blobs, the extension's own
 plus-mark icon). release.yml embeds this file automatically via its raw
 GitHub URL when it exists at that path for the tag being released — see
-this repo's CLAUDE.md "Release images" section. Run this and commit the
+this repo's CONTRIBUTING.md. Run this and commit the
 output BEFORE tagging a release, same step as the changelog/README update.
 
 Two styles. `classic` (1280x400) is the plain banner used for patch releases. `major`

@@ -3,7 +3,7 @@
  *
  * Was a single ~1560-line file through v2.7.0; the individual features are
  * now content/state.js, content/utils.js, and content/features/*.js — see
- * CLAUDE.md's content-script load-order section for the full list and why
+ * ARCHITECTURE.md's content-script load-order section for the full list and why
  * the split needed a shared `state` module instead of one big closure.
  * This file is left with only what's genuinely orchestration: running every
  * feature once, deciding when to re-run (the Angular SPA's DOM mutates

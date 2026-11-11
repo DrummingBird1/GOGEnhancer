@@ -34,7 +34,7 @@ export default [
         GOGPlusTooltips: "readonly",
         GOGPlusToasts: "readonly",
         // content/state.js, content/utils.js, content/features/*.js — the
-        // v2.8.0 content.js module split (see CLAUDE.md).
+        // v2.8.0 content.js module split (see ARCHITECTURE.md).
         GOGPlusContentState: "readonly",
         GOGPlusContentUtils: "readonly",
         GOGPlusCurrencyFeature: "readonly",

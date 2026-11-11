@@ -94,7 +94,7 @@ jobs:
 
           # Optional per-release banner — generated via
           # store/release-images/generate_release_banner.py and committed
-          # before tagging (see CLAUDE.md's "Release images" section). Only
+          # before tagging (see CONTRIBUTING.md, "Releases, banners and store material"). Only
           # prepended if it exists for this exact tag; older releases and
           # any release someone forgets to generate one for just don't get
           # an image, no failure either way.

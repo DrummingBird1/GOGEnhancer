@@ -111,5 +111,6 @@
     ["🐛 Fixed: the Advanced Options page showed no exchange-rate boxes and an empty currency list for the monthly budget — they are back, for all 24 currencies", "🐛 已修复：高级设置页面没有显示汇率输入框，每月预算的货币列表也是空的——现已恢复，覆盖全部 24 种货币"],
     ["✨ A new logo and refreshed icons — a violet-to-cyan tile with a plus and a spark", "✨ 全新标志和图标——紫色到青色的方块，带有加号和火花"],
     ["🖼️ New store screenshots and promo images in English and Hebrew", "🖼️ 全新的商店截图和宣传图，提供英文和希伯来文版本"],
+    ["🆕 A tab now opens after every update and lists what changed since the version you had, in your interface language", "🆕 每次更新后现在都会打开一个标签页，用你的界面语言列出自你之前版本以来的变化"],
   ]);
 })();

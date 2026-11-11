@@ -2,7 +2,7 @@
 
 Thanks for helping. This is a small, privacy-first browser extension (Manifest V3, vanilla JavaScript, no bundler), and it is already live on the Chrome Web Store, so changes reach real people's data. A few habits keep that safe.
 
-**[CLAUDE.md](./CLAUDE.md) is the source of truth** for architecture, load order, storage, privacy and security rules, and for how to work in this repository — whether you are a person or an AI coding agent (Claude Code, Codex, Grok…). Read its "Current status and handoff" section first. This file is the short version.
+**[ARCHITECTURE.md](./ARCHITECTURE.md)** describes how the extension is put together — architecture, load order, storage, privacy and security rules. Read the part about the area you are changing; this file is the short version of the working rules.
 
 ## Set up
 
@@ -23,7 +23,7 @@ Use **npm** here, not pnpm: `package-lock.json` is what CI installs from.
 - **Stored data:** never rename an internal `gog-plus` / `GOGPlus` identifier, and never change a storage shape without a migration and a test with the old shape.
 - **Visible text:** every new string in the extension's own pages needs a row in all six translation files (`tests/i18n-pages-data.test.js` tells you what is missing).
 - **gog.com markup:** nothing outside `content/gog-dom*.js` looks for gog.com's class names.
-- User-facing changes get an entry in both `extension/lib/changelog.js` and `docs/changelog.html`; `README.md` and `README.he.md` change together.
+- User-facing changes get an entry in both `extension/lib/changelog.js` and `docs/changelog.html`; `README.md` and its translations (`README.he.md`, `.ru`, `.pl`, `.de`, `.fr`, `.es`, `.zh-CN`, `.pt-BR`) change together — `tests/readme-languages.test.js` keeps their structure identical.
 
 ## Please do not
 
@@ -31,6 +31,9 @@ Use **npm** here, not pnpm: `package-lock.json` is what CI installs from.
 - Describe an unfixed security problem in a public issue — use the contact in `SECURITY.md` once it is merged, or the repository owner's profile until then.
 - Merge a release, push a tag or publish to a store. Those are the maintainer's.
 
-## Working with an AI coding agent
+## Releases, banners and store material
 
-It is welcome; the same rules apply to it. It should read `CLAUDE.md`, state which files it will touch before editing the shared hotspots listed there, run `npm run verify`, and say what it did not verify. Per-machine agent files (`AGENTS.md`, `HANDOFF.local.md`, `.claude/settings.local.json`) stay untracked.
+The maintainer cuts releases (version bump, both changelogs, the banner, the gates, the tag — `node scripts/release.mjs`, see its header). Two things worth knowing:
+
+- **Release banners come in two styles.** A release whose version ends in `.0` gets the special *major* banner (1280×640: big logo, gradient version number, tagline and four highlight chips — `--highlights "a|b|c|d"`); other releases get the plain classic one. Generate it with `store/release-images/generate_release_banner.py` and commit `store/release-images/vX.Y.Z.png` before tagging.
+- **Brand and store assets are generated, not hand-edited:** `store/brand/logo.py` (the mark, extension icons, favicon), `store/brand/promo.py` (store promo tiles, English and Hebrew), `e2e/store-screenshots.mjs` (ten screenshots per language, demo data), and one description file per language in `store/listings/`.

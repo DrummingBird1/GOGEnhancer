@@ -30,7 +30,7 @@ await import("../extension/content/content.js");
 const { applyCardBadges, __setSettingsForTest } = window.GOGPlusContentInternals;
 const DEFAULTS = window.GOG_PLUS_DEFAULTS;
 
-// applyCardBadges() is CLAUDE.md's own documented "hot zone": the badge strip
+// applyCardBadges() is ARCHITECTURE.md's own documented "hot zone": the badge strip
 // must never land on the card root itself (GOG's carousel/preview overlays
 // use the nearest positioned ancestor, so making the card `position:relative`
 // explodes their layout), and duplicate cover-link/body-link anchors for the
@@ -143,7 +143,7 @@ describe("applyCardBadges — hot zone regressions", () => {
     // Confirms the function actually reached the position-check code path
     // (didn't just bail out early for an unrelated reason).
     expect(host.classList.contains("gog-plus-cover-host")).toBe(true);
-    // Must stay exactly as authored — CLAUDE.md: reparenting position here
+    // Must stay exactly as authored — ARCHITECTURE.md: reparenting position here
     // collapses GOG's own carousel/preview overlays.
     expect(host.style.position).toBe("absolute");
   });

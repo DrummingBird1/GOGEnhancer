@@ -1,40 +1,10 @@
-# CLAUDE.md
+# GOG Enhancer — architecture notes
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+How the extension is put together: layout, storage, load order, the site adapter, privacy boundary, translations and the checks that guard them. Read it before changing anything under `extension/`. [CONTRIBUTING.md](./CONTRIBUTING.md) is the short version of the working rules.
 
 ## What this is
 
 **GOG Enhancer** — an unofficial third-party Chromium extension (Manifest V3) that enhances gog.com with live currency conversion, price-history tracking, custom tags, Hebrew/RTL translations, and visual upgrades. Vanilla JS/CSS, no framework, no bundler.
-
-## Current status and handoff (updated 2026-11-11)
-
-Any agent or contributor can pick up from here; this section is the only "where are we" note, so keep it current and short (the `/handoff` command in `.claude/commands/`, when present, describes how).
-
-- **Released:** v4.0.0 (tag `v4.0.0`, GitHub Release with the Web Store zip and the experimental Firefox zip, Pages live). **The extension is already live on the Chrome Web Store (Chrome only)**, so a release is an update to existing users: storage-shape changes need a migration and a new host permission would re-prompt them (removing a permission does not). `main` has since only taken Dependabot bumps.
-- **4.5.0 is on `main` and tagged `v4.5.0` (GitHub Release published; not yet submitted to any store). 4.5.1 (options-page rate boxes that 4.5.0 never built, new logo and icons) is committed on `main` but not tagged.** Store submission and any further tag still need the maintainer's go-ahead. What 4.5.0 contains is in `docs/changelog.html` (the v4.5.0 entry); in short: input validation on every import path, a calmer insights panel (it no longer pushes the buy box down), working endless scrolling, live ruble rates, two new themes, quiet weekdays, copy/summary/pick helpers, `activeTab` and the CheapShark host permission removed, and light-theme / contrast fixes, 24 currencies, nine interface languages, and a "what's new" tab that opens after every update (`tour/whatsnew.html?from=<previous>`, from `background.js` `onInstalled`; the one exception is an update from before v4, which gets the tour instead). The release banner `store/release-images/v4.5.0.png` exists.
-- **Verified for 4.5.0** (all local, see "Deeper checks" under "Running and debugging"): unit tests, lint, typecheck, coverage thresholds, the end-to-end suite on fixtures and against the live site (logged out and with a saved login, read-only), upgrade from 2.9.0 / 3.0.0 / 4.0.0 on a real profile, old backups (plain and encrypted) read by the new release, currency pages in six stores, every extension page in seven languages, keyboard use and contrast per theme, soak, broken-markup resilience, service-worker restarts, a 2,500-game backup, and the unpacked zips loaded in a browser.
-- **Not done, and only the maintainer can do it:** Edge submission, a run with a real cloud folder (folder sync needs the browser's folder picker) and a real webhook (needs a runtime permission prompt), a real Firefox run, and native-speaker review of the six non-English translations. The 4.5.0 work was done in Chromium (Playwright) and the live site, not in the maintainer's everyday Chrome.
-- **Known, small, left on purpose:** the larger feature ideas (price comparison between regions, bundle value, a play queue, draggable dashboard widgets, a rules builder) were not built. The rate currencies are the 24 in `CURRENCY_TABLE` (`lib/defaults.js`, the single source of truth: symbol, aliases, decimals, fallback rate). Adding one means a row there plus a line in the privacy documents that quote the Frankfurter request; the pickers, rate boxes, FX request, symbol maps and currency names (via `Intl.DisplayNames`) follow from the table.
-- **A post-release audit (2026-10-23)** found a few dozen follow-ups. They are tracked **privately by the maintainer, not in this repo and not as public issues** — some concern security, so do not describe unfixed ones in public issues, PRs or commit messages (describe a fix neutrally). The 4.5.0 branch fixes most of them; which ones are verified fixed is in the maintainer's list, so ask for it before starting a "next release" instead of rediscovering it.
-- **Open PRs** are Dependabot bumps plus maintainer PRs for `SECURITY.md`, a public `ROADMAP.md`, funding links and a lockfile audit fix. The vitest 5 bump fixes a dev-only advisory but is a major version: run `npm run verify:e2e` before merging it.
-- **Do not** merge a release, tag, publish, or submit to a store without the maintainer's explicit go-ahead in that conversation; an earlier go-ahead (for 4.0.0) does not carry over.
-
-### Starting a session (any agent, any user)
-
-1. Read this section, then `git status` and `git log --oneline -5`; check which branch you are on.
-2. `npm install` once, then `npm run verify` (unit tests, lint, typecheck, coverage — about a minute). `npm run verify:e2e` adds the browser suite and the zips; `npm run verify:full` adds every deep check (several minutes, needs a Chromium that honours `--load-extension`).
-3. Say which paths you will touch (see "Dual-agent collaboration"); stay off the serialized hotspots another agent holds.
-4. Read the area you are changing, **reproduce a reported bug before fixing it**, and add a test that fails without the fix.
-5. Before saying "done": `npm run verify` is green, the docs that describe what you changed are updated (privacy / permissions / translations / changelog rules below), and you have said what you did NOT verify.
-
-### Ground rules for this repository
-
-- **It is a public repository.** Nothing tracked may contain local paths, personal e-mail addresses, private notes or repository names, credentials, or the private audit list. Local-only files (`AGENTS.md`, `HANDOFF.local.md`, `*.local.json`, `e2e/.auth/`, `.claude/settings.local.json`) are not tracked; keep them that way.
-- **Never push, tag, merge a release, publish or submit without the maintainer's go-ahead in the current conversation.** Commits on a branch are fine; use the noreply identity override from "GitHub workflow".
-- **Do not turn a failing check into a passing one by loosening it** (a threshold, a timeout, an expectation) — find the cause. If a check is wrong, say why in the commit.
-- **Stored data belongs to real users.** Never rename an internal identifier (`gog-plus` / `GOGPlus`), and never change a storage shape without a migration and a test with the old shape.
-- **Network and permissions are a promise.** New host, new permission, new request = `lib/net.js` allow-list + `PRIVACY.md` + `docs/privacy.html` + `store/STORE_LISTING.md` + `tests/privacy-audit.test.js` together.
-- **Every new visible string needs rows in all six languages** (see "Interface translations").
 
 ## Repository layout
 
@@ -43,8 +13,7 @@ The shippable extension lives entirely under **`extension/`** — `background/`,
 **`store/`** holds Web-Store material that is *not* part of the extension: `STORE_LISTING.md` (submission text, English and Hebrew) and `screenshots/` (the 5 listing PNGs, uploaded separately to the dashboard; regenerate with `node e2e/store-screenshots.mjs` — they use demo data) and `release-images/`. Nothing here ships in the zip.
 
 Everything else stays at the repo root because it's neither the extension nor store-facing:
-- Shared agent setup (tracked): `.claude/settings.json` (allows the gate commands, asks before `git push` / `git tag` / `gh release` / `gh pr merge`, denies reading `e2e/.auth/`) and `.claude/commands/` (`/verify`, `/site-changed`, `/release-prep`, `/handoff`); `CONTRIBUTING.md`. Personal overrides go in `.claude/settings.local.json`, which stays untracked.
-- User-facing docs: `README.md` (English, the repo's front page), `README.he.md` (full Hebrew translation, linked from the top of both), `PRIVACY.md`, `LICENSE`, `CLAUDE.md`.
+- User-facing docs: `README.md` (English, the repo's front page), `README.he.md` (full Hebrew translation, linked from the top of both), `PRIVACY.md`, `LICENSE`, `ARCHITECTURE.md` (this file).
 - Build + test tooling: `build.ps1`, `scripts/` (`release.mjs`, `build-firefox.mjs`), `e2e/`, `package.json`, `package-lock.json`, `vitest.config.js`, `eslint.config.js`, `tests/`, `node_modules/`.
 - `docs/` — the GitHub Pages site: `index.html`, `guide.html` (how it works + FAQ), `privacy.html`, `changelog.html`, `assets/`.
 - `.github/workflows/` — CI (`test.yml`) and release automation (`release.yml`).
@@ -63,7 +32,7 @@ The extension itself is plain vanilla JS — no bundler, no framework. A Vitest 
 - **Force background jobs** (no need to wait for alarms): in the SW console, send `chrome.runtime.sendMessage({type: "force-fx-refresh"})` / `"force-mods-refresh"` / `"force-wishlist-refresh"`. Or use the buttons on the options page.
 - **Repack for Web Store**: `.\build.ps1` → zips `extension/` into `dist/gog-enhancer-webstore.zip`.
 - **Run everything that gates a change**: `npm run verify` (tests, lint, typecheck, coverage); `npm run verify:e2e` adds the browser suite, both zips and the zip check; `npm run verify:full` adds the deep checks. Each deep check also has an npm alias (`e2e:upgrade`, `e2e:backup`, `e2e:locales`, `e2e:pages`, `e2e:a11y`, `e2e:soak`, `e2e:resilience`, `e2e:sw`, `e2e:bigbackup`, `e2e:zip`, `e2e:structure`).
-- **Run tests**: `npm install` (one-time) → `npm test` (one-shot) or `npm run test:watch`. Specs live under `tests/`; environment is happy-dom with a chrome.* shim in `tests/setup.js`. **Use `npm` in this repo, not `pnpm`** (the global "always pnpm" rule is deliberately overridden here): `package-lock.json` is what CI installs from, and a stray `pnpm install` once bumped happy-dom and left a `pnpm-lock.yaml` behind. Content-script feature tests share `tests/helpers/content-env.js` (loads the real modules in manifest order against a fresh DOM) and `tests/helpers/fixtures.js` (markup recorded from the live site). `npm run coverage` enforces the per-folder thresholds in `vitest.config.js` (`lib/` 80/75/80/80) and is what CI runs.
+- **Run tests**: `npm install` (one-time) → `npm test` (one-shot) or `npm run test:watch`. Specs live under `tests/`; environment is happy-dom with a chrome.* shim in `tests/setup.js`. **Use `npm` in this repo, not `pnpm`**: `package-lock.json` is what CI installs from, and a stray `pnpm install` once bumped happy-dom and left a `pnpm-lock.yaml` behind. Content-script feature tests share `tests/helpers/content-env.js` (loads the real modules in manifest order against a fresh DOM) and `tests/helpers/fixtures.js` (markup recorded from the live site). `npm run coverage` enforces the per-folder thresholds in `vitest.config.js` (`lib/` 80/75/80/80) and is what CI runs.
 - **`options.js`/`popup.js`/`tags.js` register their boot listener with `{ once: true }`** (`document.addEventListener("DOMContentLoaded", init, { once: true })`) — not cosmetic. Their test files re-import the module fresh per test (`vi.resetModules()` + dynamic `import()`) against the *same* long-lived `document`; without `{ once: true }`, `document.addEventListener` accumulates one listener per test, and a later test's `dispatchEvent(new Event("DOMContentLoaded"))` re-fires *every* earlier test's `init()` too — each of which calls `bind()` against the current test's fresh DOM, attaching duplicate click/change listeners. This stayed invisible for a long time because most existing assertions were loose (`toHaveBeenCalled()`, not an exact count) or idempotent; it surfaced once a v2.11.0 test asserted an exact single alert message. If a new page script needs its own boot listener, register it the same way.
 - **End-to-end**: `npm run e2e` loads the real extension into a Chromium and drives it against *synthetic* gog.com pages (`e2e/fixtures.mjs` — a "legacy" markup shape and a "variant" one with no recognisable class names, split prices and a header `h1`), served by intercepting `https://www.gog.com/**` so nothing real is requested. It exists because happy-dom has no layout engine, no real injection and no real MutationObserver timing — it found two bugs the unit tests couldn't. Local only (CI has no Chromium): it needs a build that still honours `--load-extension`, which branded Google Chrome 137+ does not, so it auto-detects one Playwright already installed under `%LOCALAPPDATA%\ms-playwright` (override with `PW_CHROMIUM`; `E2E_SHOTS=dir` saves screenshots). `fixtures.mjs` holds two deliberately generic markup shapes; `fixtures-real.mjs` holds the shapes **recorded from the live site** (structure only, no content). `E2E_ONLY=real` runs just the recorded-shape checks (and `E2E_EXT=<dir>` points them at another build — running them against the released v3.0.0 failed 8 of 11 — all but one for features it already had — which is how the real-site regressions were demonstrated). `E2E_LIVE=1` runs the extension against the real gog.com (a few public, logged-out page loads) — the only way to know the recorded fixtures still match the site; manual use only. Account pages (wishlist/library/cart) need a login and are not covered end to end — only the *shape* of a logged-in wishlist row/tile was recorded (`wishlistV4`, `catalogV4`, `gameV4` in `fixtures-real.mjs`), so anything that depends on logged-in state beyond that structure is unverified against the real site. `E2E_LIVE=1` also checks the v4 catalog bar mounts above the grid, that sorting by title really re-orders the live grid, and that a real game page yields ratings/tags/year into the facts cache. **A lesson the e2e suite taught that happy-dom cannot:** `chrome.storage` returns object keys in *alphabetical* order, so any "did this record change?" comparison must be canonical (sorted keys — see `canonical()` in `content/features/knowledge.js`), or a perfectly steady page rewrites its own record forever (and `knowledge.js` additionally caps itself at `MAX_WRITES_PER_MINUTE`). Unit tests keep insertion order and will never show this class of bug.
 - **`tests/load-order.test.js`** loads each entry point's scripts in exactly the order `manifest.json` / the HTML pages list them. Every other suite imports modules in an order the test author chose and would never notice a mis-ordered manifest — which kills the whole content script in a real browser.
@@ -74,76 +43,6 @@ The extension itself is plain vanilla JS — no bundler, no framework. A Vitest 
 - **Deeper checks (all local, all in `e2e/`; `npm run verify:full` runs the main ones)**: `upgrade.mjs [tag]` installs an earlier release into a profile, fills it with data, swaps in the current files (and drops the old service-worker cache, as a store update does) and checks nothing was lost; `backup-compat.mjs [tag]` has the earlier release write plain and encrypted backups and imports them with the current one, then tries hostile files; `locales.mjs` and `live-locales.mjs` render the game page in each store currency (fixtures / the real site via the `gog_lc` cookie); `pages-sweep.mjs` opens every extension page in all seven languages at desktop and narrow widths (errors, overflow, accessible names, direction); `a11y-deep.mjs` tabs through every page, checks focus indicators and measures colour contrast per theme; `soak.mjs` runs hundreds of page changes and watches heap, nodes and listeners; `markup-resilience.mjs` serves the pages with class names, hooks, structured data or the whole body removed; `sw-reliability.mjs` kills the service worker repeatedly and exercises the FX failure / recovery path; `big-backup.mjs` exports and imports a 2,500-game library; `zip-check.mjs` unpacks `dist/*.zip` and loads the unpacked zip; `live-sweep.mjs` times real pages with the extension off and on; `live-account.mjs` (needs `E2E_AUTH`) walks the logged-in pages read-only. `tests/fuzz-v45.test.js` fuzzes the import / merge / crypto libraries.
 - **Scripts**: `scripts/release.mjs` does the mechanical parts of a release (version bump in `manifest.json`, changelog stubs in both places, the banner, the gates, the local tag; it refuses to continue while a `TODO` stub remains and never pushes without `--push`); `scripts/build-firefox.mjs` (see "Firefox build" below); `.github/workflows/canary.yml` is a scheduled check of the live site that opens an issue — it can only be dispatched by hand once it is on `main`, and has not been run on GitHub.
 - **Typecheck of the page scripts**: `tsconfig.pages-popup.json`, `tsconfig.pages-options.json` and `tsconfig.pages-onboarding.json` check those plain top-level scripts separately (`npm run typecheck` runs all four). The dashboard (`tags/`) is part of the main project.
-
-## GitHub workflow
-
-- `main` is the only branch. Two existing remote commits ("Add files via upload") plus the v2.1+ commits sit on it.
-- The repo is at https://github.com/DrummingBird1/GOGEnhancer. Push uses the GitHub noreply email — the account has the "block pushes that expose my email" privacy guard enabled, so commits authored with a personal email will bounce. Use `git -c user.email=<id>+DrummingBird1@users.noreply.github.com -c user.name=DrummingBird1` for a per-command override (no global config write); the numeric id is on the GitHub email-settings page.
-- Local Windows checkout triggers git's "dubious ownership" warning. Prefix git commands with `-c safe.directory=<repo-root>` to bypass per command without writing global config.
-- **Auto-push convention**: after a finished round of work (multiple related changes, lint+tests green, build verified), commit + push to `main` without requiring per-push confirmation. The user has authorized this end-to-end pattern. Show the resulting commit SHA in the wrap-up message. Don't push WIP mid-conversation; don't push if tests are failing.
-- **Releases are tag-driven**: `.github/workflows/release.yml` watches `v*.*.*` tags. To cut a release after a version bump, run `git tag v2.1.2 && git push origin v2.1.2` — the workflow verifies the tag matches `manifest.json`'s `version`, runs `build.ps1` via `pwsh` on the Ubuntu runner, and publishes a GitHub Release with `gog-enhancer-webstore.zip` attached.
-- **`main` has branch protection** (added v2.9.0): blocks force-pushes and branch deletion, and requires the `test` status check — but `enforce_admins` is **off** and there's no required-PR-review rule, so the direct-push-to-`main` workflow above is unaffected (a push before `test` has finished just prints a "bypassed rule violation" notice, it isn't blocked). Don't turn on required PR reviews or `enforce_admins` without asking first — that would break the established solo-dev workflow this whole section describes.
-- **Repo "About" metadata is set explicitly**: description, homepage (the GitHub Pages URL), and topics are pushed via `gh repo edit`, not left blank — check `gh api repos/DrummingBird1/GOGEnhancer --jq '{description, homepage, topics}'` after any messaging change (Patreon → Ko-fi/BMC swap, tagline wording, etc.) so this doesn't drift out of sync with STORE_LISTING.md/README.md the way it once did.
-- **README.md's hero section must stay accurate on every release** — it's what GitHub renders as the repo's front page. The version is a live shields.io dynamic-JSON badge reading `extension/manifest.json` off the raw GitHub URL (`https://img.shields.io/badge/dynamic/json?url=...manifest.json&query=%24.version`), **not** hardcoded text — don't revert it to a plain `**Version X.Y.Z**` string, that's exactly what went stale for 5 releases (2.4.1 → 2.9.0) before this fix. The logo is `docs/assets/hero-icon.png`.
-- **README.md is the English original; every interface language has a full mirror** (`README.he.md`, `.ru`, `.pl`, `.de`, `.fr`, `.es`, `.zh-CN`, `.pt-BR`), all linked from a language line at the top. `tests/readme-languages.test.js` keeps their structure (sections, table rows, links) identical to the English. When you change the *content* of a section, port it to all of them. Hebrew is the one that was written first:
-- **(older note) README.md is English-only; `README.he.md` is the full Hebrew mirror** (since v2.9.0 — README used to code-mix both languages throughout). They link to each other at the top. If you change a section's *content* (not just wording) in one, port the change to the other in the same commit — don't let them drift into "the Hebrew one describes an older feature set."
-- **The changelog does NOT live in README.md** (removed in v2.9.0 — every release page already has one, this was redundant). The two sources of truth are `extension/lib/changelog.js` (read by the popup's What's New panel) and `docs/changelog.html` (the website's full version-history page, styled with `docs/assets/site.css`) — `release.yml`'s "Verify a changelog entry exists" step checks both and fails the release if either is missing a `vX.Y.Z` entry. Add to both on every user-facing version bump. README.md/README.he.md's own "Changelog" section is just a two-line pointer to Releases + `docs/changelog.html` — leave it that way.
-- **Brand assets** live in `store/brand/` (Pillow, run with `uv run --with pillow python store/brand/logo.py` / `promo.py`): `logo.py` draws the mark and writes the extension icons, store logo, favicon and hero icon; `promo.py` writes the Chrome Web Store promo tiles (`store/promo-*.png`, English and `.he.png`). Change the design there, never hand-edit the PNGs. Screenshots: `node e2e/store-screenshots.mjs` → `store/screenshots/{en,he}/NN-name.png` (ten per language, demo data). Store descriptions: one file per language in `store/listings/`.
-- **Release banners come in two styles.** A release whose version ends in `.0` (every minor or major release — 4.5.0, 5.0.0 …) gets the special **major** banner (1280x640: big logo, gradient version number, tagline and four highlight chips; pass `--highlights "a|b|c|d"`); patch releases get the plain classic one. This is automatic (`--style` overrides) and `scripts/release.mjs --apply` passes `--highlights` through.
-- **Release images**: before tagging any release, generate its banner —
-  ```
-  cd store/release-images && uv run --with pillow python generate_release_banner.py --version X.Y.Z --tagline "short headline"
-  ```
-  then commit `store/release-images/vX.Y.Z.png` in the same commit as the version bump/changelog (so it's present at the tag). `release.yml` picks it up automatically via its raw GitHub URL pinned to the tag and prepends it to the release notes — no workflow changes needed per release. If a release ships without one, nothing breaks; it's just missing that release's image on GitHub. (v2.9.0's own banner was added retroactively via `gh release edit`, pointing at `main` instead of the tag — the tag predates the file. Every future release should get the file committed **before** tagging so this workaround isn't needed again.)
-
-## Dual-agent collaboration (Grok + Claude)
-
-The same repo may be worked by **Claude Code** and **Grok** (this machine + Claude sessions) in parallel. This section is binding for both agents.
-
-### Source of truth
-
-- **`CLAUDE.md` is canonical.** Read it first; treat architecture, load order, storage, privacy, and security rules here as authoritative.
-- `AGENTS.md` is a **thin local pointer** (gitignored; per-machine Codex/Grok bootstrap). Never let it grow back into a full stale copy of layout/architecture. If you find an obsolete full `AGENTS.md` (e.g. extension at repo root), replace it with the thin pointer — do not expand it into a second CLAUDE.
-
-### Claim protocol before editing
-
-Prefer separate concerns unless the user assigns differently:
-
-- One agent owns `extension/content/features/*` (+ related tests under `tests/`).
-- The other owns `extension/tags/features/*` **or** UI pages (`extension/popup/`, `extension/options/`, `extension/onboarding/`).
-
-Before starting a chunk, **state in chat which paths you will touch**. If the other agent already claimed overlapping paths, wait or pick different files.
-
-**One agent at a time** for these serialized hotspots:
-
-- `extension/manifest.json` (content-script / resource order)
-- `extension/lib/defaults.js`, `extension/lib/storage.js`, `extension/lib/migrations.js`
-- `extension/lib/i18n.js`
-- Shared CSS: `extension/content/content.css`, `extension/content/design-injection.css`, `extension/tags/tags.css`
-- `extension/content/state.js`, `extension/tags/state.js`, `extension/content/content.js` (orchestrator)
-- `package.json` / `package-lock.json` / `eslint.config.js` / `vitest.config.js`
-- Dual docs that must stay paired: `README.md` <-> `README.he.md`, `PRIVACY.md` <-> `store/STORE_LISTING.md`, `extension/lib/changelog.js` <-> `docs/changelog.html`
-
-Do **not** hand-edit generated outputs: `dist/`, `coverage/`, `node_modules/`, or generated release banner PNGs under `store/release-images/` (use the generator in that folder).
-
-### Git / push when both agents are active
-
-- The solo **auto-push-to-`main`** convention in GitHub workflow still applies when only **one** agent is finishing a round.
-- When **both** agents are actively editing the same day/session: prefer a short-lived branch per agent (`agent/claude-...`, `agent/grok-...`), leave a clean commit for the user; **do not** both force-push or race-push to `main`. Coordinate: `git pull --rebase` before push; if a conflict lands on a hotspot file, **stop and ask the user** rather than inventing a merge.
-- Never amend or rebase commits the other agent already pushed.
-- Keep using the noreply author email override already documented under GitHub workflow.
-
-### Quality gate
-
-Before either agent declares done: run `npm test` and `npm run lint` (and `npm run typecheck` if types / `// @ts-check` modules were touched). Don't push with failing tests.
-
-### Doc consistency
-
-If privacy or host permissions change, update `CLAUDE.md` + `PRIVACY.md` + `store/STORE_LISTING.md` together (and `manifest.json`). Do not "fix" host counts from an outdated README paragraph without checking `extension/manifest.json`.
-
-### Communication
-
-Leave a brief wrap-up note: paths touched, tests/lint run, commit SHA if any — so the other agent can continue without re-discovery.
 
 ## Architecture
 
@@ -308,7 +207,7 @@ Don't try to make the SW scrape `/account/wishlist` directly — it won't work.
 
 ### Privacy boundary (manifest + permissions)
 
-`host_permissions` is intentionally minimal: **`https://www.gog.com/*` only** (since 4.5.0). Exchange rates from `api.frankfurter.dev` and the opt-out "Price comparison table" (`lib/price-compare.js`, `www.cheapshark.com`) need no host permission — both APIs allow cross-origin reads and are on the `lib/net.js` allow-list; the unused `activeTab` permission was dropped as well. No Google Fonts, no analytics, no remote code. Before adding a new host:
+`host_permissions` is intentionally minimal: **`https://www.gog.com/*` only** (since 4.5.1). Exchange rates from `api.frankfurter.dev` and the opt-out "Price comparison table" (`lib/price-compare.js`, `www.cheapshark.com`) need no host permission — both APIs allow cross-origin reads and are on the `lib/net.js` allow-list; the unused `activeTab` permission was dropped as well. No Google Fonts, no analytics, no remote code. Before adding a new host:
 
 1. Add it to `host_permissions` in `manifest.json`.
 2. Update `PRIVACY.md`'s network-requests section (§3) and its permissions table.
@@ -328,7 +227,7 @@ The runtime permission `notifications` is opt-in: nothing fires unless the user 
 
 ### Interface translations (`lib/i18n.js` + `lib/i18n-pages*.js`)
 
-**Added in 4.5.0:** (1) the extension's own text *inside gog.com pages* is translated by `content/ui-i18n.js`, which runs the same engine but only on elements whose class or id starts with `gog-plus-` (rows in `lib/i18n-pages-content.js`; mark anything the user wrote with `data-no-i18n`); `node e2e/collect-content-strings.mjs --check` lists strings with no row. (2) Languages after the original seven are *packs* — `lib/i18n-lang-<code>.js` (popup keys via `GOGPlusI18n.addLanguage`, plus `[english, translation]` pairs via `GOGPlusPageI18n.addPack`) and `lib/i18n-lang-<code>-content.js` (the in-page text); `zh` and `pt` exist, also with `lib/i18n-lang-<code>-options.js` and `-dashboard.js`, covering the popup, wizard, tour buttons, in-page text, options page and dashboard (the long tour paragraphs and "what's new" bullets stay English; what has no row stays English; `tests/i18n-packs.test.js` keeps what MUST be covered covered). To add a language: the two files, a `<script>` for the first one in the five extension pages, the second in `manifest.json`, an `<option>` in `options.html`, an alias in `lib/lang-names.js`. Currency names come from `Intl.DisplayNames`, so they need no rows.
+**Added in 4.5.1:** (1) the extension's own text *inside gog.com pages* is translated by `content/ui-i18n.js`, which runs the same engine but only on elements whose class or id starts with `gog-plus-` (rows in `lib/i18n-pages-content.js`; mark anything the user wrote with `data-no-i18n`); `node e2e/collect-content-strings.mjs --check` lists strings with no row. (2) Languages after the original seven are *packs* — `lib/i18n-lang-<code>.js` (popup keys via `GOGPlusI18n.addLanguage`, plus `[english, translation]` pairs via `GOGPlusPageI18n.addPack`) and `lib/i18n-lang-<code>-content.js` (the in-page text); `zh` and `pt` exist, also with `lib/i18n-lang-<code>-options.js` and `-dashboard.js`, covering the popup, wizard, tour buttons, in-page text, options page and dashboard (the long tour paragraphs and "what's new" bullets stay English; what has no row stays English; `tests/i18n-packs.test.js` keeps what MUST be covered covered). To add a language: the two files, a `<script>` for the first one in the five extension pages, the second in `manifest.json`, an `<option>` in `options.html`, an alias in `lib/lang-names.js`. Currency names come from `Intl.DisplayNames`, so they need no rows.
 
 Two mechanisms, both applied by `GOGPlusI18n.apply(lang)`. `lib/i18n.js` is the old keyed one (`data-i18n` attributes, 7 languages) and still drives most of the popup. **`lib/i18n-pages.js` translates by the English text itself** and covers the tag dashboard, the options page, the popup's un-keyed strings and the first-run wizard: rows `[english, he, ru, pl, de, fr, es]` live in `lib/i18n-pages-{common,dashboard,dashboard-messages,options,options-messages,popup,onboarding}.js` and register themselves with `GOGPlusPageI18n.add()`. It rewrites text nodes and `title`/`placeholder`/`aria-label`/`alt`, translates a sentence with highlighted words as one piece (`<1>…</1>` marks the highlighted element, so a translation may reorder them; `<kbd>`/`<code>` stay in place), picks Russian/Polish plural forms (`{1#игра|игры|игр}`), remembers the English per node (so switching language, or back to English, starts from the original), and keeps watching the page with a `MutationObserver` so what the dashboard draws later is translated too. Placeholders in a row's English: `{n}` a number, `{}` any text (translated itself); in translations `{1}`, `{2}`… by position.
 

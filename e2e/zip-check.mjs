@@ -34,7 +34,7 @@ for (const [label, dir, firefox] of [["Chrome zip", webDir, false], ["Firefox zi
   console.log(`\n${label}`);
   const manifest = JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8"));
   const files = new Set(walk(dir));
-  check("manifest.json is at the root and says 4.5.0", manifest.version === JSON.parse(readFileSync(join(ROOT, "extension", "manifest.json"), "utf8")).version, manifest.version);
+  check("manifest.json is at the root and says 4.5.1", manifest.version === JSON.parse(readFileSync(join(ROOT, "extension", "manifest.json"), "utf8")).version, manifest.version);
 
   // Everything the manifest points at.
   const refs = new Set();

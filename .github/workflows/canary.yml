@@ -74,7 +74,7 @@ jobs:
             tail -60 structure.log || true
             echo '```'
             echo
-            echo "See CLAUDE.md, \"When gog.com changes its markup\"."
+            echo "See ARCHITECTURE.md, \"When gog.com changes its markup\"."
           } > body.md
           existing=$(gh issue list --label canary --state open --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then

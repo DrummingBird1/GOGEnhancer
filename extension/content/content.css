@@ -121,7 +121,7 @@ html.gog-plus-theme--highcontrast {
 
 /* Dyslexia-friendly font — swaps injected UI text to a stack widely
    recommended for dyslexic readability, plus wider letter/line spacing.
-   No remote font load (CLAUDE.md's no-Google-Fonts privacy point): lists
+   No remote font load (ARCHITECTURE.md's no-Google-Fonts privacy point): lists
    OpenDyslexic first for anyone who already has it installed system-wide,
    falling back to Comic Sans MS / Verdana / Trebuchet MS, which share the
    same "distinct letter shapes, generous spacing" traits. */

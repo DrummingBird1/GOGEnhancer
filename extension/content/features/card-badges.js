@@ -4,7 +4,7 @@
  * on every game card. Pulled out of the former single-file content.js
  * during the module split.
  *
- * applyCardBadges() is CLAUDE.md's own documented "hot zone" — regression
+ * applyCardBadges() is ARCHITECTURE.md's own documented "hot zone" — regression
  * coverage lives in tests/apply-card-badges.test.js. Read that file's
  * comments, and cardCoverHost() in content/gog-dom.js, before touching the
  * cover-host resolution logic.
