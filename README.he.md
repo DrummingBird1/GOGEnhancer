@@ -30,6 +30,7 @@
 | **`docs/`** | אתר התדמית של התוסף, מתארח ב-GitHub Pages — עמוד נחיתה, מדריך, מדיניות פרטיות, יומן שינויים. |
 | `PRIVACY.md` | מדיניות הפרטיות — מתארחת גם בכתובת ציבורית (`docs/privacy.html`) לפני הגשה לחנות הרחבות |
 | `README.he.md` | הקובץ הזה |
+| `README.ru.md`, `README.pl.md`, `README.de.md`, `README.fr.md`, `README.es.md`, `README.zh-CN.md`, `README.pt-BR.md` | תרגומים מלאים של הקובץ, אחד לכל שפת ממשק |
 | `LICENSE` | רישיון MIT |
 | `build.ps1` | סקריפט build — אורז את `extension/` ל-`dist/gog-enhancer-webstore.zip` (`node scripts/build-firefox.mjs` בונה את ה-zip הניסיוני של Firefox) |
 | `scripts/`, `e2e/` | סקריפט release (`release.mjs`), בניית Firefox, וכלי ה-end-to-end: חבילת Playwright (fixtures, חי, מחובר), תקציב ביצועים, מקליט מבנה, רגרסיית צילומי מסך, אוסף מחרוזות לתרגומים ומחולל צילומי החנות. מקומי בלבד; שום דבר מזה לא נשלח. |
