@@ -13,7 +13,7 @@
 
 <p align="center">דפדפנים מבוססי-Chromium (Chrome, Edge, Brave, Opera)</p>
 
-<p align="center"><a href="README.md">Read in English · קרא באנגלית</a></p>
+<p align="center"><a href="README.md">English</a> · <a href="README.he.md">עברית</a> · <a href="README.ru.md">Русский</a> · <a href="README.pl.md">Polski</a> · <a href="README.de.md">Deutsch</a> · <a href="README.fr.md">Français</a> · <a href="README.es.md">Español</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.pt-BR.md">Português (Brasil)</a></p>
 
 תוסף third-party (לא רשמי) ל-GOG.com — המרת מטבע חיה, מעקב היסטוריית מחירים, השוואת מחירים בין חנויות, תגיות אישיות, שדרוג עיצובי מלא, עברית ו-RTL — והכל ללא Google Fonts וללא analytics.
 
@@ -54,7 +54,7 @@
 - **לומד רק מדפים שפתחתם** — בעלות, דירוגים, שפות ועובדות מחיר נקראים מדפים שאתם מבקרים בהם בעצמכם ונשמרים מקומית. התוסף לא מביא שום דבר נוסף כדי לבנות אותם.
 
 ### פיצ'רים
-- 💱 **שערי מטבע חיים** — נשלפים אוטומטית מ-`api.frankfurter.dev` כל 12 שעות. ניתן לערוך ידנית.
+- 💱 **שערי מטבע חיים ל-24 מטבעות** — השקל, האירו, הליש"ט, הזלוטי, הרובל, הריאל, הין, היואן ועוד — נשלפים אוטומטית מ-`api.frankfurter.dev` כל 12 שעות. ניתן לערוך ידנית.
 - 📈 **מעקב מחירים** — כל ביקור בעמוד משחק מתעד תמונת-מצב. פאנל סטטיסטיקות בעמוד המשחק (current / all-time low / average), כולל חוות דעת "כדאי לחכות?".
 - 🔍 **השוואה ב-IsThereAnyDeal** — כפתור בעמוד המשחק שמחפש את אותו משחק ב-Steam / Epic / Humble / Fanatical.
 - 🏷️ **לוח תגיות מלא** — דף נפרד עם חיפוש, סינון, ספירה לכל תגית, ויצוא CSV. אוטוקומפליט לתגיות קיימות.
@@ -106,7 +106,7 @@
 - ה-pill של "Good Old Game" מקבל גרדיאנט זהב מתכתי במקום סגול שטוח.
 - Skeleton loaders עם אנימציית shimmer במקום placeholders חשופים כמו `{{ product.title }}`.
 - Clean layout: מסתיר מבצעים שפג תוקפם משנים קודמות.
-- תשע ערכות נושא (Neon, Classic GOG, CRT Green, Sunset, Light, High contrast, Custom, Auto, Native) — Auto עוקבת אחרי העדפת המערכת שלך (בהיר/כהה); Native עוקבת אחרי המראה של gog.com עצמו.
+- אחת עשרה ערכות נושא (Neon, Classic GOG, CRT Green, Sunset, Light, AMOLED, Amber, High contrast, Custom, Auto, Native) — Auto עוקבת אחרי העדפת המערכת שלך (בהיר/כהה); Native עוקבת אחרי המראה של gog.com עצמו.
 
 ### פרטיות בכנות
 - **חמישה דומיינים בלבד** (ועוד כתובת ה-webhook שתקלידו בעצמכם, רק אם תפעילו אותו) מקבלים בקשות רשת — וכל בקשה מופיעה בהגדרות המתקדמות (פרטיות ושקיפות):
@@ -203,7 +203,7 @@
 
 ## 🧑‍💻 מותאם בתחילה למשתמש הישראלי
 
-מותאם בתחילה למשתמש ישראלי (ILS, מע"מ 18%, עברית) — אבל עובד מצוין גם ל-EU/UK/US/PL. כל שדה ניתן לעריכה.
+מותאם בתחילה למשתמש ישראלי (ILS, מע"מ 18%, עברית) — אבל עובד מצוין בכל אחד מ-24 המטבעות הנתמכים. כל שדה ניתן לעריכה.
 
 ---
 
