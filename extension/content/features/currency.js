@@ -14,8 +14,8 @@
   function priceInUsdFromText(txt) {
     const sym = state.pageCurrency.symbol;
     if (!sym || !txt) return null;
-    const escSym = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const matches = txt.match(new RegExp(`${escSym}\\s?[\\d.,]+|\\d[\\d.,]*\\s?${escSym}`, "g"));
+    const group = window.GOGPlusCurrency.symbolGroup(state.pageCurrency.code);
+    const matches = txt.match(new RegExp(`${group}\\s?[\\d.,]+|\\d[\\d.,]*\\s?${group}`, "gu"));
     if (!matches?.length) return null;
     const native = window.GOGPlusCurrency.parsePrice(
       matches[matches.length - 1],
@@ -69,12 +69,13 @@
 
     const srcSym = state.pageCurrency.symbol;
     if (!srcSym) return;
-    const escSym = srcSym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const symRe = new RegExp(`${escSym}[\\s\\u00a0]?\\d|\\d[\\s\\u00a0]?${escSym}`);
+    const group = window.GOGPlusCurrency.symbolGroup(state.pageCurrency.code);
+    const symRe = new RegExp(`${group}[\\s\\u00a0]?\\d|\\d[\\s\\u00a0]?${group}`, "u");
     // "1 097,99": groups of three separated by a space / non-breaking space are one number.
     const NUM = "\\d[\\d.,]*(?:[\\s\\u00a0\\u202f]\\d{3}(?:[.,]\\d+)?)*";
     const priceOnlyRe = new RegExp(
-      `^\\s*(?:${escSym}[\\s\\u00a0]?${NUM}|${NUM}[\\s\\u00a0]?${escSym})\\s*$`
+      `^\\s*(?:${group}[\\s\\u00a0]?${NUM}|${NUM}[\\s\\u00a0]?${group})\\s*$`,
+      "u"
     );
 
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {

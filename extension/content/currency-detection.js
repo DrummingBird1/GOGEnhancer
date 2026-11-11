@@ -18,27 +18,46 @@
 (() => {
   "use strict";
 
-  const SYMBOL_TO_CODE = {
-    "$": "USD",
-    "€": "EUR",
-    "£": "GBP",
-    "₪": "ILS",
-    "₽": "RUB",
-    "zł": "PLN",
-    "Kč": "CZK",
-    "kr": "SEK",
-    "R$": "BRL",
-    "C$": "CAD",
-    "A$": "AUD",
-  };
+  // The table is shared with everything else (lib/defaults.js). A symbol many
+  // currencies print ("kr", "¥", "R") never names a currency by itself: those are
+  // known only from the page's own `prices-in-xxx` class.
+  const TABLE = (window.GOG_PLUS_CURRENCIES && window.GOG_PLUS_CURRENCIES.TABLE) || [
+    { code: "USD", symbol: "$", guess: true },
+    { code: "EUR", symbol: "€", guess: true },
+    { code: "GBP", symbol: "£", guess: true },
+    { code: "ILS", symbol: "₪", guess: true },
+    { code: "RUB", symbol: "₽", guess: true },
+    { code: "PLN", symbol: "zł", guess: true },
+  ];
 
-  const CODE_TO_SYMBOL = Object.entries(SYMBOL_TO_CODE).reduce((acc, [s, c]) => {
-    acc[c] = s;
-    return acc;
-  }, {});
+  /** @type {Record<string, string>} */
+  const SYMBOL_TO_CODE = {};
+  /** @type {Record<string, string>} */
+  const CODE_TO_SYMBOL = {};
+  /** @type {Record<string, string[]>} every form GOG prints for a code, the main symbol first */
+  const FORMS = {};
+  for (const c of TABLE) {
+    FORMS[c.code] = [c.symbol, ...((/** @type {any} */ (c)).alts || [])];
+    CODE_TO_SYMBOL[c.code] = c.symbol;
+    if (c.guess && !(c.symbol in SYMBOL_TO_CODE)) SYMBOL_TO_CODE[c.symbol] = c.code;
+  }
+  // Symbols we still recognise by text although the table has no rate for them.
+  if (!("kr" in SYMBOL_TO_CODE) && !CODE_TO_SYMBOL.SEK) CODE_TO_SYMBOL.SEK = "kr";
 
   // Longest first, so "R$" / "A$" / "C$" are tried before a bare "$".
   const SYMBOLS_LONGEST_FIRST = Object.keys(SYMBOL_TO_CODE).sort((a, b) => b.length - a.length);
+
+  /**
+   * Regex pieces for "the symbol next to a number". A symbol made of letters ("R",
+   * "kr", "Ft") must not be part of a word: "3 Reviews" is not "3 R".
+   * @param {string} sym
+   */
+  function symbolPattern(sym) {
+    const esc = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const lead = /^[\p{L}$]/u.test(sym) ? "(?<![\\p{L}])" : "";
+    const trail = /[\p{L}]$/u.test(sym) ? "(?![\\p{L}])" : "";
+    return { lead, trail, esc };
+  }
 
   /**
    * Which currencies are named in a price text. A symbol that is part of a
@@ -46,14 +65,33 @@
    * @param {string} text
    * @returns {string[]}
    */
+  /**
+   * One regex source that matches any form GOG prints for `code` — each form with
+   * its own word boundaries — to put on either side of a number.
+   * @param {string} code
+   */
+  function symbolGroup(code) {
+    const forms = FORMS[code] || [CODE_TO_SYMBOL[code]].filter(Boolean);
+    const parts = forms.map((f) => {
+      const { lead, trail, esc } = symbolPattern(f);
+      return `${lead}${esc}${trail}`;
+    });
+    return `(?:${parts.join("|")})`;
+  }
+
   function codesIn(text) {
     const found = [];
     let rest = String(text || "");
     for (const sym of SYMBOLS_LONGEST_FIRST) {
-      if (rest.includes(sym)) {
-        found.push(SYMBOL_TO_CODE[sym]);
-        rest = rest.split(sym).join(" ");
+      if (!rest.includes(sym)) continue;
+      const { lead, trail, esc } = symbolPattern(sym);
+      if (/^[\p{L}]|[\p{L}]$/u.test(sym)) {
+        // letters: only when it sits against a number
+        const re = new RegExp(`${lead}${esc}${trail}[\\s\\u00a0]?\\d|\\d[\\s\\u00a0]?${lead}${esc}${trail}`, "u");
+        if (!re.test(rest)) continue;
       }
+      found.push(SYMBOL_TO_CODE[sym]);
+      rest = rest.split(sym).join(" ");
     }
     return found;
   }
@@ -120,13 +158,16 @@
   // Currencies where comma is conventionally the decimal mark.
   // We disambiguate per-number by looking at the digits after the separator;
   // 2 digits → decimal, 3 digits → thousands.
-  const COMMA_DECIMAL_LOCALES = new Set(["EUR", "PLN", "RUB", "CZK", "SEK", "BRL"]);
+  const WHOLE_UNIT = new Set(["IDR", "JPY", "KRW", "HUF"]);
+  const COMMA_DECIMAL_LOCALES = new Set(["EUR", "PLN", "RUB", "CZK", "SEK", "NOK", "DKK", "HUF", "RON", "TRY", "BRL"]);
 
   function normalizeNumber(raw, currency) {
     // raw is a token like "1,234.56" / "1.234,56" / "19,99" / "1234"
     const commaDecimal = COMMA_DECIMAL_LOCALES.has(currency);
     const hasDot = raw.includes(".");
     const hasComma = raw.includes(",");
+    // Currencies without minor units write "Rp 142.000" / "¥1.500": the dot groups thousands.
+    if (WHOLE_UNIT.has(currency) && /^\d{1,3}(\.\d{3})+$/.test(raw)) return parseFloat(raw.replace(/\./g, ""));
 
     if (hasDot && hasComma) {
       // Both present — the LAST one is the decimal separator.
@@ -165,12 +206,11 @@
     // Symbol-first ("$19.99") or symbol-last ("19,99 €") — which side the
     // symbol sits on varies by locale and by how GOG's markup is built.
     const grab = (sym, currency) => {
-      const escSym = sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const group = currency && FORMS[currency] ? symbolGroup(currency) : (() => { const q = symbolPattern(sym); return `(?:${q.lead}${q.esc}${q.trail})`; })();
       // "1 097,99" and "26 069" (space, NBSP or narrow NBSP between groups of
       // three) are one number, not two. A bare "$" is not the tail of "R$".
       const NUM = "(?:\\d{1,3}(?:[\\s\\u00a0\\u202f]\\d{3})+(?:[.,]\\d+)?|[\\d.,]+)";
-      const lead = sym === "$" ? "(?<![A-Za-z])" : "";
-      const re = new RegExp(`${lead}${escSym}[\\s\\u00a0]?(${NUM})|(${NUM})[\\s\\u00a0]?${escSym}`);
+      const re = new RegExp(`${group}[\\s\\u00a0]?(${NUM})|(${NUM})[\\s\\u00a0]?${group}`, "u");
       const m = text.match(re);
       if (!m) return null;
       const raw = (m[1] ?? m[2]).replace(/[\s  ]/g, "");
@@ -202,5 +242,7 @@
     parsePrice,
     SYMBOL_TO_CODE,
     CODE_TO_SYMBOL,
+    symbolPattern,
+    symbolGroup,
   };
 })();

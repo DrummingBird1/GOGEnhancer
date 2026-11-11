@@ -76,9 +76,15 @@ function parseFxResponse(data) {
   return out;
 }
 
+/** Currencies with a live rate: the shared table (lib/defaults.js). */
+const RATE_CODES = self.GOG_PLUS_CURRENCIES.RATE_CODES;
+/** @param {string} code the symbol GOG prints for it, or the code itself */
+const symOf = (code) => self.GOG_PLUS_CURRENCIES.find(code)?.symbol || code;
+
 const FX_URLS = [
-  "https://api.frankfurter.dev/v2/rates?base=USD&quotes=ILS,EUR,GBP,PLN,RUB,BRL,AUD,CAD",
-  "https://api.frankfurter.dev/v1/latest?from=USD&to=ILS,EUR,GBP,PLN,BRL,AUD,CAD",
+  `https://api.frankfurter.dev/v2/rates?base=USD&quotes=${RATE_CODES.join(",")}`,
+  // the old endpoint has no rouble
+  `https://api.frankfurter.dev/v1/latest?from=USD&to=${RATE_CODES.filter((c) => c !== "RUB").join(",")}`,
 ];
 
 async function fetchLiveRates() {
@@ -100,7 +106,7 @@ async function fetchLiveRates() {
     if (!Object.keys(fresh).length) throw new Error(lastErr);
 
     const next = {};
-    ["ILS", "EUR", "GBP", "PLN", "RUB", "BRL", "AUD", "CAD"].forEach((c) => {
+    RATE_CODES.forEach((c) => {
       if (typeof fresh[c] === "number") next[c] = fresh[c];
     });
 
@@ -476,7 +482,7 @@ async function checkPriceAlerts() {
     if (notifLog[key]) continue;
 
     const sym =
-      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽", BRL: "R$", AUD: "A$", CAD: "C$" })[alert.currency] ||
+      symOf(alert.currency) ||
       alert.currency;
     const sameCur = hist.filter((e) => e.c === latest.c).map((e) => e.p);
     const peak = Math.max(...sameCur);
@@ -549,7 +555,7 @@ async function checkWishlistWideAlerts() {
     if (notifLog[key]) continue;
 
     const sym =
-      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽", BRL: "R$", AUD: "A$", CAD: "C$" })[latest.c] || latest.c;
+      symOf(latest.c) || latest.c;
     const low = Math.min(...hist.filter((e) => e.c === latest.c).map((e) => e.p));
     const outcome = await emit({
       id: key,
@@ -600,7 +606,7 @@ async function checkTagAlerts() {
     const key = `tagAlert:${hit.slug}:${hit.tag}:${hit.threshold}`;
     if (notifLog[key]) continue;
     const sym =
-      ({ USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽", BRL: "R$", AUD: "A$", CAD: "C$" })[hit.currency] || hit.currency;
+      symOf(hit.currency) || hit.currency;
     const hist = priceHistory[hit.slug] || [];
     const latest = hist[hist.length - 1];
     const low = Math.min(...hist.filter((e) => e.c === latest?.c).map((e) => e.p));

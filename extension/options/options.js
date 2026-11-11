@@ -84,13 +84,37 @@ function flashSaved() {
   }, 1400);
 }
 
+/** The rate boxes and the budget currency list come from the shared currency table. */
+function buildCurrencyControls() {
+  const C = window.GOG_PLUS_CURRENCIES;
+  const grid = $("rateGrid");
+  if (grid && !grid.children.length) {
+    for (const code of C.RATE_CODES) {
+      const label = document.createElement("label");
+      label.append("1 USD = ");
+      const input = document.createElement("input");
+      input.id = `rate-${code}`;
+      input.type = "number";
+      input.step = C.find(code).places === 0 && code !== "ILS" && code !== "RUB" ? "1" : "0.001";
+      label.append(input, ` ${code}`);
+      grid.appendChild(label);
+    }
+  }
+  const budget = $("monthlyBudgetCurrency");
+  if (budget) {
+    const keep = budget.value;
+    C.fill(budget, { short: true });
+    if (keep) budget.value = keep;
+  }
+}
+
 async function load() {
   const s = await window.GOGPlusStorage.get(DEFAULTS);
   window.GOGPlusI18n?.apply(s.uiLanguage || "en");
   if ($("uiLanguage")) $("uiLanguage").value = s.uiLanguage || "en";
 
   // Rate inputs
-  ["ILS", "EUR", "GBP", "PLN", "RUB", "BRL", "AUD", "CAD"].forEach((c) => {
+  window.GOG_PLUS_CURRENCIES.RATE_CODES.forEach((c) => {
     const inp = $(`rate-${c}`);
     if (inp && s.rates[c] !== undefined) inp.value = s.rates[c];
   });
@@ -238,7 +262,7 @@ function bind() {
   });
 
   // Rate inputs
-  ["ILS", "EUR", "GBP", "PLN", "RUB", "BRL", "AUD", "CAD"].forEach((c) => {
+  window.GOG_PLUS_CURRENCIES.RATE_CODES.forEach((c) => {
     const inp = $(`rate-${c}`);
     if (!inp) return;
     inp.addEventListener("change", async () => {

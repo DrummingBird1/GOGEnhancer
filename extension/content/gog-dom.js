@@ -142,7 +142,16 @@
     '[class*="price"], [class*="Price"], .product-tile__price, .price-text, .product-row-price';
   const PRICE_ATTR_SEL =
     '[itemprop="price"], [data-price], [data-testid*="price"], [data-testid*="Price"], [data-test*="price"], [data-qa*="price"]';
-  const CURRENCY_SYM = "[$€£₪₽]|zł|Kč|kr|R\\$|C\\$|A\\$";
+  const CURRENCY_SYM = (() => {
+    // Every symbol the shared table knows, longest first ("MX$" before "$").
+    const syms = [...new Set(((window.GOG_PLUS_CURRENCIES && window.GOG_PLUS_CURRENCIES.TABLE) || []).map((c) => c.symbol))];
+    for (const t of (window.GOG_PLUS_CURRENCIES && window.GOG_PLUS_CURRENCIES.TABLE) || []) for (const alt of t.alts || []) if (!syms.includes(alt)) syms.push(alt);
+    for (const extra of ["$", "€", "£", "₪", "₽", "zł", "Kč", "kr"]) if (!syms.includes(extra)) syms.push(extra);
+    return syms
+      .sort((a, b) => b.length - a.length)
+      .map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("|");
+  })();
   // The WHOLE trimmed text must be one price ("$19.99" / "19,99 €") — a
   // substring test would flag "from $5 to $60" sliders and "3 kr" in prose.
   // A number, with "1 097,99" (groups of three split by a space / NBSP) counted as one.
@@ -206,7 +215,42 @@
       const m = (el?.getAttribute("class") || "").match(/(?:^|[\s_-])prices-in-([a-z]{3})(?=\s|$)/i);
       if (m) return m[1].toUpperCase();
     }
-    return null;
+    return currencyFromCatalogRequests();
+  }
+
+  /** @type {{ at: number, code: string | null }} */
+  let requestHint = { at: 0, code: null };
+  /**
+   * The new catalog / home pages carry no currency class and several stores print a
+   * bare "$" (Australia, Canada, Mexico, New Zealand, Singapore, the US). What names
+   * the currency is the catalog API call the page itself made: its query ends in
+   * `currencyCode=AUD`, both in the server-rendered state and in the request list.
+   * @returns {string | null}
+   */
+  function currencyFromCatalogRequests() {
+    const now = Date.now();
+    if (requestHint.code && now - requestHint.at < 30000) return requestHint.code;
+    if (!requestHint.code && now - requestHint.at < 1000) return null; // looked a moment ago
+    let code = null;
+    try {
+      const state = document.getElementById("gogcom-store-state");
+      const m = /currencyCode=([A-Z]{3})/.exec(state ? state.textContent || "" : "");
+      if (m) code = m[1];
+      if (!code) {
+        const entries = performance.getEntriesByType("resource");
+        for (let i = entries.length - 1; i >= 0 && !code; i--) {
+          const name = entries[i].name || "";
+          if (!/^https:\/\/(catalog|api|embed)\.gog\.com\//.test(name)) continue;
+          const q = /[?&]currencyCode=([A-Z]{3})/.exec(name);
+          if (q) code = q[1];
+        }
+      }
+    } catch (_) {
+      /* no hint */
+    }
+    if (code && window.GOG_PLUS_CURRENCIES && !window.GOG_PLUS_CURRENCIES.find(code)) code = null; // a currency we have no rate for
+    requestHint = { at: now, code };
+    return code;
   }
 
   // "2.99", "2,99" and "1 097,99" (a space or non-breaking space between groups of three).
@@ -568,6 +612,9 @@
     isSiteElement,
     displayText,
     currencyHint,
+    _resetCurrencyHint: () => {
+      requestHint = { at: 0, code: null };
+    },
     genreLabels,
     readSystemRequirements,
     isRendered,

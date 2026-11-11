@@ -46,6 +46,7 @@ async function load() {
   $("masterEnabled").checked = !!s.enabled;
   document.body.classList.toggle("disabled", !s.enabled);
 
+  window.GOG_PLUS_CURRENCIES?.fill($("targetCurrency"), { lang: s.uiLanguage || "en" });
   $("targetCurrency").value = s.targetCurrency || "ILS";
   $("vatPercent").value = s.vatPercent ?? 18;
 
@@ -86,7 +87,8 @@ function renderBroken(s) {
   box.hidden = false;
 }
 
-const CUR_SYMBOLS = { USD: "$", EUR: "€", ILS: "₪", GBP: "£", PLN: "zł", RUB: "₽", BRL: "R$", AUD: "A$", CAD: "C$" };
+// symbols come from the shared currency table (lib/defaults.js)
+const CUR_SYMBOLS = Object.fromEntries((window.GOG_PLUS_CURRENCIES?.TABLE || []).map((c) => [c.code, c.symbol]));
 
 function slugToTitle(slug) {
   return slug

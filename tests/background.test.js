@@ -60,7 +60,7 @@ describe("force-fx-refresh", () => {
       ],
     });
     await fireMessage({ type: "force-fx-refresh" });
-    expect(String(globalThis.fetch.mock.calls[0][0])).toContain("quotes=ILS,EUR,GBP,PLN,RUB,BRL,AUD,CAD");
+    expect(String(globalThis.fetch.mock.calls[0][0])).toContain("quotes=ILS,EUR,GBP,PLN,RUB,BRL,AUD,CAD,CHF,SEK,NOK,DKK,CZK,HUF,RON,TRY,CNY,JPY,MXN,ZAR,NZD,SGD,THB,IDR");
     const s = await getSync(["rates"]);
     expect(s.rates).toMatchObject({ ILS: 3.7, BRL: 5.6, AUD: 1.55, CAD: 1.4 });
     expect(s.rates.XYZ).toBeUndefined();
@@ -75,7 +75,7 @@ describe("force-fx-refresh", () => {
     expect(resp).toEqual({ ok: true });
     const s = await getSync(["rates", "ratesUpdatedAt", "lastFxError"]);
     expect(s.rates.ILS).toBe(3.7);
-    expect(s.rates.RUB).toBe(92); // frankfurter didn't return RUB this call — GOG_PLUS_DEFAULTS' RUB rate carries through
+    expect(s.rates.RUB).toBe(globalThis.GOG_PLUS_DEFAULTS.rates.RUB); // frankfurter didn't return RUB this call — GOG_PLUS_DEFAULTS' RUB rate carries through
     expect(s.lastFxError).toBe(null);
     expect(s.ratesUpdatedAt).toBeGreaterThan(0);
   });
@@ -353,7 +353,8 @@ describe("daily jobs — per-game price alerts", () => {
     await setSync({ desktopNotifications: true, rates: {} });
     await setLocal({
       priceAlerts: { hades: { threshold: 10, currency: "USD", createdAt: 0 } },
-      priceHistory: { hades: [{ d: "2026-01-01", p: 5, c: "ILS" }] },
+      // a currency with no rate anywhere (not even a built-in one)
+      priceHistory: { hades: [{ d: "2026-01-01", p: 5, c: "XYZ" }] },
     });
     fireAlarm("gog-plus-daily");
     await new Promise((r) => setTimeout(r, 0));

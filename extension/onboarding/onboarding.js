@@ -62,6 +62,29 @@ $$(".currency-card").forEach((btn) => {
   });
 });
 
+// Every other currency the extension converts, named in the page's language by the browser.
+(async () => {
+  const sel = $("moreCurrency");
+  const C = window.GOG_PLUS_CURRENCIES;
+  if (!sel || !C) return;
+  const { uiLanguage } = await window.GOGPlusStorage.get({ uiLanguage: "en" });
+  const withCard = new Set(["USD", "ILS", "EUR", "GBP", "PLN", "RUB"]);
+  for (const c of C.TABLE) {
+    if (withCard.has(c.code)) continue;
+    const opt = document.createElement("option");
+    opt.value = c.code;
+    opt.textContent = C.label(c.code, uiLanguage || "en");
+    sel.appendChild(opt);
+  }
+  sel.addEventListener("change", () => {
+    if (!sel.value) return;
+    $$(".currency-card").forEach((b) => b.classList.remove("selected"));
+    state.selectedCurrency = sel.value;
+    $("next1").disabled = false;
+  });
+  $$(".currency-card").forEach((b) => b.addEventListener("click", () => { sel.value = ""; }));
+})();
+
 $("next1").addEventListener("click", async () => {
   await window.GOGPlusStorage.set({
     targetCurrency: state.selectedCurrency,

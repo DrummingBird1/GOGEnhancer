@@ -221,6 +221,7 @@ declare global {
 declare global {
   interface Window {
     GOG_PLUS_DEFAULTS?: GogPlusSettings;
+    GOG_PLUS_CURRENCIES?: any;
     GOG_PLUS_SETTINGS_VERSION?: number;
     GOGPlusStorage?: GogPlusStorageApi;
     GOGPlusStorageKeys?: GogPlusStorageKeysApi;
@@ -236,6 +237,7 @@ declare global {
   }
   // eslint-disable-next-line no-var
   var GOG_PLUS_DEFAULTS: GogPlusSettings | undefined;
+  var GOG_PLUS_CURRENCIES: any;
   // eslint-disable-next-line no-var
   var GOG_PLUS_SETTINGS_VERSION: number | undefined;
   // eslint-disable-next-line no-var

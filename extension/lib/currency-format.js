@@ -19,25 +19,25 @@
 (() => {
   "use strict";
 
-  /** @type {Record<string, string>} */
-  const SYMBOLS = {
-    ILS: "₪",
-    EUR: "€",
-    GBP: "£",
-    RUB: "₽",
-    PLN: "zł",
-    USD: "$",
-    BRL: "R$",
-    AUD: "A$",
-    CAD: "C$",
-  };
+  // The table lives in lib/defaults.js; this small copy keeps formatting working in a page that
+  // loaded this file without it.
+  const FALLBACK = [
+    { code: "USD", symbol: "$", places: 2 },
+    { code: "EUR", symbol: "€", places: 2 },
+    { code: "GBP", symbol: "£", places: 2 },
+    { code: "PLN", symbol: "zł", places: 2 },
+    { code: "ILS", symbol: "₪", places: 0 },
+    { code: "RUB", symbol: "₽", places: 0 },
+  ];
+  const TABLE = () => (typeof globalThis !== "undefined" && globalThis.GOG_PLUS_CURRENCIES?.TABLE) || FALLBACK;
 
   /**
    * @param {string} cur ISO-ish currency code (USD, ILS, ...)
    * @returns {string} the currency's symbol, or the code itself if unknown
    */
   function symbolFor(cur) {
-    if (Object.prototype.hasOwnProperty.call(SYMBOLS, cur)) return SYMBOLS[cur];
+    const known = TABLE().find((c) => c.code === cur);
+    if (known) return known.symbol;
     // Stored values (a backup, a sync file) can name any "currency": keep only
     // letters so the result is always safe to place inside markup.
     return String(cur ?? "").replace(/[^A-Za-z]/g, "").slice(0, 5).toUpperCase();
@@ -46,13 +46,14 @@
   /**
    * @param {number} value
    * @param {string} cur
-   * @returns {string} e.g. "$15.00" or "₪16" (ILS/RUB round to whole units)
+   * @returns {string} e.g. "$15.00" or "₪16" (ILS, RUB, JPY, HUF, CZK and IDR round to whole units)
    */
   function formatPrice(value, cur) {
-    if (cur === "RUB" || cur === "ILS") {
-      return `${symbolFor(cur)}${Math.round(value)}`;
-    }
-    return `${symbolFor(cur)}${value.toFixed(2)}`;
+    const known = TABLE().find((c) => c.code === cur);
+    const places = known ? known.places : 2;
+    // Thousands are grouped ("Rp18,101", "₪1,098") so a large figure stays readable.
+    const text = value.toLocaleString("en-US", { minimumFractionDigits: places, maximumFractionDigits: places });
+    return `${symbolFor(cur)}${text}`;
   }
 
   const api = { symbolFor, formatPrice };

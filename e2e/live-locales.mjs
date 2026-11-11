@@ -16,15 +16,10 @@ function check(name, ok, detail = "") {
 // rates per 1 USD; target ILS
 const RATES = { ILS: 4, EUR: 0.9, GBP: 0.8, PLN: 4, RUB: 90, BRL: 5, AUD: 1.5, CAD: 1.25 };
 const STORES = [
-  ["US_USD_en-US", "USD"],
-  ["DE_EUR_en-US", "EUR"],
-  ["GB_GBP_en-US", "GBP"],
-  ["PL_PLN_en-US", "PLN"],
-  ["BR_BRL_en-US", "BRL"],
-  ["AU_AUD_en-US", "AUD"],
-  ["CA_CAD_en-US", "CAD"],
-  ["IL_ILS_en-US", "ILS"],
-];
+  "US_USD", "DE_EUR", "GB_GBP", "PL_PLN", "BR_BRL", "AU_AUD", "CA_CAD", "IL_ILS",
+  "CH_CHF", "SE_SEK", "NO_NOK", "DK_DKK", "CZ_CZK", "HU_HUF", "RO_RON", "TR_TRY",
+  "CN_CNY", "MX_MXN", "ZA_ZAR", "NZ_NZD", "SG_SGD", "TH_THB", "ID_IDR", "JP_JPY",
+].map((x) => [`${x}_en-US`, x.split("_")[1]]);
 
 for (const [lc, code] of STORES) {
   const h = await startHarness({
@@ -32,7 +27,8 @@ for (const [lc, code] of STORES) {
     extPath: new URL("../extension", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"),
     cookies: [{ name: "gog_lc", value: lc, domain: ".gog.com", path: "/" }],
   });
-  await h.setSettings({ sync: { currencyConverter: true, targetCurrency: "ILS", taxEstimator: false, rates: RATES, priceCompareTable: false }, local: { priceHistory: {} } });
+  // no rates given: the built-in ones answer for every currency (the storage wrapper fills them in)
+  await h.setSettings({ sync: { currencyConverter: true, targetCurrency: "ILS", taxEstimator: false, rates: {}, priceCompareTable: false }, local: { priceHistory: {} } });
   const page = await h.context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -53,12 +49,27 @@ for (const [lc, code] of STORES) {
   const wantCode = code.toLowerCase();
   const gotCurrency = (info.bodyCurrency || "").replace(/^_?prices-in-/, "");
   const absurd = info.notes.some((n) => /₪\s?\d{4,}/.test(n)) && code !== "RUB";
-  const converted = code === "ILS" ? info.notes.length === 0 : info.notes.length > 0 && !absurd;
+  // GOG sells some games in only some stores: a price of 0 means "not sold here", nothing to convert
+  const notSold = /"0(\.0+)?"/.test(info.shown || "") || /[|]0(\.0+)?[|]/.test(info.shown || "");
+  const converted = code === "ILS" ? info.notes.length === 0 : notSold ? true : info.notes.length > 0 && !absurd;
   check(
     `${code}: page says ${gotCurrency || "?"}, shows ${info.shown}, note ${JSON.stringify(info.notes.slice(0, 2))}, recorded ${hist ? `${hist.p} ${hist.c}` : "nothing"}`,
-    info.panel && converted && errors.length === 0 && (hist && hist.c === code) && gotCurrency === wantCode,
+    info.panel && converted && errors.length === 0 && (notSold || (hist && hist.c === code)) && gotCurrency === wantCode,
     JSON.stringify({ info, hist, errors })
   );
+  // The new catalog pages carry no currency class and several stores print a bare "$" (or "kr", "¥", "R"):
+  // the currency has to come from the page's own catalog request.
+  {
+    const cat = await h.context.newPage();
+    await cat.goto("https://www.gog.com/en/games", { waitUntil: "domcontentloaded" });
+    await new Promise((r) => setTimeout(r, 5000));
+    const c = await cat.evaluate(() => {
+      const notes = [...document.querySelectorAll(".gog-plus-conv-note")];
+      return { n: notes.length, sample: notes[0]?.parentElement?.textContent.replace(/\s+/g, " ").trim().slice(0, 40) || null, big: notes.filter((x) => /₪\s?\d{4,}/.test(x.textContent)).length };
+    });
+    check(`${code} catalog: ${c.n} prices converted (e.g. ${c.sample})`, code === "JPY" || code === "ILS" || (c.n > 20 && c.big === 0), JSON.stringify(c));
+    await cat.close();
+  }
   await h.cleanup();
 }
 

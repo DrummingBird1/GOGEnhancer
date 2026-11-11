@@ -186,3 +186,73 @@ describe("the newer store currencies", () => {
     expect(document.querySelector("#p .gog-plus-conv-note").textContent).toContain("104");
   });
 });
+
+describe("the currency table and the stores GOG prints", () => {
+  const C = window.GOG_PLUS_CURRENCIES;
+
+  it("is one consistent table: unique codes, a default rate for each, the rest derived from it", () => {
+    const codes = C.TABLE.map((c) => c.code);
+    expect(new Set(codes).size).toBe(codes.length);
+    expect(codes).toContain("USD");
+    expect(C.RATE_CODES).toEqual(codes.filter((c) => c !== "USD"));
+    for (const c of C.RATE_CODES) expect(window.GOG_PLUS_DEFAULTS.rates[c], c).toBeGreaterThan(0);
+    for (const c of C.TABLE) expect(c.symbol.length).toBeGreaterThan(0);
+  });
+
+  it("reads the forms GOG really prints, per currency", () => {
+    const P = window.GOGPlusCurrency.parsePrice;
+    expect(P("CHF 7.19", "CHF")).toBe(7.19);
+    expect(P("Fr. 3.35", "CHF")).toBe(3.35);
+    expect(P("85,50 kr", "SEK")).toBe(85.5);
+    expect(P("kr 95,50", "NOK")).toBe(95.5);
+    expect(P("56,00 kr.", "DKK")).toBe(56);
+    expect(P("164 Kč", "CZK")).toBe(164);
+    expect(P("1 990 Ft", "HUF")).toBe(1990);
+    expect(P("229,19 TL", "TRY")).toBe(229.19);
+    expect(P("¥33", "CNY")).toBe(33);
+    expect(P("R 86", "ZAR")).toBe(86);
+    expect(P("$11.50", "AUD")).toBe(11.5);
+    expect(P("MX$ 35.99", "MXN")).toBe(35.99);
+    expect(P("Rp 142.000", "IDR")).toBe(142000); // a dot groups thousands where there are no minor units
+    expect(P("฿265", "THB")).toBe(265);
+  });
+
+  it("never reads a letter symbol that is part of a word as a price", () => {
+    const P = window.GOGPlusCurrency.parsePrice;
+    expect(P("3 Reviews", "ZAR")).toBeNull();
+    expect(P("Version 4 Rated", "ZAR")).toBeNull();
+    expect(P("the leisure 5", "RON")).toBeNull();
+  });
+
+  it("only infers a currency from text when the symbol is distinctive", () => {
+    const S = window.GOGPlusCurrency.SYMBOL_TO_CODE;
+    expect(S["zł"]).toBe("PLN");
+    expect(S["Kč"]).toBe("CZK");
+    expect(S["kr"]).toBeUndefined(); // Swedish, Norwegian or Danish: only the page's own hint can say
+    expect(S["¥"]).toBeUndefined();
+  });
+
+  it("a stored rates object from an older version still answers for newer currencies", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ rates: { ILS: 3.7 } }, r));
+    const { rates } = await window.GOGPlusStorage.get({ rates: window.GOG_PLUS_DEFAULTS.rates });
+    expect(rates.ILS).toBe(3.7); // the stored one wins
+    expect(rates.CHF).toBeGreaterThan(0); // the built-in one fills the gap
+    expect(rates.IDR).toBeGreaterThan(0);
+  });
+
+  it("formats whole-unit currencies without decimals and groups thousands", () => {
+    const F = window.GOGPlusCurrencyFormat;
+    expect(F.formatPrice(18101.4, "IDR")).toBe("Rp18,101");
+    expect(F.formatPrice(158.2, "JPY")).toBe("¥158");
+    expect(F.formatPrice(1097.99, "PLN")).toBe("zł1,097.99");
+    expect(F.formatPrice(1097.99, "ILS")).toBe("₪1,098");
+  });
+
+  it("converts a Swedish catalog price once the page says it is Swedish", () => {
+    setup("SEK", "kr");
+    state.settings.rates = { ...state.settings.rates, SEK: 10 };
+    document.body.innerHTML = '<span id="p">85,50 kr</span>';
+    applyCurrencyConversion(document.body);
+    expect(document.querySelector("#p .gog-plus-conv-note").textContent).toContain("34"); // 85.5 / 10 x 4
+  });
+});

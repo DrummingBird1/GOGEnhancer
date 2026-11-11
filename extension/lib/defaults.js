@@ -209,6 +209,85 @@
    */
 
   /** @type {Settings} */
+  /**
+   * Every currency the extension converts, in one place. `symbol` is how GOG
+   * prints it; `places` how many decimals this extension shows; `guess` says the
+   * symbol is distinctive enough to infer the currency from price text alone
+   * ("kr" is Swedish, Norwegian AND Danish, "¥" yen or yuan, "R" rand: for those
+   * the page's own `prices-in-xxx` class is the only evidence). `rate` is a
+   * fallback per 1 USD until the first live refresh. The list is the stores GOG
+   * served in November 2026 that Frankfurter also has a rate for.
+   * `alts` are the other forms GOG prints (the catalog writes "CHF 7.19" and "TL" where the
+   * game page writes "Fr." and "₺"; five dollar stores print a bare "$").
+   * @type {Array<{ code: string, symbol: string, places: number, guess: boolean, rate: number, alts?: string[] }>}
+   */
+  const CURRENCY_TABLE = [
+    { code: "USD", symbol: "$", places: 2, guess: true, rate: 1 },
+    { code: "ILS", symbol: "₪", places: 0, guess: true, rate: 3.17 },
+    { code: "EUR", symbol: "€", places: 2, guess: true, rate: 0.89 },
+    { code: "GBP", symbol: "£", places: 2, guess: true, rate: 0.75 },
+    { code: "PLN", symbol: "zł", places: 2, guess: true, rate: 3.92 },
+    { code: "RUB", symbol: "₽", places: 0, guess: true, rate: 82.7 },
+    { code: "BRL", symbol: "R$", places: 2, guess: true, rate: 5.53 },
+    { code: "AUD", symbol: "A$", places: 2, guess: true, rate: 1.45, alts: ["$"] },
+    { code: "CAD", symbol: "C$", places: 2, guess: true, rate: 1.41, alts: ["$"] },
+    { code: "CHF", symbol: "Fr.", places: 2, guess: true, rate: 0.82, alts: ["CHF"] },
+    { code: "SEK", symbol: "kr", places: 2, guess: false, rate: 9.82 },
+    { code: "NOK", symbol: "kr", places: 2, guess: false, rate: 9.44 },
+    { code: "DKK", symbol: "kr", places: 2, guess: false, rate: 6.67, alts: ["kr."] },
+    { code: "CZK", symbol: "Kč", places: 0, guess: true, rate: 21.7 },
+    { code: "HUF", symbol: "Ft", places: 0, guess: true, rate: 324 },
+    { code: "RON", symbol: "lei", places: 2, guess: true, rate: 4.77 },
+    { code: "TRY", symbol: "₺", places: 2, guess: true, rate: 50.2, alts: ["TL"] },
+    { code: "CNY", symbol: "¥", places: 2, guess: false, rate: 6.67 },
+    { code: "JPY", symbol: "¥", places: 0, guess: false, rate: 158 },
+    { code: "MXN", symbol: "MX$", places: 2, guess: true, rate: 18.6, alts: ["$"] },
+    { code: "ZAR", symbol: "R", places: 2, guess: false, rate: 16.4 },
+    { code: "NZD", symbol: "NZ$", places: 2, guess: true, rate: 1.78, alts: ["$"] },
+    { code: "SGD", symbol: "S$", places: 2, guess: true, rate: 1.28, alts: ["$"] },
+    { code: "THB", symbol: "฿", places: 2, guess: true, rate: 33.5 },
+    { code: "IDR", symbol: "Rp", places: 0, guess: true, rate: 18100 },
+  ];
+  /** Codes that have a live rate (everything but the base currency). */
+  const RATE_CODES = CURRENCY_TABLE.filter((c) => c.code !== "USD").map((c) => c.code);
+  const CURRENCIES = {
+    TABLE: CURRENCY_TABLE,
+    RATE_CODES,
+    /** @param {string} code */
+    find: (code) => CURRENCY_TABLE.find((c) => c.code === code) || null,
+    /**
+     * "₪ ILS — Israeli Shekel", with the name in `lang` (the browser knows the
+     * currency names of every language, so none needs a translation row).
+     * @param {string} code @param {string} [lang]
+     */
+    label(code, lang = "en") {
+      const c = CURRENCY_TABLE.find((x) => x.code === code);
+      let name = "";
+      try {
+        name = new Intl.DisplayNames([lang || "en"], { type: "currency" }).of(code) || "";
+      } catch (_) {
+        /* an unknown language tag: show the code alone */
+      }
+      return `${c ? c.symbol + " " : ""}${code}${name && name !== code ? " — " + name : ""}`;
+    },
+    /**
+     * Fills a <select> with the supported currencies (keeps a first "none" option if it has one).
+     * @param {HTMLSelectElement} select @param {{ lang?: string, withUsd?: boolean, short?: boolean }} [o]
+     */
+    fill(select, o = {}) {
+      const keep = [...select.options].filter((x) => x.value === "none");
+      select.textContent = "";
+      keep.forEach((x) => select.appendChild(x));
+      const codes = (o.withUsd === false ? CURRENCY_TABLE.filter((c) => c.code !== "USD") : CURRENCY_TABLE).map((c) => c.code);
+      for (const code of codes) {
+        const opt = document.createElement("option");
+        opt.value = code;
+        opt.textContent = o.short ? `${CURRENCIES.find(code)?.symbol} ${code}` : CURRENCIES.label(code, o.lang);
+        select.appendChild(opt);
+      }
+    },
+  };
+
   const DEFAULTS = {
     // version + onboarding
     settingsVersion: SETTINGS_VERSION,
@@ -242,7 +321,7 @@
 
     // currency + region
     targetCurrency: "ILS",
-    rates: { ILS: 3.65, EUR: 0.92, GBP: 0.79, RUB: 92.0, PLN: 4.0, BRL: 5.4, AUD: 1.52, CAD: 1.38 },
+    rates: Object.fromEntries(CURRENCY_TABLE.filter((c) => c.code !== "USD").map((c) => [c.code, c.rate])),
     ratesUpdatedAt: 0,
     lastFxError: null,
     vatPercent: 18,
@@ -352,9 +431,11 @@
   if (typeof window !== "undefined") {
     window.GOG_PLUS_DEFAULTS = DEFAULTS;
     window.GOG_PLUS_SETTINGS_VERSION = SETTINGS_VERSION;
+    window.GOG_PLUS_CURRENCIES = CURRENCIES;
   }
   if (typeof self !== "undefined") {
     self.GOG_PLUS_DEFAULTS = DEFAULTS;
     self.GOG_PLUS_SETTINGS_VERSION = SETTINGS_VERSION;
+    self.GOG_PLUS_CURRENCIES = CURRENCIES;
   }
 })();

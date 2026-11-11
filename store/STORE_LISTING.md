@@ -42,7 +42,7 @@ features GOG.com does not ship with — without any analytics, ads, or remote
 code.
 
 ▸ Live currency conversion
-  Converts prices to ILS, EUR, GBP, PLN, USD, RUB, BRL, AUD, or CAD using exchange rates
+  Converts prices to 24 currencies (ILS, EUR, GBP, PLN, USD, RUB, BRL, AUD, CAD, CHF, SEK, NOK, DKK, CZK, HUF, RON, TRY, CNY, JPY, MXN, ZAR, NZD, SGD, THB, IDR) using exchange rates
   fetched from frankfurter.dev (a free, public, ECB-backed rate service).
   Works whether GOG shows you USD, EUR, or any other locale — full
   cross-currency conversion via the rate matrix.
@@ -252,7 +252,7 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
 שהאתר לא מציע מהקופסה — בלי analytics, בלי פרסומות, בלי קוד מרוחק.
 
 ▸ המרת מטבע חיה (cross-currency מלא)
-  ממיר מחירים לשקלים / יורו / לירה / זלוטי / דולר / רובל / ריאל / דולר אוסטרלי / דולר קנדי. שערים נמשכים
+  ממיר מחירים לשקלים / יורו / לירה / זלוטי / דולר / רובל / ריאל / דולר אוסטרלי / דולר קנדי / פרנק שוויצרי / כתרים / פורינט / ין / יואן ועוד (24 מטבעות בסך הכול). שערים נמשכים
   אוטומטית מ-frankfurter.dev (שירות חינמי מבוסס הבנק המרכזי האירופי).
   עובד גם כשה-GOG מציג EUR/GBP מקומיים — לא רק USD.
 

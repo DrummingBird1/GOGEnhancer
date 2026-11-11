@@ -31,7 +31,11 @@
       .join(" ");
 
   /** @type {Record<string, string>} */
-  const SYMBOLS = { USD: "$", EUR: "€", GBP: "£", ILS: "₪", PLN: "zł", RUB: "₽", BRL: "R$", AUD: "A$", CAD: "C$" };
+  // the symbols of every supported currency (lib/defaults.js)
+  const SYMBOLS = {
+    USD: "$", EUR: "€", GBP: "£", ILS: "₪", PLN: "zł", RUB: "₽",
+    ...Object.fromEntries(((typeof globalThis !== "undefined" && globalThis.GOG_PLUS_CURRENCIES?.TABLE) || []).map((c) => [c.code, c.symbol])),
+  };
 
   /**
    * @typedef {{

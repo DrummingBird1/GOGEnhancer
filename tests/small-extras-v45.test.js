@@ -64,6 +64,6 @@ describe("small extras on the game page", () => {
     await vi.advanceTimersByTimeAsync(600);
     const all = await new Promise((r) => chrome.storage.local.get(null, r));
     const { priceAlerts } = all;
-    expect(priceAlerts.the_witcher_3.threshold).toBe(21.9); // 8 USD x 3.65 (ILS) x 0.75
+    expect(priceAlerts.the_witcher_3.threshold).toBeCloseTo(8 * window.GOG_PLUS_DEFAULTS.rates.ILS * 0.75, 2); // 8 USD x the ILS rate x 0.75
   });
 });

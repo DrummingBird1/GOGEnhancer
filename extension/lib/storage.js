@@ -199,6 +199,7 @@
     return { sync, local };
   }
 
+  const rawGet = (/** @type {any} */ k) => Storage._rawGet(k);
   const Storage = {
     /**
      * get(keysOrDefaults) → object. Accepts string | string[] | {key: default}.
@@ -208,6 +209,19 @@
      * @returns {Promise<Record<string, any>>}
      */
     get(keysOrDefaults) {
+      return rawGet(keysOrDefaults).then((res) => {
+        // A `rates` object stored by an earlier version lacks the currencies added
+        // since; answer for them from the built-in rates until a refresh stores real ones.
+        const def = typeof globalThis !== "undefined" && globalThis.GOG_PLUS_DEFAULTS?.rates;
+        if (def && res && res.rates && typeof res.rates === "object" && !Array.isArray(res.rates)) {
+          for (const [c, v] of Object.entries(def)) if (res.rates[c] === undefined) res.rates = { ...def, ...res.rates };
+        }
+        return res;
+      });
+    },
+
+    /** @param {string | string[] | Record<string, any>} [keysOrDefaults] @returns {Promise<Record<string, any>>} */
+    _rawGet(keysOrDefaults) {
       const builtins =
         (typeof globalThis !== "undefined" && globalThis.GOG_PLUS_DEFAULTS) || {};
       return new Promise((resolve) => {

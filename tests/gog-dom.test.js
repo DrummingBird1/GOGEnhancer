@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
+await import("../extension/lib/defaults.js");
 await import("../extension/content/gog-dom.js");
 
 const Dom = window.GOGPlusGogDom;
@@ -114,6 +115,29 @@ describe("cardCoverHost", () => {
     card.getBoundingClientRect = rect(200, 300);
     document.getElementById("w").getBoundingClientRect = rect(200, 300);
     expect(Dom.cardCoverHost(card)).toBeNull();
+  });
+});
+
+describe("currencyHint", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    document.documentElement.className = "";
+    Dom._resetCurrencyHint();
+  });
+
+  it("reads the body class on game pages", () => {
+    document.body.className = "productcard _prices-in-sek";
+    expect(Dom.currencyHint()).toBe("SEK");
+  });
+
+  it("falls back to the catalog call recorded in the server-rendered state (pages with no class and a bare $)", () => {
+    document.body.innerHTML = `<script id="gogcom-store-state" type="application/json">{"catalog.gog/v1/catalog?limit=48&a;currencyCode=AUD&a;countryCode=AU":{"body":{"products":[]}}}</script>`;
+    expect(Dom.currencyHint()).toBe("AUD");
+  });
+
+  it("ignores a currency the extension has no rate for", () => {
+    document.body.innerHTML = `<script id="gogcom-store-state" type="application/json">{"catalog.gog/v1/catalog?currencyCode=XYZ":{}}</script>`;
+    expect(Dom.currencyHint()).toBeNull();
   });
 });
 

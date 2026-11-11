@@ -114,32 +114,7 @@
         until the next refresh.
       </p>
       <div class="rate-status" id="rateStatus"></div>
-      <div class="rate-grid">
-        <label>1 USD =
-          <input id="rate-ILS" type="number" step="0.001" /> ILS
-        </label>
-        <label>1 USD =
-          <input id="rate-EUR" type="number" step="0.001" /> EUR
-        </label>
-        <label>1 USD =
-          <input id="rate-GBP" type="number" step="0.001" /> GBP
-        </label>
-        <label>1 USD =
-          <input id="rate-PLN" type="number" step="0.001" /> PLN
-        </label>
-        <label>1 USD =
-          <input id="rate-RUB" type="number" step="0.01" /> RUB
-        </label>
-        <label>1 USD =
-          <input id="rate-BRL" type="number" step="0.001" /> BRL
-        </label>
-        <label>1 USD =
-          <input id="rate-AUD" type="number" step="0.001" /> AUD
-        </label>
-        <label>1 USD =
-          <input id="rate-CAD" type="number" step="0.001" /> CAD
-        </label>
-      </div>
+      <div class="rate-grid" id="rateGrid"></div>
       <div class="card-actions">
         <button id="refreshRates" class="primary">Refresh now</button>
       </div>
@@ -544,17 +519,7 @@
         </div>
         <div class="dev-num-suffixed">
           <input type="number" id="monthlyBudgetAmount" aria-label="Monthly spending budget" min="0" step="1" class="dev-num" />
-          <select id="monthlyBudgetCurrency" aria-label="Monthly spending budget" class="dev-select">
-            <option value="ILS">₪ ILS</option>
-            <option value="EUR">€ EUR</option>
-            <option value="GBP">£ GBP</option>
-            <option value="RUB">₽ RUB</option>
-            <option value="PLN">zł PLN</option>
-            <option value="BRL">R$ BRL</option>
-            <option value="AUD">A$ AUD</option>
-            <option value="CAD">C$ CAD</option>
-            <option value="USD">$ USD</option>
-          </select>
+          <select id="monthlyBudgetCurrency" aria-label="Monthly spending budget" class="dev-select"></select>
         </div>
       </div>
     </section>
@@ -583,7 +548,7 @@
       </p>
       <ul class="bullet">
         <li><strong>www.gog.com</strong> — the pages you browse, and the public mods list once a day.</li>
-        <li><strong>api.frankfurter.dev</strong> — USD→EUR/ILS/GBP/PLN/RUB/BRL/AUD/CAD exchange rates (no key, no tracking).</li>
+        <li><strong>api.frankfurter.dev</strong> — USD→EUR/ILS/GBP/PLN/RUB/BRL/AUD/CAD/CHF/SEK/NOK/DKK/CZK/HUF/RON/TRY/CNY/JPY/MXN/ZAR/NZD/SGD/THB/IDR exchange rates (no key, no tracking).</li>
         <li><strong>www.cheapshark.com</strong> — the optional price-comparison table on a game page (only the game's title is sent).</li>
         <li><strong>api.gog.com</strong> — GOG's own product API, asked once per game page which games a pack contains (only its numeric id is sent). Switch it off under Catalog, wishlist &amp; library.</li>
         <li><strong>catalog.gog.com</strong> — GOG's own catalog API, used only if you turn on endless scrolling, to fetch the next page of the list you're already looking at.</li>
