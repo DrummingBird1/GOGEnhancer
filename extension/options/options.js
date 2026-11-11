@@ -765,6 +765,7 @@ function bindSettingsSearch() {
 document.addEventListener(
   "DOMContentLoaded",
   () => {
+    buildCurrencyControls();
     load();
     bind();
     bindSettingsSearch();

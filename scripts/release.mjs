@@ -2,7 +2,8 @@
 // forget (the version, BOTH changelogs, the banner, the gates, the tag):
 //
 //   node scripts/release.mjs 4.1.0 --tagline "short headline"           check only: shows what it would do
-//   node scripts/release.mjs 4.1.0 --tagline "short headline" --apply   bump manifest.json, add changelog stubs, make the banner
+//   node scripts/release.mjs 4.1.0 --tagline "short headline" [--highlights "a|b|c|d"] --apply   bump manifest.json, add changelog stubs, make the banner
+//                                                       (x.y.0 releases get the special "major" banner; --highlights are its chips)
 //   node scripts/release.mjs 4.1.0 --commit                              (after writing the changelog) run the gates, commit, tag locally
 //   node scripts/release.mjs 4.1.0 --push                                 push the branch and the tag — which publishes the GitHub Release
 //
@@ -100,6 +101,7 @@ const git = (...a) => execFileSync("git", ["-c", `safe.directory=${ROOT}`, ...a]
 function main(argv) {
   const version = argv.find((a) => /^\d/.test(a)) || "";
   const flag = (n) => argv.includes(`--${n}`);
+  const highlights = argv.includes("--highlights") ? argv[argv.indexOf("--highlights") + 1] : "";
   const tagline = argv.includes("--tagline") ? argv[argv.indexOf("--tagline") + 1] : "";
   if (!isVersion(version)) {
     console.error("Usage: node scripts/release.mjs <X.Y.Z> [--tagline \"…\"] [--apply | --commit | --push]");
@@ -119,7 +121,7 @@ function main(argv) {
     write(manifestPath, setManifestVersion(read(manifestPath), version));
     write("extension/lib/changelog.js", addChangelogJsStub(read("extension/lib/changelog.js"), version));
     write("docs/changelog.html", addChangelogHtmlStub(read("docs/changelog.html"), version, tagline));
-    run("uv", ["run", "--with", "pillow", "python", "generate_release_banner.py", "--version", version, "--tagline", tagline], { cwd: join(ROOT, "store", "release-images") });
+    run("uv", ["run", "--with", "pillow", "python", "generate_release_banner.py", "--version", version, "--tagline", tagline, ...(highlights ? ["--highlights", highlights] : [])], { cwd: join(ROOT, "store", "release-images") });
     console.log(`\nDone. Now:\n  1. replace every TODO in extension/lib/changelog.js and docs/changelog.html\n  2. update README.md / README.he.md / PRIVACY.md / store/STORE_LISTING.md if features or permissions changed\n  3. node scripts/release.mjs ${version} --commit`);
     return 0;
   }

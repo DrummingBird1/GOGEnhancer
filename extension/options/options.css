@@ -357,6 +357,9 @@ html.gog-plus-theme--light .card.subtle { background: var(--bg-elevated); }
 }
 .rate-grid label {
   display: flex;
+  flex-direction: row;
+  white-space: nowrap;
+  direction: ltr; /* "1 USD = 3.6 ILS" reads left to right in every language */
   align-items: center;
   gap: 8px;
   background: var(--bg-elevated);
@@ -369,6 +372,7 @@ html.gog-plus-theme--light .card.subtle { background: var(--bg-elevated); }
 }
 .rate-grid input {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--border-strong);

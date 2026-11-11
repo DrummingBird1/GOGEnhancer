@@ -15,14 +15,24 @@ GitHub URL when it exists at that path for the tag being released — see
 this repo's CLAUDE.md "Release images" section. Run this and commit the
 output BEFORE tagging a release, same step as the changelog/README update.
 
+Two styles. `classic` (1280x400) is the plain banner used for patch releases. `major`
+(1280x640) is the special one: big glowing logo, a "NEW VERSION" pill, the version in the
+brand gradient, the tagline and up to four highlight chips. A release whose version ends in
+".0" (4.5.0, 5.0.0 ...) gets `major` automatically; pass `--style classic` to override, and
+`--highlights "24 currencies|9 languages|Tabs after updates|Safer imports"` for the chips.
+Rule for the repo: every minor or major release uses the major style.
+
 Only needs Pillow, invoked via `uv run --with pillow` so no project
 dependency is added just for this.
 """
 import argparse
 import os
+import sys
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, "..", "brand"))
+import common  # noqa: E402
 FONT_DIR = "C:/Windows/Fonts/"
 BOLD = FONT_DIR + "seguibl.ttf"
 SEMIBOLD = FONT_DIR + "seguisb.ttf"
@@ -100,7 +110,7 @@ def build(version, tagline, out_path, w=1280, h=400):
     draw = ImageDraw.Draw(img)
 
     icon_size = 168
-    icon = build_icon(icon_size)
+    icon = common.draw_logo(icon_size)
     pad_left = 80
     icon_y = (h - icon_size) // 2
     img.paste(icon, (pad_left, icon_y), icon)
@@ -134,10 +144,45 @@ def build(version, tagline, out_path, w=1280, h=400):
     print(f"Wrote {out_path} ({img.size[0]}x{img.size[1]}, mode={img.mode})")
 
 
+def build_major(version, tagline, out_path, highlights, w=1280, h=640):
+    img = common.make_bg(w, h, stars=90, seed=int(version.replace(".", "") or 1))
+    d = ImageDraw.Draw(img)
+    common.paste_logo(img, 260, 70, (h - 260) // 2 - 20)
+    x = 70 + 260 + 60
+    pill_f = common.font(common.SEMIBOLD, 22)
+    label = "NEW VERSION"
+    tw = d.textlength(label, font=pill_f)
+    d.rounded_rectangle([x, 120, x + tw + 44, 120 + 44], radius=22, fill=(0, 60, 80), outline=common.CYAN, width=2)
+    d.text((x + 22, 142), label, font=pill_f, fill=common.CYAN, anchor="lm")
+    d.text((x, 175), "GOG Enhancer", font=common.font(common.BOLD, 66), fill=common.TEXT)
+    common.gradient_text(img, (x - 4, 235), f"v{version}", common.font(common.BOLD, 150))
+    tag_f = common.fit_text(d, tagline, common.LIGHT, 34, 20, w - x - 60) if hasattr(common, "fit_text") else common.font(common.LIGHT, 30)
+    d.text((x, 420), tagline, font=tag_f, fill=(210, 196, 240))
+    cx, cy = x, 500
+    for g, lab in highlights:
+        wd = common.chip(img, cx, cy, lab, size=20, glyph=g)
+        cx += wd + 12
+        if cx > w - 60:
+            cx, cy = x, cy + 62
+    common.bottom_line(img, 8)
+    img.save(out_path, "PNG")
+    print(f"Wrote {out_path} ({img.size[0]}x{img.size[1]}, mode={img.mode}, major style)")
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--version", required=True, help="e.g. 2.9.0 (no leading v)")
     p.add_argument("--tagline", required=True)
+    p.add_argument("--style", choices=["auto", "classic", "major"], default="auto")
+    p.add_argument("--highlights", default="", help='up to four chips, separated by "|"')
     args = p.parse_args()
     out = os.path.join(HERE, f"v{args.version}.png")
-    build(args.version, args.tagline, out)
+    style = args.style
+    if style == "auto":
+        style = "major" if args.version.endswith(".0") else "classic"
+    if style == "major":
+        glyphs = ["$", "↗", "#", "◎"]
+        chips = [(glyphs[i % 4], t.strip()) for i, t in enumerate([t for t in args.highlights.split("|") if t.strip()][:4])]
+        build_major(args.version, args.tagline, out, chips)
+    else:
+        build(args.version, args.tagline, out)
