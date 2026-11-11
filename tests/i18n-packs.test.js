@@ -47,7 +47,7 @@ describe.each(Object.keys(LANGS))("language pack %s", (lang) => {
   });
 
   it("uses only the placeholders its English has, and fills them", () => {
-    const text = readFileSync(resolve(EXT, `lib/i18n-lang-${lang}-content.js`), "utf8") + readFileSync(resolve(EXT, `lib/i18n-lang-${lang}.js`), "utf8");
+    const text = ["-content", "", "-options", "-dashboard"].map((k) => readFileSync(resolve(EXT, `lib/i18n-lang-${lang}${k}.js`), "utf8")).join(" ");
     const rows = [...text.matchAll(PAIR)];
     expect(rows.length).toBeGreaterThan(200);
     for (const [, en, tr] of rows) {
@@ -58,6 +58,15 @@ describe.each(Object.keys(LANGS))("language pack %s", (lang) => {
       expect(tr, `"${en}" left a literal {n} or {}`).not.toMatch(/\{n\}|\{\}/);
       expect([...new Set(tr.match(/<\d+>/g) || [])].sort(), `tags in "${en}"`).toEqual([...new Set(en.match(/<\d+>/g) || [])].sort());
     }
+  });
+
+  it("covers every row of the options page and the dashboard", async () => {
+    for (const f of ["options", "options-messages", "dashboard", "dashboard-messages"]) await import(`../extension/lib/i18n-pages-${f}.js`);
+    await import(`../extension/lib/i18n-lang-${lang}-options.js`);
+    await import(`../extension/lib/i18n-lang-${lang}-dashboard.js`);
+    const pageRows = T.rows().map((r) => r[0]).filter((e) => !contentRows.includes(e));
+    const missing = pageRows.filter((e) => T.translate(sample(e), lang) === null);
+    expect(missing, `${lang} has no translation for: ${missing.slice(0, 8).join(" | ")}`).toEqual([]);
   });
 
   it("fills a translated sentence with its numbers and amounts", () => {
@@ -76,6 +85,8 @@ describe("where the languages are offered", () => {
     for (const l of Object.keys(LANGS)) {
       expect(html).toContain(`<option value="${l}">`);
       expect(scripts).toContain(`lib/i18n-lang-${l}-content.js`);
+      expect(readFileSync(resolve(EXT, "options/options.html"), "utf8")).toContain(`i18n-lang-${l}-options.js`);
+      expect(readFileSync(resolve(EXT, "tags/tags.html"), "utf8")).toContain(`i18n-lang-${l}-dashboard.js`);
       for (const page of ["popup/popup.html", "options/options.html", "tags/tags.html", "onboarding/onboarding.html", "tour/tour.html"]) {
         expect(readFileSync(resolve(EXT, page), "utf8"), `${page} loads the ${l} pack`).toContain(`i18n-lang-${l}.js`);
       }
