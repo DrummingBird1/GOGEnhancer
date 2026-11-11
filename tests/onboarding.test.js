@@ -29,6 +29,7 @@ function fixtureHtml() {
 
     <section class="step active" data-step="1">
       <div id="currencyGrid">${currencies}</div>
+      <select id="moreCurrency"><option value="">Another currency…</option></select>
       <button data-action="next" disabled id="next1">Continue</button>
     </section>
 
@@ -115,6 +116,38 @@ describe("step 1 — currency", () => {
     await new Promise((r) => setTimeout(r, 0));
     const s = await new Promise((r) => chrome.storage.sync.get(["currencyConverter"], r));
     expect(s.currencyConverter).toBe(false);
+  });
+});
+
+describe("step 1 — the other currencies", () => {
+  it("lists every supported currency that has no card, named in the page's language", async () => {
+    await new Promise((r) => chrome.storage.sync.set({ uiLanguage: "de" }, r));
+    await bootOnboarding();
+    await new Promise((r) => setTimeout(r, 20));
+    const values = [...document.querySelectorAll("#moreCurrency option")].map((o) => o.value);
+    expect(values).toContain("CHF");
+    expect(values).toContain("IDR");
+    expect(values).not.toContain("EUR"); // has a card
+    expect(document.querySelector('#moreCurrency option[value="CHF"]').textContent).toMatch(/Franken/); // Intl names it in German
+  });
+
+  it("picking one enables Continue, deselects the cards and is what gets saved", async () => {
+    await bootOnboarding();
+    await new Promise((r) => setTimeout(r, 20));
+    document.querySelector('.currency-card[data-cur="ILS"]').click();
+    const sel = document.getElementById("moreCurrency");
+    sel.value = "SEK";
+    sel.dispatchEvent(new Event("change"));
+    expect(document.querySelector('.currency-card.selected')).toBeNull();
+    expect(document.getElementById("next1").disabled).toBe(false);
+    document.getElementById("next1").click();
+    await new Promise((r) => setTimeout(r, 0));
+    const s = await new Promise((r) => chrome.storage.sync.get(["targetCurrency", "currencyConverter"], r));
+    expect(s.targetCurrency).toBe("SEK");
+    expect(s.currencyConverter).toBe(true);
+    // choosing a card again clears the list
+    document.querySelector('.currency-card[data-cur="EUR"]').click();
+    expect(sel.value).toBe("");
   });
 });
 
