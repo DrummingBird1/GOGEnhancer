@@ -69,6 +69,8 @@
         "content/toasts.js",
         "lib/i18n-pages.js",
         "lib/i18n-pages-content.js",
+        "lib/i18n-lang-zh-content.js",
+        "lib/i18n-lang-pt-content.js",
         "content/announce.js",
         "content/native-theme.js",
         "content/state.js",

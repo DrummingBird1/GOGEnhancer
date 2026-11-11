@@ -74,6 +74,7 @@ interface GogPlusChangelogApi {
 }
 
 interface GogPlusI18nApi {
+  addLanguage(code: string, name: string, dict: Record<string, string>): void;
   apply(lang: string): void;
   t(key: string, lang?: string): string;
 }
@@ -90,6 +91,8 @@ interface GogPlusPageI18nApi {
   rows(): string[][];
   pluralIndex(n: number, lang: string): number;
   translateTree(root: Node, lang: string): void;
+  addPack(lang: string, pairs: string[][]): void;
+  languages(): string[];
 }
 
 interface GogPlusGameStatusEntry {

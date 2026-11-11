@@ -716,6 +716,23 @@ try {
     const wl = await w.evaluate(() => document.getElementById("gog-plus-wlfilters")?.innerText || "");
     check("in-page: the wishlist bar is Hebrew", /סינון מהיר|במבצע|ייצוא/.test(wl), wl.slice(0, 160));
     await w.close();
+    for (const [lang, headingRe, popupRe] of [["zh", /优惠检查|价格历史/, /货币与价格/], ["pt", /Análise da oferta|Histórico de preços/i, /Moeda e preços/i]]) {
+      await setSettings({ sync: { uiLanguage: lang } });
+      const pg = await open("/en/game/alpha_game");
+      await pg.waitForSelector("#gog-plus-gamepanel", { timeout: 6000 }).catch(() => {});
+      await new Promise((r) => setTimeout(r, 1200));
+      const txt = await pg.evaluate(() => document.getElementById("gog-plus-gamepanel")?.innerText || "");
+      check(`in-page: ${lang}: the panel is in the new language`, headingRe.test(txt), txt.slice(0, 120));
+      await pg.close();
+      const pop = await context.newPage();
+      await pop.goto(`chrome-extension://${extId}/popup/popup.html`);
+      await new Promise((r) => setTimeout(r, 700));
+      const ptxt = await pop.evaluate(() => document.body.innerText);
+      check(`${lang}: the popup is in the new language, and its currency list names currencies in it`, popupRe.test(ptxt), ptxt.slice(0, 120));
+      const cur = await pop.evaluate(() => [...document.querySelectorAll("#targetCurrency option")].map((o) => o.textContent).slice(0, 12));
+      check(`${lang}: the popup's currency picker lists "Off" and the 25 currencies`, (await pop.evaluate(() => document.querySelectorAll("#targetCurrency option").length)) === 26, JSON.stringify(cur)); // Off + the 25 in the table
+      await pop.close();
+    }
     await setSettings({ sync: { uiLanguage: "en" } });
     const e = await open("/en/game/alpha_game");
     await e.waitForSelector("#gog-plus-gamepanel", { timeout: 6000 }).catch(() => {});

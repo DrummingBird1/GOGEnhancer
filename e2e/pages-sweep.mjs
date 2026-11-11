@@ -19,7 +19,7 @@ function check(name, ok, detail = "") {
   console.log(`${ok ? "  ✓" : "  ✗"} ${name}${!ok && detail ? `\n      ${detail}` : ""}`);
 }
 
-const LANGS = [["en", "ltr"], ["he", "rtl"], ["ru", "ltr"], ["pl", "ltr"], ["de", "ltr"], ["fr", "ltr"], ["es", "ltr"]];
+const LANGS = [["en", "ltr"], ["he", "rtl"], ["ru", "ltr"], ["pl", "ltr"], ["de", "ltr"], ["fr", "ltr"], ["es", "ltr"], ["zh", "ltr"], ["pt", "ltr"]];
 const PAGES = [
   ["popup", "popup/popup.html", [380]],
   ["options", "options/options.html", [1100, 420]],

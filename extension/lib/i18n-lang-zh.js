@@ -1,0 +1,104 @@
+/**
+ * 中文（简体）— Simplified Chinese, the seventh language gog.com itself offers.
+ * Covers the popup, the first-run wizard, the tour's buttons and the shared words
+ * of the settings and dashboard pages; text with no row here stays English (see
+ * lib/i18n-pages.js, `addPack`). The in-page text (the insights panel, bars,
+ * dialogs) is in lib/i18n-lang-zh-content.js.
+ */
+// @ts-check
+
+(() => {
+  "use strict";
+  window.GOGPlusI18n?.addLanguage("zh", "中文（简体）", {
+    "popup.subtitle": "增强版",
+    "popup.rate.bundled": "使用内置汇率 · 点击 ↻ 刷新",
+    "popup.section.currency": "货币与价格",
+    "popup.section.onpage": "页面增强",
+    "popup.section.visual": "视觉升级",
+    "popup.section.library": "游戏库与账户",
+    "popup.section.localization": "本地化",
+    "popup.row.targetCurrency": "在美元旁显示",
+    "popup.row.vatToggle": "估算增值税 / 销售税",
+    "popup.row.vatToggle.sub": "在美元价格旁显示含税价格。",
+    "popup.row.vatPercent": "税率 %",
+    "popup.row.refresh": "↻ 汇率",
+    "popup.row.refundBadge": "“30 天退款”徽章",
+    "popup.row.refundBadge.sub": "在每张游戏卡片上提醒。",
+    "popup.row.drmBanner": "底部 DRM-free 横幅",
+    "popup.row.drmBanner.sub": "突出 GOG 的核心承诺。",
+    "popup.row.modIndicator": "卡片上的 MOD 标记",
+    "popup.row.modIndicator.sub": "可Modding的游戏显示 ★ MOD 徽章。",
+    "popup.row.hideExpired": "隐藏已过期的促销",
+    "popup.row.hideExpired.sub": "将带有过期年份的促销变灰。",
+    "popup.row.cleanLayout": "更简洁的首页布局",
+    "popup.row.cleanLayout.sub": "折叠重复的促销横条。",
+    "popup.row.skeleton": "加载动画",
+    "popup.row.skeleton.sub": "用闪烁效果替换空白占位。",
+    "popup.row.design": "设计注入",
+    "popup.row.design.sub": "等宽价格、按年代区分的卡片、层次感、金色 “Good Old Game” 标签。",
+    "popup.row.richTooltips": "丰富提示",
+    "popup.row.richTooltips.sub": "带详细信息的自定义悬停提示。",
+    "popup.row.tags": "自定义标签与笔记",
+    "popup.row.tags.sub": "含自动补全与仪表板。",
+    "popup.row.wlFilters": "愿望单快速筛选",
+    "popup.row.wlFilters.sub": "按促销、价格、评分。",
+    "popup.row.wlAlerts": "愿望单促销提醒",
+    "popup.row.wlAlerts.sub": "工具栏徽章显示愿望单中的优惠数量。",
+    "popup.whatsnew.title": "新功能",
+    "popup.whatsnew.dismiss": "知道了",
+    "popup.deals.title": "愿望单优惠",
+    "popup.digest.title": "本周",
+    "popup.row.priceHistory": "价格历史记录",
+    "popup.row.priceHistory.sub": "每次访问都会记录价格。",
+    "popup.row.lowestBadge": "最低价徽章",
+    "popup.row.lowestBadge.sub": "💎 标记处于已记录历史最低价的卡片。",
+    "popup.row.refundTimer": "退款期倒计时",
+    "popup.row.refundTimer.sub": "在游戏页面手动输入购买日期进行倒计时。",
+    "popup.row.itad": "在 IsThereAnyDeal 比价",
+    "popup.row.itad.sub": "一键跨商店比价。",
+    "popup.row.priceCompare": "价格对比表",
+    "popup.row.priceCompare.sub": "通过 CheapShark 在游戏页面显示 Steam/Epic/Humble/Fanatical 的价格。",
+    "popup.row.hebrew": "希伯来语翻译覆盖",
+    "popup.row.hebrew.sub": "翻译稳定的导航与界面文字。",
+    "popup.row.rtl": "从右到左布局",
+    "popup.row.rtl.sub": "为从右到左的语言镜像布局。",
+    "popup.btn.tags": "标签仪表板",
+    "popup.btn.advanced": "高级",
+    "popup.btn.reload": "重新加载标签页",
+    "popup.shortcuts": "快捷键：",
+    "popup.shortcuts.open": "打开",
+    "popup.shortcuts.toggle": "切换",
+    "options.hero.title": "高级设置",
+    "options.hero.sub": "微调行为、管理数据，并调整 GOG Enhancer 注入的内容。",
+    "options.section.language": "语言",
+    "options.section.language.sub": "切换扩展的界面语言。不影响 GOG.com 本身（那由弹出窗口中的希伯来语翻译开关控制）。",
+    "language.label": "界面语言",
+  });
+
+  window.GOGPlusPageI18n?.addPack("zh", [
+    // shared words
+    ["Israel", "以色列"], ["EU", "欧盟"], ["European Union", "欧盟"], ["UK", "英国"], ["United Kingdom", "英国"], ["Poland", "波兰"], ["USA", "美国"], ["Germany", "德国"], ["France", "法国"], ["Spain", "西班牙"], ["Italy", "意大利"], ["Netherlands", "荷兰"], ["Russia", "俄罗斯"], ["Custom", "自定义"],
+    ["{} · {n}% VAT", "{1} · 增值税 {2}%"], ["{n}% VAT · {}", "增值税 {1}% · {2}"], ["{n}% VAT (varies) · {}", "增值税 {1}%（因地区而异）· {2}"], ["{n}% (state-dependent)", "{1}%（因州而异）"], ["manual", "手动"],
+    ["Neon", "霓虹"], ["magenta + cyan", "品红 + 青色"], ["magenta + cyan (default)", "品红 + 青色（默认）"], ["Classic GOG", "经典 GOG"], ["deep purple", "深紫色"], ["CRT Green", "CRT 绿"], ["phosphor", "荧光"], ["phosphor screen", "荧光屏"], ["Sunset", "日落"], ["orange + pink", "橙色 + 粉色"], ["Light", "浅色"], ["inverted palette", "反转配色"], ["Auto", "自动"], ["matches your system", "跟随系统"], ["High contrast", "高对比度"], ["max readability", "最高可读性"], ["pick your own colors", "自选颜色"], ["Native", "原生"], ["matches gog.com's own look", "与 gog.com 自身外观一致"],
+    ["Copy report", "复制报告"], ["Sync now", "立即同步"], ["Never", "从不"], ["Delete everything…", "删除所有数据…"], ["Skip", "跳过"], ["Plain look", "朴素外观"], ["Calm mode", "平静模式"], ["Catalog tools", "目录工具"], ["Smart wishlist", "智能愿望单"], ["Custom tags & notes", "自定义标签与笔记"], ["Wishlist sale alerts", "愿望单促销提醒"], ["Visual upgrade", "视觉升级"], ["RTL layout", "从右到左布局"], ["Price history", "价格历史"], ["Close window", "关闭窗口"],
+    // popup
+    ["Enable GOG Enhancer", "启用 GOG Enhancer"], ["Something on gog.com isn't working", "gog.com 上有功能无法正常工作"], ["{} stopped working on a gog.com page. The rest of the extension still works.", "{1} 在 gog.com 页面上停止工作。扩展的其余部分仍可使用。"], ["Report on GitHub", "在 GitHub 上报告"], ["Dismiss", "忽略"],
+    ["The report has no web addresses or personal data. \"Report on GitHub\" only opens a page with it filled in — you choose whether to send it.", "报告不含网址或个人数据。“在 GitHub 上报告”只会打开一个已填好内容的页面——是否发送由你决定。"],
+    ["Using bundled rates · click ↻ to refresh", "使用内置汇率 · 点击 ↻ 刷新"], ["just updated", "刚刚更新"], ["⚠ refresh failed", "⚠ 刷新失败"], ["{n}h ago", "{1} 小时前"], ["{n}d ago", "{1} 天前"], ["Off (USD only)", "关闭（仅美元）"], ["VAT estimator", "增值税估算"], ["Refresh exchange rates now", "立即刷新汇率"],
+    ["Show gog.com without GOG Enhancer's styling — features keep working.", "显示不带 GOG Enhancer 样式的 gog.com——功能仍然可用。"], ["No glow, blur or animation.", "无发光、模糊或动画。"], ["Sort, near-my-low filter, totals, export.", "排序、接近我的最低价筛选、合计、导出。"], ["Sort a page, hide owned games, compare, save searches.", "排序页面、隐藏已拥有的游戏、比较、保存搜索。"],
+    ["Save this week's digest as a web page you can keep or send", "将本周摘要保存为可留存或发送的网页"], ["Save as page", "保存为网页"], ["⏰ refund closes in {n}d", "⏰ 退款将在 {1} 天后截止"], ["🔔 {} — alert hit", "🔔 {1} — 提醒已触发"], ["📉 -{n}% off peak", "📉 较峰值下降 {1}%"], ["⏳ offer ends in under a day", "⏳ 优惠不到一天后结束"], ["⏳ offer ends in {n}d", "⏳ 优惠将在 {1} 天后结束"],
+    ["Copied ✓", "已复制 ✓"], ["Couldn't copy", "无法复制"], ["Buy Me a Coffee", "请我喝杯咖啡"], ["🧡 Coffee", "🧡 咖啡"],
+    // first-run wizard
+    ["Welcome.", "欢迎。"], ["GOG Enhancer adds the bits the store doesn't: live currency conversion, price history, custom tags, Hebrew, and a bunch of small visual upgrades. Two minutes to set up.", "GOG Enhancer 补充商店没有的功能：实时货币换算、价格历史、自定义标签、希伯来语，以及一些小的视觉升级。两分钟即可完成设置。"],
+    ["First, your currency", "首先，选择你的货币"], ["We'll show every price in this currency next to the original USD.", "我们会在原始美元价格旁用此货币显示每个价格。"], ["None", "无"], ["Tax estimator", "税费估算"], ["USD only", "仅美元"], ["Continue →", "继续 →"],
+    ["GOG shows USD without sales tax. We can show you the post-tax price too, based on a region preset. Pick what fits, or skip.", "GOG 显示的美元价格不含销售税。我们也可以根据地区预设显示含税价格。请选择合适的，或跳过。"], ["No tax estimation", "不估算税费"], ["← Back", "← 返回"],
+    ["Choose your toggles", "选择你的开关"], ["Everything is on by default. Untick anything you don't want — you can change all of these later from the popup.", "默认全部开启。取消勾选你不需要的功能——以后可随时在弹出窗口中更改。"],
+    ["DRM-free banner", "DRM-free 横幅"], ["Bottom-of-page reminder of GOG's \"you own it\" promise.", "页面底部提醒 GOG 的“你拥有它”承诺。"], ["30-day refund badges", "30 天退款徽章"], ["Adds a refund chip to every game card.", "在每张游戏卡片上添加退款标签。"], ["Mod indicator", "MOD 标记"], ["★ MOD badge on cards for moddable titles.", "可 Modding 的游戏卡片上显示 ★ MOD 徽章。"],
+    ["Records prices on visit. Mini-stats panel on game pages.", "访问时记录价格。游戏页面上有迷你统计面板。"], ["Compare via IsThereAnyDeal", "通过 IsThereAnyDeal 比价"], ["One-click button to check Steam/Epic/Humble/Fanatical.", "一键查看 Steam/Epic/Humble/Fanatical。"], ["Toolbar badge counts wishlist items currently on sale.", "工具栏徽章显示愿望单中当前促销的数量。"], ["Tag any game with autocomplete + dashboard.", "为任何游戏添加标签，带自动补全和仪表板。"],
+    ["Hebrew translations", "希伯来语翻译"], ["Translates stable nav & UI strings to Hebrew. Off by default.", "将稳定的导航与界面文字翻译成希伯来语。默认关闭。"], ["Right-to-left mirroring. Off by default.", "从右到左镜像布局。默认关闭。"], ["Pick a look", "选择外观"], ["Sets the accent colors across badges, the game-page panel, and the era-aware card effects. Change anytime in Advanced Options.", "设置徽章、游戏页面面板和按年代区分的卡片效果的强调色。可随时在高级选项中更改。"],
+    ["Finish setup", "完成设置"], ["You're set.", "一切就绪。"], ["GOG Enhancer is active. Visit <1>gog.com</1> to see it in action.", "GOG Enhancer 已启用。访问 <1>gog.com</1> 查看效果。"], ["<1>Alt</1>+<2>G</2> — open settings popup", "<1>Alt</1>+<2>G</2> — 打开设置弹出窗口"], ["<1>Alt</1>+<2>Shift</2>+<3>G</3> — toggle on/off", "<1>Alt</1>+<2>Shift</2>+<3>G</3> — 开/关"], ["<1>Alt</1>+<2>Shift</2>+<3>H</3> — toggle Hebrew", "<1>Alt</1>+<2>Shift</2>+<3>H</3> — 切换希伯来语"],
+    ["You can revisit any of these settings from the toolbar icon.", "你可以随时从工具栏图标重新访问这些设置。"], ["Another currency…", "其他货币…"], ["Another currency", "其他货币"],
+    // tour buttons
+    ["Skip the tour", "跳过导览"], ["Back", "上一步"], ["Next", "下一步"], ["Done", "完成"], ["Tour progress", "导览进度"], ["Slide {n}", "第 {1} 页"], ["Open the settings", "打开设置"], ["Check my gog.com tab", "检查我的 gog.com 标签页"], ["{n} thing to look at — see below.", "有 {1} 项需要查看——见下方。"], ["{n} things to look at — see below.", "有 {1} 项需要查看——见下方。"], ["Everything the extension looks for was found on that page.", "扩展需要的所有内容都在该页面上找到了。"],
+  ]);
+})();

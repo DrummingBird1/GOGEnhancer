@@ -56,7 +56,7 @@
       "popup.row.hideExpired.sub": "Greys out promos with stale year stamps.",
       "popup.row.cleanLayout": "Cleaner homepage layout",
       "popup.row.cleanLayout.sub": "Collapses duplicate sale strips.",
-      "popup.row.skeleton": "אנימציית טעינה",
+      "popup.row.skeleton": "Loading animation",
       "popup.row.skeleton.sub": "Replace bare placeholders with shimmer.",
       "popup.row.design": "Design injection",
       "popup.row.design.sub": 'Mono prices, era-aware cards, depth, golden "Good Old Game" pill.',
@@ -520,6 +520,15 @@
 
   const Api = {
     LANGUAGES,
+    /**
+     * Adds a language after the original seven: its name and the keyed strings it has
+     * (anything missing falls back to English).
+     * @param {string} code @param {string} name @param {Record<string, string>} dict
+     */
+    addLanguage(code, name, dict) {
+      LANGUAGES[code] = name;
+      STRINGS[code] = dict;
+    },
     /**
      * Translate a key in the given language (or current document language).
      * @param {string} key

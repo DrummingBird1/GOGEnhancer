@@ -18,6 +18,8 @@
     de: ["German", "Deutsch"],
     fr: ["French", "Français", "Francais"],
     es: ["Spanish", "Español", "Espanol"],
+    zh: ["Chinese", "Simplified Chinese", "中文", "中文(简体)", "简体中文"],
+    pt: ["Portuguese", "Português", "Brazilian Portuguese", "Portuguese - Brazil"],
   };
 
   /** @param {string} s */

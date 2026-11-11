@@ -63,31 +63,52 @@
   const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   /**
+   * One translation of one English text into `lang` (the shared core of `add` and `addPack`).
+   * @param {string} lang @param {string} source @param {string} translated
+   */
+  function register(lang, source, translated) {
+    if (typeof translated !== "string" || !translated) return;
+    if (!exact[lang]) {
+      exact[lang] = new Map();
+      patterns[lang] = [];
+    }
+    const english = norm(source);
+    if (!/\{n\}|\{\}/.test(english)) {
+      exact[lang].set(english, translated);
+      return;
+    }
+    const literal = english.replace(/\{n\}|\{\}/g, "");
+    const pattern = english
+      .split(/(\{n\}|\{\})/)
+      .map((part) => (part === "{n}" ? "(\\d[\\d.,]*)" : part === "{}" ? "(.*?)" : escapeRe(part)))
+      .join("");
+    patterns[lang].push({ re: new RegExp(`^${pattern}$`), fmt: translated, weight: literal.length });
+    patterns[lang].sort((x, y) => y.weight - x.weight); // the most specific wording first
+  }
+
+  /**
    * Registers rows: `[english, he, ru, pl, de, fr, es]`.
    * @param {string[][]} rows
    */
   function add(rows) {
     for (const row of rows) {
       allRows.push(row);
-      const english = norm(row[0]);
-      const hasSlots = /\{n\}|\{\}/.test(english);
-      ORDER.forEach((lang, i) => {
-        const translated = row[i + 1];
-        if (typeof translated !== "string" || !translated) return;
-        if (!hasSlots) {
-          exact[lang].set(english, translated);
-          return;
-        }
-        const literal = english.replace(/\{n\}|\{\}/g, "");
-        const source = english
-          .split(/(\{n\}|\{\})/)
-          .map((part) => (part === "{n}" ? "(\\d[\\d.,]*)" : part === "{}" ? "(.*?)" : escapeRe(part)))
-          .join("");
-        patterns[lang].push({ re: new RegExp(`^${source}$`), fmt: translated, weight: literal.length });
-        patterns[lang].sort((a, b) => b.weight - a.weight); // the most specific wording first
-      });
+      ORDER.forEach((lang, i) => register(lang, row[0], row[i + 1]));
     }
   }
+
+  /**
+   * Registers one more language as `[english, translation]` pairs — a language added
+   * after the original six, which may cover only part of the text (what has no row
+   * stays English). Same placeholders as `add`.
+   * @param {string} lang @param {string[][]} pairs
+   */
+  function addPack(lang, pairs) {
+    for (const [english, translated] of pairs) register(lang, english, translated);
+  }
+
+  /** The languages that have at least one translation. */
+  const languages = () => Object.keys(exact);
 
   /**
    * Which plural form a count takes in `lang`. Russian and Polish have three.
@@ -426,6 +447,6 @@
     }
   }
 
-  const Api = { ORDER, add, translate, tx, covers, apply, strings, rows: () => allRows, pluralIndex, translateTree: walk };
+  const Api = { ORDER, add, addPack, languages, translate, tx, covers, apply, strings, rows: () => allRows, pluralIndex, translateTree: walk };
   /** @type {any} */ (window).GOGPlusPageI18n = Api;
 })();

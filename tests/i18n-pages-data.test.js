@@ -22,7 +22,7 @@ const TECHNICAL = new Set([
   "GOG Enhancer", "GOG Enhancer 4", "v4.0.0", "v2.4", "ILS", "EUR", "GBP", "PLN", "RUB", "BRL", "AUD", "CAD", "USD", "zł", "₪ ILS", "€ EUR", "£ GBP", "₽ RUB", "zł PLN", "R$ BRL", "A$ AUD", "C$ CAD", "R$", "A$", "C$", "$ USD",
   "1 USD =", "frankfurter.dev", "api.frankfurter.dev", "www.gog.com", "www.cheapshark.com", "api.gog.com", "catalog.gog.com", "gog.com",
   "Ko-fi", "☕ Ko-fi", "Patreon", "💜 Patreon", "https://discord.com/api/webhooks/…", "Windows 11", "Ryzen 5 5600", "RTX 3060", "Hebrew, English",
-  "J", "K", "T", "?", "Alt", "G", "H", "Shift", "English", "עברית (Hebrew)", "Русский (Russian)", "Polski (Polish)", "Deutsch (German)", "Français (French)", "Español (Spanish)",
+  "J", "K", "T", "?", "Alt", "G", "H", "Shift", "English", "עברית (Hebrew)", "Русский (Russian)", "Polski (Polish)", "Deutsch (German)", "Français (French)", "Español (Spanish)", "中文（简体）(Chinese)", "Português (Brasil) (Portuguese)",
   "↓ CSV", "📝 Markdown ↓", "Webhook", "[GOG+]", "window.GOG_PLUS_DEBUG = true", "chrome.notifications", "gog-enhancer-sync.json", "gog-enhancer-backup-YYYY-MM-DD.json",
   "USD", "Alt+↑ / Alt+↓", "Name",
 ]);
