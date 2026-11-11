@@ -8,8 +8,10 @@ coverage/
 # Build artifacts and manual extractions (all under dist/)
 dist/
 
-# Local tooling config (Claude Code, IDE)
-.claude/
+# Local tooling config. The shared Claude Code settings and slash commands
+# (.claude/settings.json, .claude/commands/) ARE tracked; personal overrides are not.
+.claude/settings.local.json
+.claude/*.local.*
 .vscode/
 .idea/
 

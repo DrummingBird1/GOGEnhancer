@@ -43,6 +43,7 @@ The shippable extension lives entirely under **`extension/`** — `background/`,
 **`store/`** holds Web-Store material that is *not* part of the extension: `STORE_LISTING.md` (submission text, English and Hebrew) and `screenshots/` (the 5 listing PNGs, uploaded separately to the dashboard; regenerate with `node e2e/store-screenshots.mjs` — they use demo data) and `release-images/`. Nothing here ships in the zip.
 
 Everything else stays at the repo root because it's neither the extension nor store-facing:
+- Shared agent setup (tracked): `.claude/settings.json` (allows the gate commands, asks before `git push` / `git tag` / `gh release` / `gh pr merge`, denies reading `e2e/.auth/`) and `.claude/commands/` (`/verify`, `/site-changed`, `/release-prep`, `/handoff`); `CONTRIBUTING.md`. Personal overrides go in `.claude/settings.local.json`, which stays untracked.
 - User-facing docs: `README.md` (English, the repo's front page), `README.he.md` (full Hebrew translation, linked from the top of both), `PRIVACY.md`, `LICENSE`, `CLAUDE.md`.
 - Build + test tooling: `build.ps1`, `scripts/` (`release.mjs`, `build-firefox.mjs`), `e2e/`, `package.json`, `package-lock.json`, `vitest.config.js`, `eslint.config.js`, `tests/`, `node_modules/`.
 - `docs/` — the GitHub Pages site: `index.html`, `guide.html` (how it works + FAQ), `privacy.html`, `changelog.html`, `assets/`.

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm run lint)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run coverage)",
+      "Bash(npm run verify)",
+      "Bash(npm run verify:*)",
+      "Bash(npm run e2e)",
+      "Bash(npm run e2e:*)",
+      "Bash(npm run build:firefox)",
+      "Bash(npx vitest run:*)",
+      "Bash(node e2e/*.mjs)",
+      "Bash(node scripts/verify.mjs:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git tag:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(gh release:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh repo edit:*)"
+    ],
+    "deny": [
+      "Read(./e2e/.auth/**)"
+    ]
+  }
+}
