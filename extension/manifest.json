@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "name": "GOG Enhancer",
   "version": "4.5.0",
-  "description": "תוסף third-party (לא רשמי) ל-GOG.com: המרת מטבע חיה, מעקב היסטוריית מחירים, תגיות, עברית + RTL.",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
 
   "permissions": ["storage", "alarms", "notifications"],
   "host_permissions": [

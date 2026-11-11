@@ -24,7 +24,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** Same allow-list as build.ps1 — what ships. */
-export const INCLUDE = ["background", "content", "icons", "lib", "onboarding", "options", "popup", "tags", "tour", "manifest.json"];
+export const INCLUDE = ["_locales", "background", "content", "icons", "lib", "onboarding", "options", "popup", "tags", "tour", "manifest.json"];
 
 export const GECKO_ID = "gog-enhancer@drummingbird1.github.io";
 /** 140 is the first Firefox that understands `data_collection_permissions`. */

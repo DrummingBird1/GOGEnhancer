@@ -42,6 +42,7 @@ if ($outDir -and -not (Test-Path $outDir)) {
 # What goes in the zip. Docs (*.md) and screenshots (*.png at root) stay out.
 $include = @(
     "background",
+    "_locales",
     "content",
     "icons",
     "lib",
