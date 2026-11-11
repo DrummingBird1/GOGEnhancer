@@ -99,5 +99,13 @@
     ["You can revisit any of these settings from the toolbar icon.", "Você pode rever qualquer uma destas configurações pelo ícone da barra de ferramentas."], ["Another currency…", "Outra moeda…"], ["Another currency", "Outra moeda"],
     // tour buttons
     ["Skip the tour", "Pular o tour"], ["Back", "Voltar"], ["Next", "Avançar"], ["Done", "Concluir"], ["Tour progress", "Progresso do tour"], ["Slide {n}", "Slide {1}"], ["Open the settings", "Abrir as configurações"], ["Check my gog.com tab", "Verificar minha aba do gog.com"], ["{n} thing to look at — see below.", "{1} item para ver — veja abaixo."], ["{n} things to look at — see below.", "{1} itens para ver — veja abaixo."], ["Everything the extension looks for was found on that page.", "Tudo o que a extensão procura foi encontrado nessa página."],
+    ["GOG Enhancer was updated", "O GOG Enhancer foi atualizado"],
+    ["Version {} → {}. Here is what changed:", "Versão {1} → {2}. Veja o que mudou:"],
+    ["You now have version {}. Here is what changed:", "Você agora está na versão {1}. Veja o que mudou:"],
+    ["Your tags, notes, price history and settings were kept as they were.", "Suas tags, notas, histórico de preços e configurações foram mantidos como estavam."],
+    ["Full changelog", "Registro de alterações completo"],
+    ["Releases on GitHub", "Versões no GitHub"],
+    ["Got it", "Entendi"],
+    ["💱 24 currencies instead of five, two more interface languages (中文, Português), and the extension's own text on gog.com now follows your language", "💱 24 moedas em vez de cinco, mais dois idiomas de interface (中文, Português), e o texto da própria extensão no gog.com agora segue o seu idioma"],
   ]);
 })();

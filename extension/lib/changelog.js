@@ -79,6 +79,7 @@
       "🧩 The insights panel no longer pushes the buy box down the page, no longer loses what you are typing when something else is saved, and asks CheapShark once per game instead of several times",
       "♾️ Endless scrolling no longer repeats games already on screen, and starts over when you sort or filter the list",
       "🎨 Two new themes, AMOLED and Amber — and click a converted price to copy it",
+      "💱 24 currencies instead of five, two more interface languages (中文, Português), and the extension's own text on gog.com now follows your language",
     ],
     "4.0.0": [
       "🧭 Rebuilt for gog.com's redesign — every lookup of the site's markup now goes through one adapter that tries several strategies, each feature runs in isolation, and prices GOG prints with CSS are converted and recorded again",

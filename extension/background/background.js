@@ -870,6 +870,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     if (major < 4 && tourSeen !== "4") {
       await self.GOGPlusStorage.set({ tourSeen: "4" });
       chrome.tabs.create({ url: chrome.runtime.getURL("tour/tour.html") });
+    } else if (details.previousVersion && details.previousVersion !== chrome.runtime.getManifest().version) {
+      // Every other update: one tab that says what changed, so nobody wonders whether it happened.
+      const from = encodeURIComponent(details.previousVersion);
+      chrome.tabs.create({ url: chrome.runtime.getURL(`tour/whatsnew.html?from=${from}`) });
     }
   }
 });

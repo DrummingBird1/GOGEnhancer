@@ -74,7 +74,7 @@ describe("manifest.json content script", () => {
 });
 
 describe("extension pages load their scripts in a working order", () => {
-  for (const page of ["options/options.html", "tags/tags.html", "popup/popup.html", "onboarding/onboarding.html", "tour/tour.html"]) {
+  for (const page of ["options/options.html", "tags/tags.html", "popup/popup.html", "onboarding/onboarding.html", "tour/tour.html", "tour/whatsnew.html"]) {
     it(page, async () => {
       const files = pageScripts(page);
       expect(files.length).toBeGreaterThan(0);

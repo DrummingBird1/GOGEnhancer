@@ -15,6 +15,7 @@ const PAGES = {
   popup: { html: "popup/popup.html", files: ["common", "popup"] },
   onboarding: { html: "onboarding/onboarding.html", files: ["common", "onboarding"] },
   tour: { html: "tour/tour.html", files: ["common", "options-messages", "tour"] },
+  whatsnew: { html: "tour/whatsnew.html", files: ["common", "popup", "tour"] },
 };
 
 /** What a page may show without a row: names, codes, addresses, numbers and sizes. */

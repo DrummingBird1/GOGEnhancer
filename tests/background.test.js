@@ -265,9 +265,10 @@ describe("onInstalled", () => {
     });
   });
 
-  it("does not open onboarding on an update within v4", async () => {
+  it("does not open onboarding on an update within v4, but shows what changed in one new tab", async () => {
     await Promise.all(listeners.onInstalled.map((fn) => fn({ reason: "update", previousVersion: "4.0.0" })));
-    expect(chrome.tabs.create).not.toHaveBeenCalled();
+    expect(chrome.tabs.create).toHaveBeenCalledTimes(1);
+    expect(chrome.tabs.create).toHaveBeenCalledWith({ url: "chrome-extension://test-id/tour/whatsnew.html?from=4.0.0" });
   });
 
   it("shows the v4 tour once to someone updating from an older version", async () => {
@@ -277,7 +278,7 @@ describe("onInstalled", () => {
     expect((await getLocal(["tourSeen"])).tourSeen).toBe("4");
     chrome.tabs.create.mockClear();
     await Promise.all(listeners.onInstalled.map((fn) => fn({ reason: "update", previousVersion: "3.0.0" })));
-    expect(chrome.tabs.create).not.toHaveBeenCalled(); // never twice
+    expect(chrome.tabs.create).not.toHaveBeenCalledWith({ url: "chrome-extension://test-id/tour/tour.html" }); // the tour never twice
   });
 
   it("fills in any settings keys missing from storage with defaults", async () => {

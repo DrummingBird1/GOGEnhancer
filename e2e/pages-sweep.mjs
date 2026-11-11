@@ -26,6 +26,7 @@ const PAGES = [
   ["dashboard", "tags/tags.html", [1200, 420]],
   ["onboarding", "onboarding/onboarding.html", [900, 420]],
   ["tour", "tour/tour.html", [900, 420]],
+  ["whatsnew", "tour/whatsnew.html?from=4.0.0", [900, 420]],
 ];
 
 const h = await startHarness({ extPath: new URL("../extension", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1") });

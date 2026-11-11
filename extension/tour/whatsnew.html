@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GOG Enhancer was updated</title>
+  <link rel="stylesheet" href="tour.css" />
+  <style>
+    .wn-list { margin: 8px 0 0; padding-inline-start: 20px; display: grid; gap: 8px; line-height: 1.5; }
+    .wn-version { margin: 22px 0 0; font-size: 15px; color: var(--cyan); }
+    .wn-links { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 22px; }
+    .wn-links a { color: var(--cyan); }
+  </style>
+</head>
+<body>
+  <main class="tour">
+    <header class="tour-head">
+      <span class="tour-pill" id="wnPill">GOG Enhancer</span>
+    </header>
+    <section class="slide">
+      <h1>GOG Enhancer was updated</h1>
+      <p id="wnIntro"></p>
+      <div id="wnBody"></div>
+      <p class="tour-note">Your tags, notes, price history and settings were kept as they were.</p>
+      <div class="wn-links">
+        <a href="https://drummingbird1.github.io/GOGEnhancer/changelog.html" target="_blank" rel="noopener noreferrer">Full changelog</a>
+        <a href="https://github.com/DrummingBird1/GOGEnhancer/releases" target="_blank" rel="noopener noreferrer">Releases on GitHub</a>
+      </div>
+    </section>
+    <footer class="tour-foot">
+      <button id="wnClose" class="tour-btn tour-btn--primary" type="button">Got it</button>
+    </footer>
+  </main>
+
+  <script src="../lib/browser-compat.js"></script>
+  <script src="../lib/defaults.js"></script>
+  <script src="../lib/storage.js"></script>
+  <script src="../lib/i18n.js"></script>
+  <script src="../lib/i18n-pages.js"></script>
+  <script src="../lib/i18n-pages-common.js"></script>
+  <script src="../lib/i18n-pages-popup.js"></script>
+  <script src="../lib/i18n-pages-tour.js"></script>
+  <script src="../lib/i18n-lang-zh.js"></script>
+  <script src="../lib/i18n-lang-pt.js"></script>
+  <script src="../lib/changelog.js"></script>
+  <script src="whatsnew.js"></script>
+</body>
+</html>

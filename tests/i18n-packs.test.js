@@ -87,7 +87,7 @@ describe("where the languages are offered", () => {
       expect(scripts).toContain(`lib/i18n-lang-${l}-content.js`);
       expect(readFileSync(resolve(EXT, "options/options.html"), "utf8")).toContain(`i18n-lang-${l}-options.js`);
       expect(readFileSync(resolve(EXT, "tags/tags.html"), "utf8")).toContain(`i18n-lang-${l}-dashboard.js`);
-      for (const page of ["popup/popup.html", "options/options.html", "tags/tags.html", "onboarding/onboarding.html", "tour/tour.html"]) {
+      for (const page of ["popup/popup.html", "options/options.html", "tags/tags.html", "onboarding/onboarding.html", "tour/tour.html", "tour/whatsnew.html"]) {
         expect(readFileSync(resolve(EXT, page), "utf8"), `${page} loads the ${l} pack`).toContain(`i18n-lang-${l}.js`);
       }
     }

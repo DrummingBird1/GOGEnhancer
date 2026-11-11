@@ -148,10 +148,11 @@ code.
   device. Optional J / K / T keyboard navigation on game grids (and
   W / N / A on a game page), and a RAM-only system check on game pages.
 
-▸ Seven interface languages
-  The tag dashboard, Advanced Options, popup and first-run wizard come in
-  English, Hebrew (right-to-left), Russian, Polish, German, French and
-  Spanish. What you wrote yourself — tag names, notes — is never translated.
+▸ Nine interface languages
+  The tag dashboard, Advanced Options, popup, first-run wizard and the
+  extension's own text on gog.com come in English, Hebrew (right-to-left),
+  Russian, Polish, German, French, Spanish, Simplified Chinese and
+  Brazilian Portuguese. What you wrote yourself — tag names, notes — is never translated.
 
 ▸ See exactly what it does
   A privacy dashboard in Advanced Options lists every address the extension
@@ -326,9 +327,10 @@ GOG Enhancer הוא תוסף third-party (לא רשמי) שמוסיף ל-GOG.com
   Alt וחצים, ותפריטים ודיאלוגים שתופסים פוקוס ומכריזים על שינויים לקורא
   מסך.
 
-▸ שבע שפות ממשק
-  לוח התגיות, ההגדרות המתקדמות, החלון הקופץ ואשף ההתקנה זמינים באנגלית,
-  עברית (מימין לשמאל), רוסית, פולנית, גרמנית, צרפתית וספרדית. מה שכתבתם
+▸ תשע שפות ממשק
+  לוח התגיות, ההגדרות המתקדמות, החלון הקופץ, אשף ההתקנה והטקסט של התוסף
+  בתוך gog.com זמינים באנגלית, עברית (מימין לשמאל), רוסית, פולנית, גרמנית,
+  צרפתית, ספרדית, סינית פשוטה ופורטוגזית ברזילאית. מה שכתבתם
   בעצמכם — שמות תגיות והערות — אף פעם לא מתורגם.
 
 ▸ רואים בדיוק מה התוסף עושה

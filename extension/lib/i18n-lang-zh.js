@@ -100,5 +100,13 @@
     ["You can revisit any of these settings from the toolbar icon.", "你可以随时从工具栏图标重新访问这些设置。"], ["Another currency…", "其他货币…"], ["Another currency", "其他货币"],
     // tour buttons
     ["Skip the tour", "跳过导览"], ["Back", "上一步"], ["Next", "下一步"], ["Done", "完成"], ["Tour progress", "导览进度"], ["Slide {n}", "第 {1} 页"], ["Open the settings", "打开设置"], ["Check my gog.com tab", "检查我的 gog.com 标签页"], ["{n} thing to look at — see below.", "有 {1} 项需要查看——见下方。"], ["{n} things to look at — see below.", "有 {1} 项需要查看——见下方。"], ["Everything the extension looks for was found on that page.", "扩展需要的所有内容都在该页面上找到了。"],
+    ["GOG Enhancer was updated", "GOG Enhancer 已更新"],
+    ["Version {} → {}. Here is what changed:", "版本 {1} → {2}。更新内容如下："],
+    ["You now have version {}. Here is what changed:", "你现在使用的是版本 {1}。更新内容如下："],
+    ["Your tags, notes, price history and settings were kept as they were.", "你的标签、笔记、价格历史和设置都保持原样。"],
+    ["Full changelog", "完整更新日志"],
+    ["Releases on GitHub", "GitHub 上的发布版本"],
+    ["Got it", "知道了"],
+    ["💱 24 currencies instead of five, two more interface languages (中文, Português), and the extension's own text on gog.com now follows your language", "💱 24 种货币取代原来的 5 种，新增两种界面语言（中文、Português），扩展在 gog.com 上的文字也会跟随你的语言"],
   ]);
 })();
