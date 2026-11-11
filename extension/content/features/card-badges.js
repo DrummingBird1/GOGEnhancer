@@ -43,7 +43,7 @@
       if (ph.length >= 2) body += buildMiniSparkline(ph);
     }
     if (tags.length) {
-      const chips = tags.map((t) => `<span class="gog-plus-ql-tag">${escapeHtml(t)}</span>`).join("");
+      const chips = tags.map((t) => `<span class="gog-plus-ql-tag" data-no-i18n>${escapeHtml(t)}</span>`).join("");
       body += `<div class="gog-plus-ql-tags">${chips}</div>`;
     }
     return body;

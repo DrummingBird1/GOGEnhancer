@@ -676,6 +676,55 @@ try {
     await g2.close();
   }
 
+  console.log("v4.5 — the extension's own text inside gog.com pages, in the interface language");
+  {
+    await setSettings({
+      sync: { uiLanguage: "he", targetCurrency: "ILS", rates: { ILS: 4 }, currencyConverter: true, catalogTools: true, wishlistFilters: true, wishlistSmart: true, priceCompareTable: false, customTags: true, hebrewTranslations: false },
+      local: { tags: { alpha_game: ["Backlog", "rpg"] }, notes: {}, priceHistory: { alpha_game: [{ d: "2026-08-01", p: 29.99, c: "USD" }, { d: "2026-10-30", p: 14.99, c: "USD" }] }, notInterested: {} },
+    });
+    const g = await open("/en/game/alpha_game");
+    await g.waitForSelector("#gog-plus-gamepanel", { timeout: 6000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 1500));
+    const t = await g.evaluate(() => ({
+      panel: document.getElementById("gog-plus-gamepanel")?.innerText || "",
+      siteTitle: document.querySelector("h1")?.textContent.trim(),
+      siteBuy: document.querySelector("button.buy")?.textContent.trim(),
+      chips: [...document.querySelectorAll(".gog-plus-tag-chip")].map((c) => c.textContent.replace("×", "").trim()),
+      banner: document.querySelector(".gog-plus-banner")?.innerText || "",
+    }));
+    check("in-page: the panel is in Hebrew (headings and buttons)", /בדיקת מבצע|היסטוריית מחירים/.test(t.panel) && /העתקת קישור נקי/.test(t.panel), t.panel.slice(0, 200));
+    check("in-page: the site's own text is untouched (title, Add to cart)", t.siteTitle === "Alpha Game" && t.siteBuy === "Add to cart", JSON.stringify({ a: t.siteTitle, b: t.siteBuy }));
+    check("in-page: what the user wrote is never translated (a tag named 'Backlog' stays as written)", t.chips.includes("Backlog") && t.chips.includes("rpg"), JSON.stringify(t.chips));
+    check("in-page: the pinned banner is Hebrew", /מה שקניתם שייך לכם/.test(t.banner), t.banner.slice(0, 80));
+    // a section added later (a rebuild) is translated too, and switching back to English restores it
+    await g.click("#gog-plus-alert-low").catch(() => {});
+    await new Promise((r) => setTimeout(r, 800));
+    const after = await g.evaluate(() => document.getElementById("gog-plus-gamepanel")?.innerText || "");
+    check("in-page: after the panel rebuilds it is still Hebrew", /התראת מחיר/.test(after), after.slice(0, 120));
+    await g.close();
+
+    const c = await open("/en/games/v4");
+    await c.waitForSelector("#gog-plus-catbar", { timeout: 6000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 1200));
+    const bar = await c.evaluate(() => document.getElementById("gog-plus-catbar")?.innerText || "");
+    check("in-page: the catalog bar is Hebrew", /מיון|הסתרה|משחקים/.test(bar), bar.slice(0, 160));
+    await c.close();
+
+    const w = await open("/en/account/wishlist");
+    await w.waitForSelector("#gog-plus-wlfilters", { timeout: 6000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 1200));
+    const wl = await w.evaluate(() => document.getElementById("gog-plus-wlfilters")?.innerText || "");
+    check("in-page: the wishlist bar is Hebrew", /סינון מהיר|במבצע|ייצוא/.test(wl), wl.slice(0, 160));
+    await w.close();
+    await setSettings({ sync: { uiLanguage: "en" } });
+    const e = await open("/en/game/alpha_game");
+    await e.waitForSelector("#gog-plus-gamepanel", { timeout: 6000 }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 1000));
+    const en = await e.evaluate(() => document.getElementById("gog-plus-gamepanel")?.innerText || "");
+    check("in-page: in English the panel is untouched", /deal check/i.test(en) && /copy clean link/i.test(en) && !/בדיקת מבצע|העתקת קישור/.test(en), en.slice(0, 120));
+    await e.close();
+  }
+
   console.log("v4 — game page (deal check, offer timer, languages, collapsible panel, review filter)");
   {
     await setSettings({ sync: { targetCurrency: "ILS", preferredLanguages: ["English", "Hebrew"], realDiscountCheck: true, offerTimer: true, languageMeter: true, reviewTools: true, priceCompareTable: false }, local: { priceHistory: {}, gameFacts: {}, panelCollapsed: {} } });

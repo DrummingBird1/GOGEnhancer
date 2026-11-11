@@ -426,6 +426,6 @@
     }
   }
 
-  const Api = { ORDER, add, translate, tx, covers, apply, strings, rows: () => allRows, pluralIndex };
+  const Api = { ORDER, add, translate, tx, covers, apply, strings, rows: () => allRows, pluralIndex, translateTree: walk };
   /** @type {any} */ (window).GOGPlusPageI18n = Api;
 })();

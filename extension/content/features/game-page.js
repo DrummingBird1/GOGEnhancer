@@ -898,6 +898,7 @@
         (state.settings.tags?.[slug] || state.settings._tagsCache?.[slug] || existing).forEach((t) => {
           const chip = document.createElement("span");
           chip.className = "gog-plus-tag-chip";
+          chip.setAttribute("data-no-i18n", ""); // the user's own words
           const accent = window.GOGPlusValidate?.safeHex(tagColors[t]);
           if (accent) chip.style.setProperty("--tag-accent", accent);
           // Build safely — t is user input, must NOT go through innerHTML raw.
@@ -957,7 +958,7 @@
       wrap.querySelector(".gog-plus-note-templates")?.addEventListener("click", (e) => {
         const b = /** @type {HTMLElement} */ (e.target).closest("button[data-tpl]");
         if (!b) return;
-        const line = b.getAttribute("data-tpl") || "";
+        const line = window.GOGPlusUiI18n?.tx(b.getAttribute("data-tpl") || "") || b.getAttribute("data-tpl") || "";
         noteEl.value = noteEl.value ? `${noteEl.value.replace(/\s+$/, "")}\n${line}` : line;
         noteEl.focus();
         noteEl.dispatchEvent(new Event("input", { bubbles: true }));

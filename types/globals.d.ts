@@ -89,6 +89,7 @@ interface GogPlusPageI18nApi {
   strings(root: Node): string[];
   rows(): string[][];
   pluralIndex(n: number, lang: string): number;
+  translateTree(root: Node, lang: string): void;
 }
 
 interface GogPlusGameStatusEntry {
@@ -233,6 +234,7 @@ declare global {
     GOGPlusChangelog?: GogPlusChangelogApi;
     GOGPlusI18n?: GogPlusI18nApi;
     GOGPlusPageI18n?: GogPlusPageI18nApi;
+    GOGPlusUiI18n?: { init(): void; tx(text: string): string; _flush(): void };
     GOGPlusGameStatus?: GogPlusGameStatusApi;
   }
   // eslint-disable-next-line no-var

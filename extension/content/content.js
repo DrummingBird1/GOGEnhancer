@@ -477,6 +477,7 @@
     watchSiteTheme();
     window.GOGPlusGogDom.watchRoute(onRouteChange);
     window.GOGPlusKeyboardNav.init();
+    window.GOGPlusUiI18n?.init();
     window.GOGPlusSiteSignals?.checkPackLink();
     // The day streak (achievements, monthly challenges): one small write a day.
     void window.GOGPlusStreak?.recordVisit(window.GOGPlusStorage);
